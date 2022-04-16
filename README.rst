@@ -15,7 +15,7 @@ Table of contents
 
 - `Architecture`_
 - `Project structure`_
-- `Behavior`_
+- `Behaviour`_
 - `Match summary`_
 - `Allowed messages`_
 - `Commands`_
@@ -38,7 +38,7 @@ Project structure
 - **main.py**: the real heart of PartitelleBot code
 
 =================
-Behavior
+Behaviour
 =================
 .. image:: presentation_message.png
     :width: 450px
