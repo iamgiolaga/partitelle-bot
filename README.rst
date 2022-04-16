@@ -1,6 +1,6 @@
 # PartitelleBot
 
-.. image:: https://img.shields.io/badge/Telegram-Group-blue.svg?logo=telegram
+.. image:: https://img.shields.io/badge/Telegram-PartitelleBot-blue.svg?logo=telegram
    :target: https://t.me/PartitelleBot
    :alt: PartitelleBot
 
