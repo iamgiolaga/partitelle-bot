@@ -55,7 +55,7 @@ You have two ways of interacting with the bot:
 By default, the bot sets all new matches on the next wednesday at 9 pm but this information is, of course, editable.
 Once a new match is created through **/start** command, people can begin to organize the match through the set of allowed messages.
 The first time the bot detects an interaction, it will print a `match summary`_ of the current situation
-whereas from the second time it will edit its previous message (by the way remind that a new explicit summary can be obtained through /participants command).
+whereas from the second time it will edit its previous message (by the way remind that a new explicit summary can be obtained through **/participants** command).
 
 **Note**: if you give PartitelleBot the administrator rights, it will be able to pin its messages in the group.
 
