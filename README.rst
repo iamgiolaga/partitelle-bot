@@ -74,13 +74,13 @@ This message has a specific structure:
 **GIORNO:** <day> | <time>
 
 
-<participants list
+<participants list from 1 to N
 
-- 1. added player ✅
-- 2. added player ✅
-- 3. proposed player ❓
-- i. ...
-- N. free slot ❌
+- added player ✅
+- added player ✅
+- proposed player ❓
+- ...
+- free slot ❌
 where N is the target number>
 
 
