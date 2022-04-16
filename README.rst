@@ -25,7 +25,7 @@ Architecture
 =================
 
 This is basically a *Python* project relying on `python-telegram-bot <https://github.com/python-telegram-bot/python-telegram-bot>`_ library.
-Data storage is handled through a *PostgresSQL* Database.
+Data storage is handled through a *PostgreSQL* Database.
 The application and the mentioned database are both hosted on `Heroku <https://heroku.com>`_.
 
 =================
