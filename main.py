@@ -244,7 +244,9 @@ def set_number(update: Update, context: CallbackContext):
 
                 if choosen_number_str.isnumeric():
                     choosen_number = int(choosen_number_str)
-                    if choosen_number < participants_num:
+                    if choosen_number <= 0 or choosen_number > 40:
+                        answer = "Non è un numero valido di partecipanti 🌚"
+                    elif choosen_number < participants_num:
                         answer = "Hai ridotto i partecipanti ma c'è ancora gente nella lista. Io non saprei chi togliere, puoi farlo tu? 🙏"
                     elif choosen_number < 2:
                         answer = "Il numero che hai inserito non va bene 👎"
