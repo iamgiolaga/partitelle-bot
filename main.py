@@ -67,10 +67,10 @@ def get_sender_name(source):
     return source.message.from_user.username.lower()
 
 def delete_row_on_db(chat_id):
-    connection.execute('DELETE FROM all_players WHERE chat_id=' + str(chat_id) + ";")
+    connection.execute('DELETE FROM all_players WHERE chat_id=%s', [str(chat_id)])
 
 def is_already_present(chat_id, name):
-    connection.execute('SELECT players FROM all_players WHERE chat_id=' + str(chat_id) + ";")
+    connection.execute('SELECT players FROM all_players WHERE chat_id=%s', [str(chat_id)])
     current_players = connection.fetchone()
     if current_players is None or current_players[0] is None:
         return False
@@ -78,42 +78,40 @@ def is_already_present(chat_id, name):
 
 def create_chat_id_row(chat_id):
     default_day = "Mercoledì " + compute_next_wednesday()
-    connection.execute("INSERT INTO all_players "
-                       "(chat_id, players, day, time, target, custom_message, pitch, bot_last_message_id) "
-                       "VALUES ((" + str(chat_id) + "), null, '" + default_day + "', '" + default_time + "', " + str(
-        default_target) + ", '" + custom_message + "', null, null);")
+    connection.execute("INSERT INTO all_players (chat_id, players, day, time, target, custom_message, pitch, bot_last_message_id) "
+                       "VALUES (( %s, null, %s, %s, %s, %s, null, null);", [str(chat_id), default_day, default_time, str(default_target), custom_message])
 
 def find_all_info_by_chat_id(chat_id):
-    connection.execute('SELECT players, day, time, target, custom_message, pitch, bot_last_message_id FROM all_players WHERE chat_id=' + str(chat_id) + ";")
+    connection.execute('SELECT players, day, time, target, custom_message, pitch, bot_last_message_id FROM all_players WHERE chat_id=%s', [str(chat_id)])
     return connection.fetchone()
 
 def find_row_by_chat_id(chat_id):
-    connection.execute('SELECT chat_id, players FROM all_players WHERE chat_id=' + str(chat_id) + ";")
+    connection.execute('SELECT chat_id, players FROM all_players WHERE chat_id=%s', [str(chat_id)])
     return connection.fetchone()
 
 def update_bot_last_message_id_on_db(chat_id, msg_id):
-    connection.execute('UPDATE all_players SET bot_last_message_id = ' + str(msg_id) + ' WHERE chat_id= ' + str(chat_id) + ";")
+    connection.execute('UPDATE all_players SET bot_last_message_id = %s WHERE chat_id= %s', [str(msg_id), str(chat_id)])
 
 def update_target_on_db(chat_id, target):
-    connection.execute('UPDATE all_players SET target = ' + str(target) + ' WHERE chat_id= ' + str(chat_id) + ";")
+    connection.execute('UPDATE all_players SET target = %s WHERE chat_id= %s', [str(target), str(chat_id)])
 
 def update_day_on_db(chat_id, day):
-    connection.execute("UPDATE all_players SET day = '" + day + "' WHERE chat_id= " + str(chat_id) + ";")
+    connection.execute("UPDATE all_players SET day = %s WHERE chat_id= %s", [day, str(chat_id)])
 
 def update_time_on_db(chat_id, time):
-    connection.execute("UPDATE all_players SET time = '" + time + "' WHERE chat_id= " + str(chat_id) + ";")
+    connection.execute("UPDATE all_players SET time = %s WHERE chat_id= %s", [time, str(chat_id)])
 
 def update_description_on_db(chat_id, description):
-    connection.execute("UPDATE all_players SET custom_message = '" + description + "' WHERE chat_id= " + str(chat_id) + ";")
+    connection.execute("UPDATE all_players SET custom_message = %s WHERE chat_id= %s", [description, str(chat_id)])
 
 def update_pitch_on_db(chat_id, pitch):
-    connection.execute("UPDATE all_players SET pitch = '" + pitch + "' WHERE chat_id= " + str(chat_id) + ";")
+    connection.execute("UPDATE all_players SET pitch = %s WHERE chat_id= %s", [pitch, str(chat_id)])
 
 def update_players_on_db(chat_id, new_entry, action):
-    connection.execute('SELECT players FROM all_players WHERE chat_id=' + str(chat_id) + ";")
+    connection.execute('SELECT players FROM all_players WHERE chat_id=%s', [str(chat_id)])
     current_players = connection.fetchone()
     if current_players[0] is None:
-        connection.execute("UPDATE all_players SET players = "+"'{" + new_entry + "}'"+" WHERE chat_id=" + str(chat_id) + ";")
+        connection.execute("UPDATE all_players SET players = %s WHERE chat_id=%s", [f"{{{new_entry}}}", str(chat_id)])
     else:
         result = "'{"
         if action == "add":
@@ -137,7 +135,7 @@ def update_players_on_db(chat_id, new_entry, action):
             if len(current_players[0]) == 0:
                 result = "null"
 
-        connection.execute('UPDATE all_players SET players = ' + result + ' WHERE chat_id=' + str(chat_id) + ";")
+        connection.execute('UPDATE all_players SET players = %s WHERE chat_id=%s', [result, str(chat_id)])
 
 def start(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
