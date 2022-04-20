@@ -79,7 +79,7 @@ def is_already_present(chat_id, name):
 def create_chat_id_row(chat_id):
     default_day = "Mercoledì " + compute_next_wednesday()
     connection.execute("INSERT INTO all_players (chat_id, players, day, time, target, custom_message, pitch, bot_last_message_id) "
-                       "VALUES (( %s, null, %s, %s, %s, %s, null, null);", [str(chat_id), default_day, default_time, str(default_target), custom_message])
+                       "VALUES ( %s, null, %s, %s, %s, %s, null, null)", [str(chat_id), default_day, default_time, str(default_target), custom_message])
 
 def find_all_info_by_chat_id(chat_id):
     connection.execute('SELECT players, day, time, target, custom_message, pitch, bot_last_message_id FROM all_players WHERE chat_id=%s', [str(chat_id)])
@@ -111,31 +111,32 @@ def update_players_on_db(chat_id, new_entry, action):
     connection.execute('SELECT players FROM all_players WHERE chat_id=%s', [str(chat_id)])
     current_players = connection.fetchone()
     if current_players[0] is None:
-        connection.execute("UPDATE all_players SET players = %s WHERE chat_id=%s", [f"{{{new_entry}}}", str(chat_id)])
+        connection.execute("UPDATE all_players SET players = %s WHERE chat_id=%s", ['{'+new_entry+'}', str(chat_id)])
     else:
-        result = "'{"
+        result = "{"
         if action == "add":
             current_players[0].append(new_entry)
             for index, player in enumerate(current_players[0]):
                 if index < len(current_players):
                     result = result + player + ","
                 else:
-                    last_char_index = len(result) - 2
+                    last_char_index = len(result) - 1
                     if result[last_char_index] == "}":
                         result = result[0:last_char_index] + result[last_char_index].replace("}", ",")
-                    result = result + player + "}'"
+                    result = result + player + "}"
         elif action == "remove":
             current_players[0].remove(new_entry)
             for index, player in enumerate(current_players[0]):
                 if index < len(current_players[0])-1 and len(current_players[0]) > 1:
                     result = result + player + ","
                 else:
-                    result = result + player + "}'"
+                    result = result + player + "}"
 
             if len(current_players[0]) == 0:
-                result = "null"
+                result = None
 
         connection.execute('UPDATE all_players SET players = %s WHERE chat_id=%s', [result, str(chat_id)])
+
 
 def start(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
