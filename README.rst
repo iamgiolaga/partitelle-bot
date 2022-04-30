@@ -17,6 +17,8 @@ Table of contents
 - `Project structure`_
 - `Behaviour`_
 - `Match summary`_
+- `Final phase`_
+- `Swapping players`_
 - `Allowed messages`_
 - `Commands`_
 
