@@ -192,7 +192,8 @@ def start(update: Update, context: CallbackContext):
                                   "- per essere aggiunto o confermato rispondi _aggiungimi_,\n" \
                                   "- per aggiungere o confermare qualcuno usa _aggiungi <nome>_,\n" \
                                   "- per essere rimosso _toglimi_, \n" \
-                                  "- per rimuovere qualcuno _togli <nome>_. \n\n" \
+                                  "- per rimuovere qualcuno _togli <nome>_, \n" \
+                                  "- per modificare le squadre scrivi _scambia <nome 1> con <nome 2>_. \n\n" \
                                   "Posso anche pinnare i messaggi se vuoi " \
                                   "ma per farlo ricordati di aggiungermi come amministratore."
                              )
@@ -460,7 +461,8 @@ def help_func(update: Update, context: CallbackContext):
              "- per essere aggiunto o confermato rispondi _aggiungimi_,\n" \
              "- per aggiungere o confermare qualcuno usa _aggiungi <nome>_,\n" \
              "- per essere rimosso _toglimi_, \n" \
-             "- per rimuovere qualcuno _togli <nome>_. \n\n" \
+             "- per rimuovere qualcuno _togli <nome>_, \n" \
+             "- per modificare le squadre scrivi _scambia <nome 1> con <nome 2>_. \n\n" \
              "Posso anche pinnare i messaggi se vuoi " \
              "ma per farlo ricordati di aggiungermi come amministratore.\n" \
              "\n" \
