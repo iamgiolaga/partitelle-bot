@@ -43,8 +43,8 @@ Project structure
 Behaviour
 =================
 .. image:: presentation_message.png
-    :width: 450px
-    :height: 200px
+    :width: 500px
+    :height: 250px
     :align: center
     :alt: Presentation message
 |
@@ -98,8 +98,8 @@ where N is the target number>
 Final phase
 =================
 .. image:: final_phase.png
-    :width: 490px
-    :height: 480px
+    :width: 340px
+    :height: 350px
     :align: center
     :alt: Final phase
 |
@@ -108,8 +108,8 @@ Final phase
 Swapping players
 =================
 .. image:: swap.png
-    :width: 490px
-    :height: 480px
+    :width: 300px
+    :height: 360px
     :align: center
     :alt: Swap
 |
