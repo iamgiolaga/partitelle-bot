@@ -90,6 +90,26 @@ where N is the target number>
 **CAMPO:** <pitch>
 
 =================
+Final phase
+=================
+.. image:: final_phase.png
+    :width: 490px
+    :height: 480px
+    :align: center
+    :alt: Final phase
+|
+
+=================
+Swapping players
+=================
+.. image:: swap.png
+    :width: 490px
+    :height: 480px
+    :align: center
+    :alt: Swap
+|
+
+=================
 Allowed messages
 =================
 This is the list of current available allowed messages to interact with the bot:
