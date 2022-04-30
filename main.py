@@ -3,12 +3,14 @@ from telegram import Update
 from telegram.ext import CallbackContext
 from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler, Filters
-from config import config
 import datetime
 from datetime import datetime, timedelta
+from config import config
 import logging
-import os
 import psycopg2
+import os
+import json
+import random
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -50,6 +52,10 @@ def connect():
         return cur
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+    # finally:
+    #     if conn is not None:
+    #         conn.close()
+    #         print('Database connection closed.')
 
 def compute_next_wednesday():
     return get_next_weekday((datetime.today().strftime('%d/%m/%Y')), 2)
@@ -78,11 +84,11 @@ def is_already_present(chat_id, name):
 
 def create_chat_id_row(chat_id):
     default_day = "Mercoledì " + compute_next_wednesday()
-    connection.execute("INSERT INTO all_players (chat_id, players, day, time, target, custom_message, pitch, bot_last_message_id) "
-                       "VALUES ( %s, null, %s, %s, %s, %s, null, null)", [str(chat_id), default_day, default_time, str(default_target), custom_message])
+    connection.execute("INSERT INTO all_players (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
+                       "VALUES ( %s, null, %s, %s, %s, %s, null, null, null)", [str(chat_id), default_day, default_time, str(default_target), custom_message])
 
 def find_all_info_by_chat_id(chat_id):
-    connection.execute('SELECT players, day, time, target, custom_message, pitch, bot_last_message_id FROM all_players WHERE chat_id=%s', [str(chat_id)])
+    connection.execute('SELECT players, day, time, target, custom_message, pitch, teams, bot_last_message_id FROM all_players WHERE chat_id=%s', [str(chat_id)])
     return connection.fetchone()
 
 def find_row_by_chat_id(chat_id):
@@ -106,6 +112,9 @@ def update_description_on_db(chat_id, description):
 
 def update_pitch_on_db(chat_id, pitch):
     connection.execute("UPDATE all_players SET pitch = %s WHERE chat_id= %s", [pitch, str(chat_id)])
+
+def update_teams_on_db(chat_id, teams):
+    connection.execute("UPDATE all_players SET teams = %s WHERE chat_id= %s", [teams, str(chat_id)])
 
 def update_players_on_db(chat_id, new_entry, action):
     connection.execute('SELECT players FROM all_players WHERE chat_id=%s', [str(chat_id)])
@@ -137,10 +146,40 @@ def update_players_on_db(chat_id, new_entry, action):
 
         connection.execute('UPDATE all_players SET players = %s WHERE chat_id=%s', [result, str(chat_id)])
 
+def swap_players(teams, x, y):
+    error = False
+
+    if (x in teams['black'] and y in teams['black']) or (x in teams['white'] and y in teams['white']):
+        error = True
+
+    if x in teams['black']:
+        temp = [y if player == x else player for player in teams['black']]
+        teams['black'] = temp
+    else:
+        temp = [y if player == x else player for player in teams['white']]
+        teams['white'] = temp
+
+    if y in teams['black']:
+        temp = [x if player == y else player for player in teams['black']]
+        teams['black'] = temp
+    else:
+        temp = [x if player == y else player for player in teams['white']]
+        teams['white'] = temp
+
+    return error, json.dumps(teams)
+
+def generate_teams(players):
+    black_team = random.sample(players, int(len(players)/2))
+    white_team = [player for player in players if player not in black_team]
+    teams = {
+        'black': black_team,
+        'white': white_team
+    }
+    return json.dumps(teams)
 
 def start(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
-    row = find_row_by_chat_id(chat_id)
+    row = find_all_info_by_chat_id(chat_id)
 
     if row is None:
         create_chat_id_row(chat_id)
@@ -185,7 +224,7 @@ def beautify(all_players, day, time, target, custom_message, pitch):
     return prefix + "\n" + player_list + "\n" + appendix
 
 def print_summary(chat_id, reached_target, is_participants_command, update: Update, context: CallbackContext):
-    players, day, time, target, custom_message, pitch, bot_last_message_id = find_all_info_by_chat_id(chat_id)
+    players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
     current_situation = beautify(players, day, time, target, custom_message, pitch)
 
     if bot_last_message_id is None or is_participants_command:
@@ -205,7 +244,23 @@ def print_summary(chat_id, reached_target, is_participants_command, update: Upda
 
     if reached_target:
         context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown',
-                                 text="🚀 *SI GIOCA* 🚀")
+                                 text="🚀 *SI GIOCA* 🚀 facciamo le squadre? /teams 😎")
+
+def print_teams(teams, update: Update, context: CallbackContext):
+    json_teams = json.loads(teams)
+    black_team = json_teams["black"]
+    white_team = json_teams["white"]
+
+    teams_message = "*SQUADRA NERA* \n"
+    for player in black_team:
+        teams_message = teams_message + " - " + player + "\n"
+
+    teams_message = teams_message + "\n"
+    teams_message = teams_message + "*SQUADRA BIANCA* \n"
+    for player in white_team:
+        teams_message = teams_message + " - " + player + "\n"
+
+    context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=teams_message)
 
 def flatten_args(args):
     res = ""
@@ -224,18 +279,19 @@ def filter_maybe_placeholders(players):
 
 def set_number(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
-    row = find_row_by_chat_id(chat_id)
+    row = find_all_info_by_chat_id(chat_id)
 
     if row is None:
         answer = "Prima di iniziare con le danze, avvia una partita, per farlo usa /start"
     else:
+        teams = row[-2]
         try:
             if len(context.args) > 1:
                 answer = "Hai messo più di un numero, probabilmente intendevi /setnumber " + context.args[0]
             else:
                 choosen_number_str = context.args[0]
                 sender = "@" + get_sender_name(update)
-                stored_chat_id, players = row
+                players = row[0]
                 if players is None:
                     participants_num = 0
                 else:
@@ -250,6 +306,12 @@ def set_number(update: Update, context: CallbackContext):
                     elif choosen_number < 2:
                         answer = "Il numero che hai inserito non va bene 👎"
                     else:
+                        if teams is not None:
+                            update_teams_on_db(chat_id, None)
+                            answer = "*SQUADRE ANNULLATE*"
+                            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown',
+                                                     text=answer)
+
                         update_target_on_db(chat_id, choosen_number)
                         answer = "Ok, " + sender + "! Ho impostato il numero di partecipanti a " + str(choosen_number)
                         reached_target = players and participants_num == choosen_number
@@ -347,6 +409,39 @@ def participants(update: Update, context: CallbackContext):
     else:
         print_summary(chat_id, False, True, update, context)
 
+def teams(update: Update, context: CallbackContext):
+    chat_id = update.message.chat_id
+    row = find_all_info_by_chat_id(chat_id)
+
+    if row is None:
+        answer = "Prima di iniziare con le danze, avvia una partita, per farlo usa /start"
+        context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+
+    else:
+        players = row[0]
+        target = row[3]
+        teams = row[-2]
+        if players is None:
+            participants_num = 0
+        else:
+            participants_num = len(filter_maybe_placeholders(players))
+        reached_target = players and participants_num == target
+
+        if teams is not None:
+            print_teams(json.dumps(teams), update, context)
+        else:
+            if target % 2 == 0:
+                if not reached_target:
+                    answer = "Prima di poter fare le squadre, devi raggiungere " + str(target) + " partecipanti"
+                    context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+                else:
+                    generated_teams = generate_teams(players)
+                    update_teams_on_db(chat_id, generated_teams)
+                    print_teams(generated_teams, update, context)
+            else:
+                answer = "Per usare questa funzionalità dovete essere in un numero pari di partecipanti"
+                context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+
 def stop(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
     row = find_row_by_chat_id(chat_id)
@@ -376,6 +471,7 @@ def help_func(update: Update, context: CallbackContext):
              "/setdescription - Imposta la descrizione sotto i partecipanti \n" \
              "/setpitch - Imposta il campo \n" \
              "/participants - Mostra i partecipanti della partita attuale \n" \
+             "/teams - Mostra le squadre della partita attuale \n" \
              "/stop - Rimuovi la partita \n" \
              "/help - Mostra la lista di comandi disponibili"
 
@@ -387,17 +483,19 @@ def echo(update: Update, context: CallbackContext):
     answer = None
     show_summary = True
     reached_target = False
+    revoked_teams = False
 
     if new_message in ['aggiungimi', 'toglimi', 'proponimi'] \
             or new_message.startswith('aggiungi') \
             or new_message.startswith('togli') \
-            or new_message.startswith('proponi'):
+            or new_message.startswith('proponi') \
+            or new_message.startswith('scambia'):
         row = find_row_by_chat_id(chat_id)
         if row is None:
             answer = "Prima di iniziare con le danze, avvia una partita, per farlo usa /start"
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
         else:
-            players, day, time, target, custom_message, pitch, bot_last_message_id = find_all_info_by_chat_id(chat_id)
+            players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
             if new_message == 'aggiungimi':
                 sender = "@" + get_sender_name(update)
                 if is_already_present(chat_id, sender):
@@ -486,11 +584,13 @@ def echo(update: Update, context: CallbackContext):
                     answer = 'Mamma mia... che paccaro'
                     update_players_on_db(chat_id, sender, "remove")
                     show_summary = True
+                    revoked_teams = teams is not None
                 else:
                     if is_already_present(chat_id, sender + maybe_placeholder):
                         answer = "Peccato, un po' ci avevo sperato"
                         update_players_on_db(chat_id, sender + maybe_placeholder, "remove")
                         show_summary = True
+                        revoked_teams = teams is not None
                     else:
                         answer = 'Non eri in lista neanche prima'
                         show_summary = False
@@ -501,16 +601,42 @@ def echo(update: Update, context: CallbackContext):
                     answer = 'Che vergogna, ' + to_be_removed
                     update_players_on_db(chat_id, to_be_removed, "remove")
                     show_summary = True
+                    revoked_teams = teams is not None
                 else:
                     if is_already_present(chat_id, to_be_removed + maybe_placeholder):
                         answer = "Davvero? Ma " + to_be_removed + ", ne sei proprio sicuro?"
                         update_players_on_db(chat_id, to_be_removed + maybe_placeholder, "remove")
                         show_summary = True
+                        revoked_teams = teams is not None
                     else:
                         answer = to_be_removed + ' non è nella lista. Chi dovrei togliere?'
                         show_summary = False
 
+            elif new_message.startswith('scambia'):
+                to_be_parsed = flatten_args(new_message.split(" ")[1:])
+                x, y = to_be_parsed.split(" con ")
+                show_summary = False
+                if teams is None:
+                    answer = "Per usare questa funzionalità devi prima formare delle squadre con /teams"
+                else:
+                    if not is_already_present(chat_id, x):
+                        answer = x + " non c'è"
+                    elif not is_already_present(chat_id, y):
+                        answer = y + " non c'è"
+                    else:
+                        error, teams = swap_players(teams, x, y)
+                        if error:
+                            answer = x + " e " + y + " sono nella stessa squadra!"
+                        else:
+                            update_teams_on_db(chat_id, teams)
+                            answer = "Perfetto, ho scambiato " + x + " con " + y
+
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+
+            if revoked_teams:
+                update_teams_on_db(chat_id, None)
+                answer = "*SQUADRE ANNULLATE*"
+                context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
 
             if show_summary:
                 print_summary(chat_id, reached_target, False, update, context)
@@ -541,6 +667,9 @@ if __name__ == '__main__':
 
     participants_handler = CommandHandler('participants', participants)
     dispatcher.add_handler(participants_handler)
+
+    teams_handler = CommandHandler('teams', teams)
+    dispatcher.add_handler(teams_handler)
 
     stop_handler = CommandHandler('stop', stop)
     dispatcher.add_handler(stop_handler)
