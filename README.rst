@@ -58,9 +58,9 @@ By default, the bot sets all new matches on the next wednesday at 9 pm but this 
 Once a new match is created through **/start** command, people can begin to organize the match through the set of allowed messages.
 The first time the bot detects an adding interaction, it will print a `match summary`_ of the current situation
 whereas from the second time it will edit its previous message (by the way remind that a new explicit summary can be obtained through **/participants** command).
-In this way, people can easily and autonomously add, propose, remove themselves or each other. Once the target number is reached, we enter in the `final phase`_; here, the bot states that is the time to play and asks the permission to generate /teams.
+In this way, people can easily and autonomously add, propose, remove themselves or each other. Once the target number is reached, users enter in the `final phase`_; here, the bot states that is the time to play and asks the permission to generate /teams.
 Through this command, the bot randomly generates two groups of players, respectively the black team and the white team.
-At this point, users can always adjust the teams by swapping players.
+At this point, users can always adjust the teams by `swapping players`_.
 
 **Note**: if you give PartitelleBot the administrator rights, it will be able to pin its messages in the group.
 
