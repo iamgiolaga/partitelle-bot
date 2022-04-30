@@ -152,19 +152,21 @@ def swap_players(teams, x, y):
     if (x in teams['black'] and y in teams['black']) or (x in teams['white'] and y in teams['white']):
         error = True
 
+    temp_black = None
+    temp_white = None
+
     if x in teams['black']:
-        temp = [y if player == x else player for player in teams['black']]
-        teams['black'] = temp
+        temp_black = [y if player == x else player for player in teams['black']]
     else:
-        temp = [y if player == x else player for player in teams['white']]
-        teams['white'] = temp
+        temp_white = [y if player == x else player for player in teams['white']]
 
     if y in teams['black']:
-        temp = [x if player == y else player for player in teams['black']]
-        teams['black'] = temp
+        temp_black = [x if player == y else player for player in teams['black']]
     else:
-        temp = [x if player == y else player for player in teams['white']]
-        teams['white'] = temp
+        temp_white = [x if player == y else player for player in teams['white']]
+
+    teams['black'] = temp_black
+    teams['white'] = temp_white
 
     return error, json.dumps(teams)
 
