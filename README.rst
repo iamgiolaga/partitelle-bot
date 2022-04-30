@@ -48,7 +48,7 @@ Behaviour
     :align: center
     :alt: Presentation message
 |
-By adding **PartitelleBot** to your Telegram group, you can easily organize those so-hard-to-organize weekly football matches with your friends.
+By adding **PartitelleBot** to your Telegram group, you can easily manage those so-hard-to-organize weekly football matches with your friends.
 You have two ways of interacting with the bot:
 
 1. by writing a specific set of `allowed messages`_ through the conversation
