@@ -557,7 +557,6 @@ def echo(update: Update, context: CallbackContext):
                         answer = 'Ok, ' + sender + ', ti propongo'
                         update_players_on_db(chat_id, sender + maybe_placeholder, "add")
                         show_summary = True
-                        reached_target = players and len(filter_maybe_placeholders(players)) + 1 == target
                     else:
                         answer = 'Siete già in ' + str(target)
                         show_summary = False
