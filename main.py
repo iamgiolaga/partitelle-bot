@@ -98,7 +98,7 @@ def set_payment_reminder(update, context, day, time):
         match_date = extract_match_day(f"{day} {time}")
         waiting_time_in_seconds = 2 * 3600
 
-    if match_date == -1:
+    if match_date != -1:
         reminder_time_from_now = compute_seconds_from_now(match_date) + waiting_time_in_seconds
 
     if reminder_time_from_now > 0:
