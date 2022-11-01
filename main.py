@@ -57,6 +57,61 @@ def connect():
     #         conn.close()
     #         print('Database connection closed.')
 
+def reminder(context):
+    job = context.job
+    chat_id = job.name
+
+    msg = context.bot.send_message(chat_id, text="Ciao bestie 😎, com'è andata la partita? C'è qualcuno che non ha ancora pagato la sua quota?")
+
+    try:
+        context.bot.pin_chat_message(chat_id=chat_id, message_id=msg.message_id)
+    except:
+        print("No admin rights to pin the message")
+
+    update_bot_last_message_id_on_db(chat_id, msg.message_id)
+def extract_match_day(day):
+    try:
+        extracted_day = parse(day, dayfirst=True)
+    except:
+        extracted_day = -1
+    return extracted_day
+
+def extract_match_time(time):
+    try:
+        extracted_time = datetime.strptime(time, '%H:%M').time()
+    except:
+        extracted_time = -1
+    return extracted_time
+
+def compute_seconds_from_now(destination_date):
+    return destination_date.timestamp() - datetime.now().timestamp()
+
+def set_payment_reminder(update, context, day, time):
+    chat_id = update.effective_message.chat_id
+    match_time = extract_match_time(time)
+    reminder_time_from_now = -1
+
+    if match_time == -1:
+        match_date = extract_match_day(day)
+        waiting_time_in_seconds = 36 * 3600
+    else:
+        match_date = extract_match_day(f"{day} {time}")
+        waiting_time_in_seconds = 2 * 3600
+
+    if match_date == -1:
+        reminder_time_from_now = compute_seconds_from_now(match_date) + waiting_time_in_seconds
+
+    if reminder_time_from_now > 0:
+        context.job_queue.run_once(reminder, reminder_time_from_now, context=context, name=str(chat_id))
+
+def remove_job_if_exists(name, context):
+    current_jobs = context.job_queue.get_jobs_by_name(name)
+    if not current_jobs:
+        return False
+    for job in current_jobs:
+        job.schedule_removal()
+    return True
+
 def compute_next_wednesday():
     return get_next_weekday((datetime.today().strftime('%d/%m/%Y')), 2)
 
@@ -246,6 +301,7 @@ def print_summary(chat_id, reached_target, is_participants_command, update: Upda
             print("No admin rights to pin the message")
 
     if reached_target:
+        set_payment_reminder(update, context, day, time)
         context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown',
                                  text="🚀 *SI GIOCA* 🚀 facciamo le squadre? /teams 😎")
 
@@ -311,9 +367,9 @@ def set_number(update: Update, context: CallbackContext):
                     else:
                         if teams is not None:
                             update_teams_on_db(chat_id, None)
+                            remove_job_if_exists(str(chat_id), context)
                             answer = "*SQUADRE ANNULLATE*"
-                            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown',
-                                                     text=answer)
+                            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
 
                         update_target_on_db(chat_id, choosen_number)
                         answer = "Ok, " + sender + "! Ho impostato il numero di partecipanti a " + str(choosen_number)
@@ -340,6 +396,9 @@ def set_day(update: Update, context: CallbackContext):
         else:
             day = flatten_args(context.args)
             update_day_on_db(chat_id, day)
+            remove_job_if_exists(str(chat_id), context)
+            players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
+            set_payment_reminder(update, context, day, time)
             sender = "@" + get_sender_name(update)
             answer = "Ok, " + sender + "! Ho impostato il giorno della partita il " + day
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
@@ -359,6 +418,9 @@ def set_time(update: Update, context: CallbackContext):
         else:
             time = flatten_args(context.args)
             update_time_on_db(chat_id, time)
+            remove_job_if_exists(str(chat_id), context)
+            players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
+            set_payment_reminder(update, context, day, time)
             sender = "@" + get_sender_name(update)
             answer = "Ok, " + sender + "! Ho impostato l'orario della partita alle " + time
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
@@ -576,7 +638,6 @@ def echo(update: Update, context: CallbackContext):
                         answer = 'Ok, propongo ' + to_be_added
                         update_players_on_db(chat_id, to_be_added + maybe_placeholder, "add")
                         show_summary = True
-                        reached_target = players and len(filter_maybe_placeholders(players)) + 1 == target
                     else:
                         answer = 'Siete già in ' + str(target)
                         show_summary = False
@@ -638,6 +699,7 @@ def echo(update: Update, context: CallbackContext):
 
             if revoked_teams:
                 update_teams_on_db(chat_id, None)
+                remove_job_if_exists(str(chat_id), context)
                 answer = "*SQUADRE ANNULLATE*"
                 context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
 
