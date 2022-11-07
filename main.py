@@ -3,6 +3,7 @@ from telegram import Update
 from telegram.ext import CallbackContext
 from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler, Filters
+from telegram.utils.helpers import escape_markdown
 import datetime
 from datetime import datetime, timedelta
 from config import config
@@ -273,11 +274,12 @@ def beautify(all_players, day, time, target, custom_message, pitch):
             player = all_players[i]
             if player.endswith(maybe_placeholder):
                 player = player.replace(maybe_placeholder, "")
-                player_list = player_list + str(i+1) + ". " + player + " ❓ \n"
+                presence_outcome_icon = "❓"
             else:
-                player_list = player_list + str(i+1) + ". " + player + " ✅ \n"
+                presence_outcome_icon = "✅"
+            player_list = player_list + str(i + 1) + ". " + escape_markdown(player) + " " + presence_outcome_icon + "\n"
         else:
-            player_list = player_list + str(i+1) + ". ❌ \n"
+            player_list = player_list + str(i + 1) + ". ❌ \n"
 
     return prefix + "\n" + player_list + "\n" + appendix
 
@@ -695,7 +697,7 @@ def echo(update: Update, context: CallbackContext):
                             update_teams_on_db(chat_id, teams)
                             answer = "Perfetto, ho scambiato " + x + " con " + y
 
-            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=escape_markdown(answer))
 
             if revoked_teams:
                 update_teams_on_db(chat_id, None)
