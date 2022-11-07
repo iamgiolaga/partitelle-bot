@@ -314,12 +314,12 @@ def print_teams(teams, update: Update, context: CallbackContext):
 
     teams_message = "*SQUADRA NERA* \n"
     for player in black_team:
-        teams_message = teams_message + " - " + player + "\n"
+        teams_message = teams_message + " - " + escape_markdown(player) + "\n"
 
     teams_message = teams_message + "\n"
     teams_message = teams_message + "*SQUADRA BIANCA* \n"
     for player in white_team:
-        teams_message = teams_message + " - " + player + "\n"
+        teams_message = teams_message + " - " + escape_markdown(player) + "\n"
 
     context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=teams_message)
 
