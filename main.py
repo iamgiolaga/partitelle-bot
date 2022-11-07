@@ -259,15 +259,15 @@ def start(update: Update, context: CallbackContext):
 def beautify(all_players, day, time, target, custom_message, pitch):
     player_list = ""
 
-    prefix = "*GIORNO*: " + day + " | " + time + "\n"\
+    prefix = "*GIORNO*: " + escape_markdown(day) + " | " + escape_markdown(time) + "\n"\
 
     if pitch is None:
         pitch = "Usa il comando /setpitch <campo> per inserire la struttura sportiva dove giocherete."
 
-    appendix = custom_message + \
+    appendix = escape_markdown(custom_message) + \
                 "\n"\
                 "*CAMPO*: \n"\
-                + pitch
+                + escape_markdown(pitch)
 
     for i in range(0, target):
         if all_players and i < len(all_players):
@@ -402,7 +402,7 @@ def set_day(update: Update, context: CallbackContext):
             players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
             set_payment_reminder(update, context, day, time)
             sender = "@" + get_sender_name(update)
-            answer = "Ok, " + sender + "! Ho impostato il giorno della partita il " + day
+            answer = "Ok, " + sender + "! Ho impostato il giorno della partita il " + escape_markdown(day)
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
             print_summary(chat_id, False, False, update, context)
 
@@ -424,7 +424,7 @@ def set_time(update: Update, context: CallbackContext):
             players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
             set_payment_reminder(update, context, day, time)
             sender = "@" + get_sender_name(update)
-            answer = "Ok, " + sender + "! Ho impostato l'orario della partita alle " + time
+            answer = "Ok, " + sender + "! Ho impostato l'orario della partita alle " + escape_markdown(time)
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
             print_summary(chat_id, False, False, update, context)
 
