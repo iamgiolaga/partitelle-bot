@@ -382,7 +382,7 @@ def set_number(update: Update, context: CallbackContext):
 
         except:
             answer = "Non hai inserito il numero: scrivi /setnumber <numero>"
-    context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+    context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=escape_markdown(answer))
 
 def set_day(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
@@ -402,8 +402,8 @@ def set_day(update: Update, context: CallbackContext):
             players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
             set_payment_reminder(update, context, day, time)
             sender = "@" + get_sender_name(update)
-            answer = "Ok, " + sender + "! Ho impostato il giorno della partita il " + escape_markdown(day)
-            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+            answer = "Ok, " + sender + "! Ho impostato il giorno della partita il " + day
+            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=escape_markdown(answer))
             print_summary(chat_id, False, False, update, context)
 
 def set_time(update: Update, context: CallbackContext):
@@ -424,8 +424,8 @@ def set_time(update: Update, context: CallbackContext):
             players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
             set_payment_reminder(update, context, day, time)
             sender = "@" + get_sender_name(update)
-            answer = "Ok, " + sender + "! Ho impostato l'orario della partita alle " + escape_markdown(time)
-            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+            answer = "Ok, " + sender + "! Ho impostato l'orario della partita alle " + time
+            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=escape_markdown(answer))
             print_summary(chat_id, False, False, update, context)
 
 def set_description(update: Update, context: CallbackContext):
@@ -444,7 +444,7 @@ def set_description(update: Update, context: CallbackContext):
             update_description_on_db(chat_id, description)
             sender = "@" + get_sender_name(update)
             answer = "Ok, " + sender + "! Ho aggiornato la descrizione!"
-            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=escape_markdown(answer))
             print_summary(chat_id, False, False, update, context)
 
 def set_pitch(update: Update, context: CallbackContext):
@@ -463,7 +463,7 @@ def set_pitch(update: Update, context: CallbackContext):
             update_pitch_on_db(chat_id, pitch)
             sender = "@" + get_sender_name(update)
             answer = "Ok, " + sender + "! Ho aggiornato il campo!"
-            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
+            context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=escape_markdown(answer))
             print_summary(chat_id, False, False, update, context)
 
 def participants(update: Update, context: CallbackContext):
