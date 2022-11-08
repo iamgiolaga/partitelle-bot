@@ -264,7 +264,7 @@ def beautify(all_players, day, time, target, custom_message, pitch):
     if pitch is None:
         pitch = "Usa il comando /setpitch <campo> per inserire la struttura sportiva dove giocherete."
 
-    appendix = escape_markdown(custom_message) + \
+    appendix = custom_message + \
                 "\n"\
                 "*CAMPO*: \n"\
                 + escape_markdown(pitch)
@@ -288,12 +288,22 @@ def print_summary(chat_id, reached_target, is_participants_command, update: Upda
     current_situation = beautify(players, day, time, target, custom_message, pitch)
 
     if bot_last_message_id is None or is_participants_command:
-        msg = context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown',
-                                 text=current_situation)
+        markdown_error = False
         try:
-            context.bot.pin_chat_message(chat_id=update.effective_chat.id, message_id=msg.message_id)
+            msg = context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown',
+                                           text=current_situation)
         except:
-            print("No admin rights to pin the message")
+            markdown_error = True
+            error_message = "Sembra che tu abbia inserito nella descrizione un carattere speciale di telegram (`, *, _).\n" \
+                            "Per favore cambiala con /setdescription <descrizione> assicurandoti di non inserire uno di questi caratteri.\n" \
+                            "Se la tua intenzione era, invece, di formattare il testo, ricordati di usare anche il carattere di chiusura, come in questo *esempio*."
+            msg = context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown',
+                                           text=escape_markdown(error_message))
+        if not markdown_error:
+            try:
+                context.bot.pin_chat_message(chat_id=update.effective_chat.id, message_id=msg.message_id)
+            except:
+                print("No admin rights to pin the message")
         update_bot_last_message_id_on_db(chat_id, msg.message_id)
     else:
         context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=bot_last_message_id, parse_mode='markdown', text=current_situation)
