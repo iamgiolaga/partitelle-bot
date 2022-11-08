@@ -7,7 +7,7 @@ PartitelleBot
    :target: https://t.me/PartitelleBot
    :alt: PartitelleBot
 |
-**PartitelleBot** is an Italian Telegram Bot in Python to retrieve participants for the organization of a football game.
+**PartitelleBot** is an Italian Telegram Bot in Python to find participants during the organization of a football game.
 
 =================
 Table of contents
