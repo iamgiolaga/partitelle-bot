@@ -130,6 +130,18 @@ def get_next_weekday(startdate, weekday):
 def get_sender_name(source):
     return source.message.from_user.username.lower()
 
+def create_bamboo_chat_id_row(chat_id):
+    pitch = "Crespi Sport Village \n" \
+            "\n" \
+            "Via Carlo Valvassori Peroni, 48, 20133 \n" \
+            "Milano, MI, 02 266 3774 \n" \
+            "https://g.co/kgs/L9b6KZ"
+    default_day = "Mercoledì " + compute_next_wednesday()
+    connection.execute(
+        "INSERT INTO all_players (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
+        "VALUES ( %s, null, %s, %s, %s, %s, %s, null, null)",
+        [str(chat_id), default_day, default_time, str(default_target), custom_message, pitch])
+
 def delete_row_on_db(chat_id):
     connection.execute('DELETE FROM all_players WHERE chat_id=%s', [str(chat_id)])
 
@@ -253,6 +265,27 @@ def start(update: Update, context: CallbackContext):
                                   "- per aggiungere o confermare qualcuno usa _aggiungi <nome>_,\n" \
                                   "- per essere rimosso _toglimi_, \n" \
                                   "- per rimuovere qualcuno _togli <nome>_, \n" \
+                                  "- per modificare le squadre scrivi _scambia <nome 1> con <nome 2>_. \n\n" \
+                                  "Posso anche pinnare i messaggi se vuoi " \
+                                  "ma per farlo ricordati di aggiungermi come amministratore."
+                             )
+
+def bamboo(update: Update, context: CallbackContext):
+    chat_id = update.message.chat_id
+    row = find_row_by_chat_id(chat_id)
+
+    if row is None:
+        create_bamboo_chat_id_row(chat_id)
+
+    context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown',
+                             text="Ciao bestie 😎, chi c'è per il prossimo calcetto? \n"
+                                  "\n"
+                                  "- se sei in forse scrivi _proponimi_, \n" \
+                                  "- se vuoi proporre qualcuno scrivi _proponi <nome>_, \n" \
+                                  "- per essere aggiunto o confermato rispondi _aggiungimi_,\n" \
+                                  "- per aggiungere o confermare qualcuno usa _aggiungi <nome>_,\n" \
+                                  "- per essere rimosso _toglimi_, \n" \
+                                  "- per rimuovere qualcuno _togli <nome>_, \n"
                                   "- per modificare le squadre scrivi _scambia <nome 1> con <nome 2>_. \n\n" \
                                   "Posso anche pinnare i messaggi se vuoi " \
                                   "ma per farlo ricordati di aggiungermi come amministratore."
@@ -758,6 +791,9 @@ if __name__ == '__main__':
 
     echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
     dispatcher.add_handler(echo_handler)
+
+    bamboo_handler = CommandHandler('bamboo', bamboo)
+    dispatcher.add_handler(bamboo_handler)
 
     #updater.start_polling()
     updater.start_webhook(listen="0.0.0.0", webhook_url=f'{HOSTING_URL}/{TOKEN}', url_path=TOKEN, port=int(os.environ.get('PORT', 5000)))
