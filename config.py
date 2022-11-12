@@ -1,9 +1,9 @@
 #!/usr/bin/python
 import os
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 def config(filename='database.ini', section='postgresql'):
-    parser = SafeConfigParser(os.environ)
+    parser = ConfigParser(os.environ)
     parser.read(filename)
     db = {}
     if parser.has_section(section):
