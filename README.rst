@@ -36,7 +36,7 @@ Project structure
 =================
 - **database.ini**: a configuration file with database credentials
 - **config.py**: a little function to parse and read database credentials in *database.ini*
-- **requirements.txt**: a file to indicate Heroku which external libraries are necessary to the Python code.
+- **requirements.txt**: a file to indicate Render which external libraries are necessary to the Python code.
 - **main.py**: the real heart of PartitelleBot code
 
 =================
