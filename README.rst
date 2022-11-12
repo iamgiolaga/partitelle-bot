@@ -21,7 +21,7 @@ Table of contents
 - `Swapping players`_
 - `Allowed messages`_
 - `Commands`_
-- `Sponsorship`_
+- `Sponsorships`_
 
 =================
 Architecture
@@ -139,7 +139,7 @@ This is the list of current available commands:
 - **/help** - Show the list of available commands
 
 =================
-Sponsorship
+Sponsorships
 =================
 The ambitiousness of this project depends on the resources it has available and every little help to contribute to its improvement is appreciated.
 Nothing mandatory, just do it if you feel like you would offer me a coffee! :)
