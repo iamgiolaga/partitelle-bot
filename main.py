@@ -16,8 +16,8 @@ import random
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-TOKEN = os.getenv("PB_TEST_TG_TOKEN")
-HOSTING_URL = os.getenv("PB_TEST_URL")
+TOKEN = os.getenv("PB_TG_TOKEN")
+HOSTING_URL = os.getenv("PB_URL")
 
 connection = None
 default_day = None
