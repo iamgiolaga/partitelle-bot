@@ -43,7 +43,7 @@ Project structure
 =================
 Behaviour
 =================
-.. image:: presentation_message.png
+.. image:: .github/img/presentation_message.png
     :width: 500px
     :height: 250px
     :align: center
@@ -62,7 +62,7 @@ By default, the bot sets all new matches the next Wednesday at 9 pm but this inf
 =================
 Match summary
 =================
-.. image:: match_summary.png
+.. image:: .github/img/match_summary.png
     :width: 490px
     :height: 480px
     :align: center
@@ -92,7 +92,7 @@ where N is the target number>
 =================
 Final phase
 =================
-.. image:: final_phase.png
+.. image:: .github/img/final_phase.png
     :width: 340px
     :height: 350px
     :align: center
@@ -102,7 +102,7 @@ Final phase
 =================
 Swapping players
 =================
-.. image:: swap.png
+.. image:: .github/img/swap.png
     :width: 300px
     :height: 360px
     :align: center
