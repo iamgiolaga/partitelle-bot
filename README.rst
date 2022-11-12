@@ -29,14 +29,13 @@ Architecture
 
 This is a *Python* project relying on `python-telegram-bot <https://github.com/python-telegram-bot/python-telegram-bot>`_ library.
 Data storage is handled through *PostgreSQL*.
-The application and the mentioned database are both hosted on `Heroku <https://heroku.com>`_.
+The application and the mentioned database are both hosted on `Render <https://dashboard.render.com>`_.
 
 =================
 Project structure
 =================
-- **database.ini**: a configuration file with database credentials (obscured from this repo for security reasons)
+- **database.ini**: a configuration file with database credentials
 - **config.py**: a little function to parse and read database credentials in *database.ini*
-- **Procfile**: a file for Heroku's pipelines of deployment to know where to take Python code.
 - **requirements.txt**: a file to indicate Heroku which external libraries are necessary to the Python code.
 - **main.py**: the real heart of PartitelleBot code
 
@@ -144,4 +143,3 @@ Sponsorships
 The ambitiousness of this project depends on the resources it has available and every little help to contribute to its improvement is appreciated.
 Nothing mandatory, just do it if you feel like you would offer me a coffee! :)
 In that case, tap the Sponsor button at the top, or click `here <https://paypal.me/GiovanniL891?country.x=IT&locale.x=it_IT>`_ 💪
-

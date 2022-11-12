@@ -16,7 +16,8 @@ import random
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-TOKEN = os.getenv("TOKEN") # this is an env variable to hide token
+TOKEN = os.getenv("PB_TEST_TG_TOKEN")
+HOSTING_URL = os.getenv("PB_TEST_URL")
 
 connection = None
 default_day = None
@@ -759,5 +760,5 @@ if __name__ == '__main__':
     dispatcher.add_handler(echo_handler)
 
     #updater.start_polling()
-    updater.start_webhook(listen="0.0.0.0", webhook_url="https://partitelle-bot.herokuapp.com/"+TOKEN, url_path=TOKEN, port=int(os.environ.get('PORT', 5000)))
+    updater.start_webhook(listen="0.0.0.0", webhook_url=f'{HOSTING_URL}/{TOKEN}', url_path=TOKEN, port=int(os.environ.get('PORT', 5000)))
     updater.idle()
