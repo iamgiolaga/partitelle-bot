@@ -8,6 +8,7 @@ import datetime
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 from config import config
+from psycopg2 import sql
 import logging
 import psycopg2
 import os
@@ -18,6 +19,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 TOKEN = os.getenv("PB_TG_TOKEN")
 HOSTING_URL = os.getenv("PB_URL")
+TABLE_NAME = os.getenv("PB_DB_TABLE_NAME")
 
 connection = None
 default_day = None
@@ -138,15 +140,17 @@ def create_bamboo_chat_id_row(chat_id):
             "https://g.co/kgs/L9b6KZ"
     default_day = "Mercoledì " + compute_next_wednesday()
     connection.execute(
-        "INSERT INTO all_players (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
-        "VALUES ( %s, null, %s, %s, %s, %s, %s, null, null)",
-        [str(chat_id), default_day, default_time, str(default_target), custom_message, pitch])
+        sql.SQL("INSERT INTO {table} (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
+            "VALUES ( %s, null, %s, %s, %s, %s, %s, null, null)")
+        .format(table=sql.Identifier(TABLE_NAME)),
+        [str(chat_id), default_day, default_time, str(default_target), custom_message, pitch]
+    )
 
 def delete_row_on_db(chat_id):
-    connection.execute('DELETE FROM all_players WHERE chat_id=%s', [str(chat_id)])
+    connection.execute(sql.SQL('DELETE FROM {table} WHERE chat_id=%s').format(table=sql.Identifier(TABLE_NAME)), [str(chat_id)])
 
 def is_already_present(chat_id, name):
-    connection.execute('SELECT players FROM all_players WHERE chat_id=%s', [str(chat_id)])
+    connection.execute(sql.SQL('SELECT players FROM {table} WHERE chat_id=%s').format(table=sql.Identifier(TABLE_NAME)), [str(chat_id)])
     current_players = connection.fetchone()
     if current_players is None or current_players[0] is None:
         return False
@@ -154,43 +158,50 @@ def is_already_present(chat_id, name):
 
 def create_chat_id_row(chat_id):
     default_day = "Mercoledì " + compute_next_wednesday()
-    connection.execute("INSERT INTO all_players (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
-                       "VALUES ( %s, null, %s, %s, %s, %s, null, null, null)", [str(chat_id), default_day, default_time, str(default_target), custom_message])
+    connection.execute(
+        sql.SQL("INSERT INTO {table} (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
+                       "VALUES ( %s, null, %s, %s, %s, %s, null, null, null)")
+        .format(table=sql.Identifier(TABLE_NAME)),
+        [str(chat_id), default_day, default_time, str(default_target), custom_message]
+    )
 
 def find_all_info_by_chat_id(chat_id):
-    connection.execute('SELECT players, day, time, target, custom_message, pitch, teams, bot_last_message_id FROM all_players WHERE chat_id=%s', [str(chat_id)])
+    connection.execute(
+        sql.SQL('SELECT players, day, time, target, custom_message, pitch, teams, bot_last_message_id FROM {table} WHERE chat_id=%s')
+        .format(table=sql.Identifier(TABLE_NAME)), [str(chat_id)]
+    )
     return connection.fetchone()
 
 def find_row_by_chat_id(chat_id):
-    connection.execute('SELECT chat_id, players FROM all_players WHERE chat_id=%s', [str(chat_id)])
+    connection.execute(sql.SQL('SELECT chat_id, players FROM {table} WHERE chat_id=%s').format(table=sql.Identifier(TABLE_NAME)), [str(chat_id)])
     return connection.fetchone()
 
 def update_bot_last_message_id_on_db(chat_id, msg_id):
-    connection.execute('UPDATE all_players SET bot_last_message_id = %s WHERE chat_id= %s', [str(msg_id), str(chat_id)])
+    connection.execute(sql.SQL('UPDATE {table} SET bot_last_message_id = %s WHERE chat_id= %s').format(table=sql.Identifier(TABLE_NAME)), [str(msg_id), str(chat_id)])
 
 def update_target_on_db(chat_id, target):
-    connection.execute('UPDATE all_players SET target = %s WHERE chat_id= %s', [str(target), str(chat_id)])
+    connection.execute(sql.SQL('UPDATE {table} SET target = %s WHERE chat_id= %s').format(table=sql.Identifier(TABLE_NAME)), [str(target), str(chat_id)])
 
 def update_day_on_db(chat_id, day):
-    connection.execute("UPDATE all_players SET day = %s WHERE chat_id= %s", [day, str(chat_id)])
+    connection.execute(sql.SQL("UPDATE {table} SET day = %s WHERE chat_id= %s").format(table=sql.Identifier(TABLE_NAME)), [day, str(chat_id)])
 
 def update_time_on_db(chat_id, time):
-    connection.execute("UPDATE all_players SET time = %s WHERE chat_id= %s", [time, str(chat_id)])
+    connection.execute(sql.SQL("UPDATE {table} SET time = %s WHERE chat_id= %s").format(table=sql.Identifier(TABLE_NAME)), [time, str(chat_id)])
 
 def update_description_on_db(chat_id, description):
-    connection.execute("UPDATE all_players SET custom_message = %s WHERE chat_id= %s", [description, str(chat_id)])
+    connection.execute(sql.SQL("UPDATE {table} SET custom_message = %s WHERE chat_id= %s").format(table=sql.Identifier(TABLE_NAME)), [description, str(chat_id)])
 
 def update_pitch_on_db(chat_id, pitch):
-    connection.execute("UPDATE all_players SET pitch = %s WHERE chat_id= %s", [pitch, str(chat_id)])
+    connection.execute(sql.SQL("UPDATE {table} SET pitch = %s WHERE chat_id= %s").format(table=sql.Identifier(TABLE_NAME)), [pitch, str(chat_id)])
 
 def update_teams_on_db(chat_id, teams):
-    connection.execute("UPDATE all_players SET teams = %s WHERE chat_id= %s", [teams, str(chat_id)])
+    connection.execute(sql.SQL("UPDATE {table} SET teams = %s WHERE chat_id= %s").format(table=sql.Identifier(TABLE_NAME)), [teams, str(chat_id)])
 
 def update_players_on_db(chat_id, new_entry, action):
-    connection.execute('SELECT players FROM all_players WHERE chat_id=%s', [str(chat_id)])
+    connection.execute(sql.SQL('SELECT players FROM {table} WHERE chat_id=%s').format(table=sql.Identifier(TABLE_NAME)), [str(chat_id)])
     current_players = connection.fetchone()
     if current_players[0] is None:
-        connection.execute("UPDATE all_players SET players = %s WHERE chat_id=%s", ['{'+new_entry+'}', str(chat_id)])
+        connection.execute(sql.SQL("UPDATE {table} SET players = %s WHERE chat_id=%s").format(table=sql.Identifier(TABLE_NAME)), ['{'+new_entry+'}', str(chat_id)])
     else:
         result = "{"
         if action == "add":
@@ -214,7 +225,7 @@ def update_players_on_db(chat_id, new_entry, action):
             if len(current_players[0]) == 0:
                 result = None
 
-        connection.execute('UPDATE all_players SET players = %s WHERE chat_id=%s', [result, str(chat_id)])
+        connection.execute(sql.SQL('UPDATE {table} SET players = %s WHERE chat_id=%s').format(table=sql.Identifier(TABLE_NAME)), [result, str(chat_id)])
 
 def swap_players(teams, x, y):
     error = False
