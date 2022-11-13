@@ -142,16 +142,12 @@ This is the list of current available commands:
 How to contribute
 =================
 "Can I contribute to this project?", Hell, yes 😉!
-Just make sure that you follow these simple rules:
 
-- Move to **test** branch and create your new branch from there
-- Please, name your branch like: feat/... | fix/... | chore/... [in brief, use the correct prefix to indicate if it is a new feature, some fix or a version upgrade]
-- Open a new PR and let's see if what you did works on `PartitelleBotTest <https://t.me/PartitelleTestBot>`_
-- If it works, I bring your contribution to `PartitelleBot <https://t.me/PartitelleBot>`_
+Have a look `here <https://github.com/iamgiolaga/partitelle-bot/discussions/17>`_.
 
 =================
 Sponsorships
 =================
 The ambitiousness of this project depends on the resources it has available and every little help to contribute to its improvement is appreciated.
 Nothing mandatory, just do it if you feel like you would offer me a coffee! :)
-In that case, tap the Sponsor button at the top, or click `here <https://paypal.me/GiovanniL891?country.x=IT&locale.x=it_IT>`_ 💪
+In that case, tap the Sponsor button at the top, or click `here <https://paypal.me/GiovanniL891?country.x=IT&locale.x=it_IT>`_ 💪.
