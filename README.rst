@@ -21,6 +21,7 @@ Table of contents
 - `Swapping players`_
 - `Allowed messages`_
 - `Commands`_
+- `How to contribute`_
 - `Sponsorships`_
 
 =================
@@ -136,6 +137,17 @@ This is the list of current available commands:
 - **/teams** - Show the generated teams for the current match
 - **/stop** - Remove the match
 - **/help** - Show the list of available commands
+
+=================
+How to contribute
+=================
+"Can I contribute to this project?", Hell, yes 😉! 
+Just make sure that you follow these simple rules:
+
+- Move to **test** branch and create your new branch from there
+- Please, name your branch like: feat/... | fix/... | chore/... [in brief, use the correct prefix to indicate if it is a new feature, some fix or a version upgrade]
+- Open a new PR and let's see if what you did works on `PartitelleBotTest <https://t.me/PartitelleTestBot>`_
+- If it works, I bring your contribution to `PartitelleBot <https://t.me/PartitelleBot>`_
 
 =================
 Sponsorships
