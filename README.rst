@@ -141,7 +141,9 @@ This is the list of current available commands:
 =================
 How to contribute
 =================
-"Can I contribute to this project?", Hell, yes 😉!
+"Can I contribute to this project?"
+
+Hell, yes 😉!
 
 Have a look `here <https://github.com/iamgiolaga/partitelle-bot/discussions/17>`_.
 
