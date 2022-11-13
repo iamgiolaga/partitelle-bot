@@ -1,0 +1,17 @@
+name: Deploy Test
+
+on:
+  push:
+    branches: [ test ]
+  pull_request:
+    branches: [ test ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to PartitelleBotTest
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_TEST_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_TEST_API_KEY }}
