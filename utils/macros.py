@@ -8,7 +8,7 @@ connection = None
 default_day = None
 default_time = "21:00"
 default_target = 10
-custom_message = "5 goal di scarto e le squadre si _potrebbero_ cambiare \n" \
+default_message = "5 goal di scarto e le squadre si _potrebbero_ cambiare \n" \
                "6 goal di scarto e le squadre si *devono* cambiare \n"\
                "(ditelo a chiunque invitate) \n"\
                "*PORTARE UNA MAGLIA BIANCA E UNA COLORATA*\n"

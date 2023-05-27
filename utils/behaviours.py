@@ -2,12 +2,12 @@ from datetime import datetime, timedelta
 from dateutil.parser import parse
 from telegram import Update
 from telegram.ext import CallbackContext
-
+from telegram.utils.helpers import escape_markdown
 from db.queries import update_bot_last_message_id_on_db, find_all_info_by_chat_id
 from utils.macros import maybe_placeholder
-from telegram.utils.helpers import escape_markdown
 import random
 import json
+
 
 def get_next_weekday(startdate, weekday):
     """
@@ -143,7 +143,7 @@ def remove_job_if_exists(name, context):
         job.schedule_removal()
     return True
 
-def beautify(all_players, day, time, target, custom_message, pitch):
+def beautify(all_players, day, time, target, default_message, pitch):
     player_list = ""
 
     prefix = "*GIORNO*: " + escape_markdown(day) + " | " + escape_markdown(time) + "\n"\
@@ -151,7 +151,7 @@ def beautify(all_players, day, time, target, custom_message, pitch):
     if pitch is None:
         pitch = "Usa il comando /setpitch <campo> per inserire la struttura sportiva dove giocherete."
 
-    appendix = custom_message + \
+    appendix = default_message + \
                 "\n"\
                 "*CAMPO*: \n"\
                 + escape_markdown(pitch)
@@ -171,8 +171,8 @@ def beautify(all_players, day, time, target, custom_message, pitch):
     return prefix + "\n" + player_list + "\n" + appendix
 
 def print_summary(chat_id, reached_target, is_participants_command, update: Update, context: CallbackContext):
-    players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
-    current_situation = beautify(players, day, time, target, custom_message, pitch)
+    players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
+    current_situation = beautify(players, day, time, target, default_message, pitch)
 
     if bot_last_message_id is None or is_participants_command:
         markdown_error = False
