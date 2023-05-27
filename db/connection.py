@@ -1,7 +1,6 @@
 import psycopg2
 from db.config import config
 
-""" Connect to the PostgreSQL database server """
 def connect():
     conn = None
     try:
@@ -11,6 +10,7 @@ def connect():
         cur = conn.cursor()
         return cur
     except (Exception, psycopg2.DatabaseError) as error:
+        print("There was an issue during the db connection:")
         print(error)
     finally:
         if conn is not None:

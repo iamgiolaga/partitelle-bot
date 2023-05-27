@@ -1,9 +1,7 @@
 from utils.constants import default_target, default_time, table_name, default_message
 from psycopg2 import sql
 from utils.utils import compute_next_wednesday
-from db.connection import connect
-
-connection = connect()
+from db.cursor import connection
 
 def create_bamboo_chat_id_row(chat_id):
     pitch = "Crespi Sport Village \n" \
