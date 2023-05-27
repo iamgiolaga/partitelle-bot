@@ -1,5 +1,4 @@
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
-from db.connection import connect
 from utils.constants import token, hosting_url
 from callbacks.start import start
 from callbacks.stop import stop
@@ -19,8 +18,6 @@ import os
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 if __name__ == '__main__':
-    connection = connect()
-
     updater = Updater(token=token, use_context=True)
     dispatcher = updater.dispatcher
 
