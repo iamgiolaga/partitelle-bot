@@ -1,8 +1,12 @@
 from telegram import Update
 from telegram.ext import CallbackContext
-from db.queries import find_row_by_chat_id, find_all_info_by_chat_id, update_time_on_db
-from utils.behaviours import flatten_args, remove_job_if_exists, set_payment_reminder, get_sender_name, print_summary
 from telegram.utils.helpers import escape_markdown
+from behaviours.edit_summary import edit_summary
+from behaviours.print_new_summary import print_new_summary
+from behaviours.remove_job_if_exists import remove_job_if_exists
+from behaviours.trigger_payment_reminder import trigger_payment_reminder
+from db.queries import find_row_by_chat_id, find_all_info_by_chat_id, update_time_on_db
+from utils.utils import flatten_args, get_sender_name, format_summary
 
 def set_time(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
@@ -20,8 +24,14 @@ def set_time(update: Update, context: CallbackContext):
             update_time_on_db(chat_id, time)
             remove_job_if_exists(str(chat_id), context)
             players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
-            set_payment_reminder(update, context, day, time)
+            trigger_payment_reminder(update, context, day, time)
             sender = "@" + get_sender_name(update)
             answer = "Ok, " + sender + "! Ho impostato l'orario della partita alle " + time
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=escape_markdown(answer))
-            print_summary(chat_id, False, False, update, context)
+            players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(
+                chat_id)
+            current_situation = format_summary(players, day, time, target, default_message, pitch)
+            if bot_last_message_id is None:
+                print_new_summary(chat_id, current_situation, update, context)
+            else:
+                edit_summary(current_situation, bot_last_message_id, update, context)

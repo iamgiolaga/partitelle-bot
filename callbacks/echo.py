@@ -1,9 +1,15 @@
 from telegram import Update
 from telegram.ext import CallbackContext
-from db.queries import find_row_by_chat_id, find_all_info_by_chat_id, update_players_on_db, update_teams_on_db, is_already_present
-from utils.behaviours import flatten_args, get_sender_name, print_summary, filter_maybe_placeholders, swap_players, remove_job_if_exists
-from utils.macros import maybe_placeholder
 from telegram.utils.helpers import escape_markdown
+from behaviours.edit_summary import edit_summary
+from behaviours.print_new_summary import print_new_summary
+from behaviours.remove_job_if_exists import remove_job_if_exists
+from behaviours.trigger_payment_reminder import trigger_payment_reminder
+from db.queries import find_row_by_chat_id, find_all_info_by_chat_id, update_players_on_db, update_teams_on_db, \
+    is_already_present
+from utils.utils import flatten_args, get_sender_name, filter_maybe_placeholders, swap_players, \
+    format_summary
+from utils.constants import maybe_placeholder
 
 def echo(update: Update, context: CallbackContext):
     new_message = update.message.text.lower()
@@ -166,4 +172,15 @@ def echo(update: Update, context: CallbackContext):
                 context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
 
             if show_summary:
-                print_summary(chat_id, reached_target, False, update, context)
+                players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(
+                    chat_id)
+                current_situation = format_summary(players, day, time, target, default_message, pitch)
+                if bot_last_message_id is None:
+                    print_new_summary(chat_id, current_situation, update, context)
+                else:
+                    edit_summary(current_situation, bot_last_message_id, update, context)
+
+                if reached_target:
+                    trigger_payment_reminder(update, context, day, time)
+                    context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown',
+                                             text="🚀 *SI GIOCA* 🚀 facciamo le squadre? /teams 😎")

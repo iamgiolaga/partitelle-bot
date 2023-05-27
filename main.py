@@ -1,6 +1,6 @@
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 from db.connection import connect
-from utils.macros import token, hosting_url
+from utils.constants import token, hosting_url
 from callbacks.start import start
 from callbacks.stop import stop
 from callbacks.set_number import set_number

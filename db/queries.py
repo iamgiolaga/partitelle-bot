@@ -1,6 +1,6 @@
-from utils.macros import connection, default_target, default_time, table_name, custom_message
+from utils.constants import connection, default_target, default_time, table_name, default_message
 from psycopg2 import sql
-from utils.behaviours import compute_next_wednesday
+from utils.utils import compute_next_wednesday
 
 def create_bamboo_chat_id_row(chat_id):
     pitch = "Crespi Sport Village \n" \
@@ -13,7 +13,7 @@ def create_bamboo_chat_id_row(chat_id):
         sql.SQL("INSERT INTO {table} (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
             "VALUES ( %s, null, %s, %s, %s, %s, %s, null, null)")
         .format(table=sql.Identifier(table_name)),
-        [str(chat_id), default_day, default_time, str(default_target), custom_message, pitch]
+        [str(chat_id), default_day, default_time, str(default_target), default_message, pitch]
     )
 
 def delete_row_on_db(chat_id):
@@ -32,7 +32,7 @@ def create_chat_id_row(chat_id):
         sql.SQL("INSERT INTO {table} (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
                        "VALUES ( %s, null, %s, %s, %s, %s, null, null, null)")
         .format(table=sql.Identifier(table_name)),
-        [str(chat_id), default_day, default_time, str(default_target), custom_message]
+        [str(chat_id), default_day, default_time, str(default_target), default_message]
     )
 
 def find_all_info_by_chat_id(chat_id):
