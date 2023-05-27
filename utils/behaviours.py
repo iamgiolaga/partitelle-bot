@@ -1,5 +1,9 @@
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from telegram import Update
+from telegram.ext import CallbackContext
+
+from db.queries import update_bot_last_message_id_on_db, find_all_info_by_chat_id
 from utils.macros import maybe_placeholder
 from telegram.utils.helpers import escape_markdown
 import random
