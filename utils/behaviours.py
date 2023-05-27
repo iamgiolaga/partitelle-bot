@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from dateutil.parser import parse
-from macros import maybe_placeholder
+from utils.macros import maybe_placeholder
 from telegram.utils.helpers import escape_markdown
 import random
 import json
