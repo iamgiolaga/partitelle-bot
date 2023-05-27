@@ -1,7 +1,7 @@
 from utils.constants import default_target, default_time, table_name, default_message
 from psycopg2 import sql
 from utils.utils import compute_next_wednesday
-from connection import connect
+from db.connection import connect
 
 connection = connect()
 
