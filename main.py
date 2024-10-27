@@ -12,16 +12,12 @@ from callbacks.teams import teams
 from callbacks.help_func import help_func
 from callbacks.echo import echo
 from callbacks.bamboo import bamboo
-from db.connection import connect
-import db.cursor as db_cursor
 import logging
 import os
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 if __name__ == '__main__':
-    db_cursor.connection = connect()
-
     updater = Updater(token=token, use_context=True)
     dispatcher = updater.dispatcher
 
