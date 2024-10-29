@@ -15,4 +15,4 @@ def participants(update: Update, context: CallbackContext):
         players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(
             chat_id)
         current_situation = format_summary(players, day, time, target, default_message, pitch)
-        print_new_summary(current_situation, update, context)
+        print_new_summary(chat_id, current_situation, update, context)
