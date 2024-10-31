@@ -1,5 +1,5 @@
 import psycopg2
-from db.config import config
+from conf.switch import host, database, user, password, port
 class Connection:
     _instance = None
 
@@ -14,8 +14,13 @@ class Connection:
     def connect(self):
         conn = None
         try:
-            params = config()
-            conn = psycopg2.connect(**params)
+            conn = psycopg2.connect(**{
+                'host': host,
+                'database': database,
+                'user': user,
+                'password': password,
+                'port': port
+            })
             conn.autocommit = True
             cur = conn.cursor()
             print('PostgreSQL database version:')
