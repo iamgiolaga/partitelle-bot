@@ -1,5 +1,5 @@
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
-from utils.constants import token, hosting_url
+from conf.switch import token, hosting_url, env
 from callbacks.start import start
 from callbacks.stop import stop
 from callbacks.set_number import set_number
@@ -57,6 +57,8 @@ if __name__ == '__main__':
     bamboo_handler = CommandHandler('bamboo', bamboo)
     dispatcher.add_handler(bamboo_handler)
 
-    #updater.start_polling()
-    updater.start_webhook(listen="0.0.0.0", webhook_url=f'{hosting_url}/{token}', url_path=token, port=int(os.environ.get('PORT', 5000)))
-    updater.idle()
+    if env == 'local':
+        updater.start_polling()
+    else:
+        updater.start_webhook(listen="0.0.0.0", webhook_url=f'{hosting_url}/{token}', url_path=token, port=int(os.environ.get('PORT', 5000)))
+        updater.idle()
