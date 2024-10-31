@@ -14,10 +14,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Read Python version
+        id: read_python_version
+        run: echo "PYTHON_VERSION=$(cat .python-version)" >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "${{ steps.read_python_version.outputs.PYTHON_VERSION }}"
+          python-version: "${{ env.PYTHON_VERSION }}"
 
       - name: Install dependencies
         run: |
