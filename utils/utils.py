@@ -6,14 +6,21 @@ import random
 import json
 
 
-def get_next_weekday(startdate, weekday):
+
+def get_next_weekday(startdate: str, weekday: int) -> str:
     """
-    @startdate: given date
-    @weekday: week day as a integer, between 0 (Monday) to 6 (Sunday)
+    Get the next weekday from a given date
+    @param startdate: the starting date
+    @param weekday: the weekday to find (0 = Monday, 1 = Tuesday, ..., 6 = Sunday)
+    @return: the date of the next specified weekday in the format 'dd/mm/yyyy'
+
     """
-    d = datetime.strptime(startdate, '%d/%m/%Y')
-    t = timedelta((7 + weekday - d.weekday()) % 7)
-    return (d + t).strftime('%d/%m/%Y')
+    format = '%d/%m/%Y'
+    d = datetime.strptime(startdate, format)
+    days_ahead = weekday - d.weekday()
+    if days_ahead <= 0:
+        days_ahead += 7
+    return (d + timedelta(days_ahead)).strftime(format)
 
 def compute_next_wednesday():
     return get_next_weekday((datetime.today().strftime('%d/%m/%Y')), 2)
