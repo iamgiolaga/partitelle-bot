@@ -1,11 +1,9 @@
-name: Deploy
+name: Deploy PartitelleBot
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
+    branches:
+      - main
 jobs:
   build:
     runs-on: ubuntu-latest
