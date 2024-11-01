@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from telegram import Update
 from telegram.utils.helpers import escape_markdown
 from utils.constants import maybe_placeholder
 import random
 import json
-
-
 
 def get_next_weekday(startdate: str, weekday: int) -> str:
     """
@@ -42,14 +41,12 @@ def extract_match_time(time):
 def compute_seconds_from_now(destination_date):
     return destination_date.timestamp() - datetime.now().timestamp()
 
-def get_sender_name(source):
+def get_sender_name(source: Update):
     return source.message.from_user.username.lower()
 
 def swap_players(teams, x, y):
-    error = False
-
     if (x in teams['black'] and y in teams['black']) or (x in teams['white'] and y in teams['white']):
-        error = True
+        raise Exception("Not allowed to swap two players of the same team")
 
     temp_black = None
     temp_white = None
@@ -67,7 +64,7 @@ def swap_players(teams, x, y):
     teams['black'] = temp_black
     teams['white'] = temp_white
 
-    return error, json.dumps(teams)
+    return json.dumps(teams)
 
 def generate_teams(players):
     black_team = random.sample(players, int(len(players)/2))
@@ -79,21 +76,17 @@ def generate_teams(players):
     return json.dumps(teams)
 
 def flatten_args(args):
-    res = ""
+    return " ".join(map(str, args))
 
-    for index, arg in enumerate(args):
-        if index == 0:
-            res = str(arg)
-        else:
-            res = res + " " + str(arg)
-
-    return res
-
-def filter_maybe_placeholders(players):
+def exclude_maybe(players):
     return [player for player in players if maybe_placeholder not in player]
 
 def format_teams(teams):
     json_teams = json.loads(teams)
+
+    if json_teams == {}:
+        raise Exception("Teams are empty")
+
     black_team = json_teams["black"]
     white_team = json_teams["white"]
 
@@ -109,28 +102,20 @@ def format_teams(teams):
     return teams_message
 
 def format_summary(all_players, day, time, target, default_message, pitch):
-    player_list = ""
-
-    prefix = "*GIORNO*: " + escape_markdown(day) + " | " + escape_markdown(time) + "\n"\
-
     if pitch is None:
         pitch = "Usa il comando /setpitch <campo> per inserire la struttura sportiva dove giocherete."
 
-    appendix = default_message + \
-                "\n"\
-                "*CAMPO*: \n"\
-                + escape_markdown(pitch)
+    prefix = f"*GIORNO*: {escape_markdown(day)} | {escape_markdown(time)}\n\n"
+    appendix = f"{default_message}\n\n*CAMPO*: \n{escape_markdown(pitch)}"
 
-    for i in range(0, target):
+    player_list = ""
+    for i in range(target):
         if all_players and i < len(all_players):
             player = all_players[i]
-            if player.endswith(maybe_placeholder):
-                player = player.replace(maybe_placeholder, "")
-                presence_outcome_icon = "❓"
-            else:
-                presence_outcome_icon = "✅"
-            player_list = player_list + str(i + 1) + ". " + escape_markdown(player) + " " + presence_outcome_icon + "\n"
+            presence_outcome_icon = "❓" if player.endswith(maybe_placeholder) else "✅"
+            player = player.replace(maybe_placeholder, "") if presence_outcome_icon == "❓" else player
+            player_list += f"{i + 1}. {escape_markdown(player)} {presence_outcome_icon}\n"
         else:
-            player_list = player_list + str(i + 1) + ". ❌ \n"
+            player_list += f"{i + 1}. ❌\n"
 
-    return prefix + "\n" + player_list + "\n" + appendix
+    return prefix + player_list + "\n" + appendix
