@@ -3,7 +3,7 @@ from telegram.ext import CallbackContext
 from telegram.utils.helpers import escape_markdown
 from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
-from db.queries import find_row_by_chat_id, update_pitch_on_db, find_all_info_by_chat_id
+from db.queries import find_row_by_chat_id, update_pitch_on_db, find_all_info_by_chat_id, update_bot_last_message_id_on_db
 from utils.utils import flatten_args, get_sender_name, format_summary
 
 def set_pitch(update: Update, context: CallbackContext):
@@ -27,6 +27,7 @@ def set_pitch(update: Update, context: CallbackContext):
                 chat_id)
             current_situation = format_summary(players, day, time, target, default_message, pitch)
             if bot_last_message_id is None:
-                print_new_summary(chat_id, current_situation, update, context)
+                msg = print_new_summary(current_situation, update, context)
+                update_bot_last_message_id_on_db(chat_id, msg.message_id)
             else:
                 edit_summary(current_situation, bot_last_message_id, update, context)

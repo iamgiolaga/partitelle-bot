@@ -32,6 +32,7 @@ def set_day(update: Update, context: CallbackContext):
                 chat_id)
             current_situation = format_summary(players, day, time, target, default_message, pitch)
             if bot_last_message_id is None:
-                print_new_summary(chat_id, current_situation, update, context)
+                msg = print_new_summary(current_situation, update, context)
+                update_bot_last_message_id_on_db(chat_id, msg.message_id)
             else:
                 edit_summary(current_situation, bot_last_message_id, update, context)
