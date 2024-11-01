@@ -1,10 +1,9 @@
-name: Deploy Test
+name: Deploy PartitelleBotTest
 
 on:
-  push:
-    branches: [ test ]
   pull_request:
-    branches: [ test ]
+    branches:
+      - main
 
 jobs:
   build:
