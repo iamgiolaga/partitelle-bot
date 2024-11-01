@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 from behaviours.print_new_summary import print_new_summary
-from db.queries import find_row_by_chat_id, find_all_info_by_chat_id
+from db.queries import find_row_by_chat_id, find_all_info_by_chat_id, update_bot_last_message_id_on_db
 from utils.utils import format_summary
 
 def participants(update: Update, context: CallbackContext):
@@ -15,4 +15,5 @@ def participants(update: Update, context: CallbackContext):
         players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(
             chat_id)
         current_situation = format_summary(players, day, time, target, default_message, pitch)
-        print_new_summary(chat_id, current_situation, update, context)
+        msg = print_new_summary(current_situation, update, context)
+        update_bot_last_message_id_on_db(chat_id, msg.message_id)

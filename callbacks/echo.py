@@ -6,7 +6,7 @@ from behaviours.print_new_summary import print_new_summary
 from behaviours.remove_job_if_exists import remove_job_if_exists
 from behaviours.trigger_payment_reminder import trigger_payment_reminder
 from db.queries import find_row_by_chat_id, find_all_info_by_chat_id, update_players_on_db, update_teams_on_db, \
-    is_already_present
+    is_already_present, update_bot_last_message_id_on_db
 from utils.utils import flatten_args, get_sender_name, exclude_maybe, swap_players, \
     format_summary
 from utils.constants import maybe_placeholder
@@ -176,7 +176,8 @@ def echo(update: Update, context: CallbackContext):
                     chat_id)
                 current_situation = format_summary(players, day, time, target, default_message, pitch)
                 if bot_last_message_id is None:
-                    print_new_summary(chat_id, current_situation, update, context)
+                    msg = print_new_summary(current_situation, update, context)
+                    update_bot_last_message_id_on_db(chat_id, msg.message_id)
                 else:
                     edit_summary(current_situation, bot_last_message_id, update, context)
 

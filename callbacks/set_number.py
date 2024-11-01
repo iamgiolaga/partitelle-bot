@@ -5,7 +5,7 @@ from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
 from behaviours.remove_job_if_exists import remove_job_if_exists
 from behaviours.trigger_payment_reminder import trigger_payment_reminder
-from db.queries import find_all_info_by_chat_id, update_teams_on_db, update_target_on_db
+from db.queries import find_all_info_by_chat_id, update_teams_on_db, update_target_on_db, update_bot_last_message_id_on_db
 from utils.utils import get_sender_name, exclude_maybe, format_summary
 
 def set_number(update: Update, context: CallbackContext):
@@ -50,7 +50,8 @@ def set_number(update: Update, context: CallbackContext):
                             chat_id)
                         current_situation = format_summary(players, day, time, target, default_message, pitch)
                         if bot_last_message_id is None:
-                            print_new_summary(chat_id, current_situation, update, context)
+                            msg = print_new_summary(current_situation, update, context)
+                            update_bot_last_message_id_on_db(chat_id, msg.message_id)
                         else:
                             edit_summary(current_situation, bot_last_message_id, update, context)
 
