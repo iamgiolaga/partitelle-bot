@@ -7,7 +7,7 @@ from behaviours.remove_job_if_exists import remove_job_if_exists
 from behaviours.trigger_payment_reminder import trigger_payment_reminder
 from db.queries import find_row_by_chat_id, find_all_info_by_chat_id, update_players_on_db, update_teams_on_db, \
     is_already_present
-from utils.utils import flatten_args, get_sender_name, filter_maybe_placeholders, swap_players, \
+from utils.utils import flatten_args, get_sender_name, exclude_maybe, swap_players, \
     format_summary
 from utils.constants import maybe_placeholder
 
@@ -40,13 +40,13 @@ def echo(update: Update, context: CallbackContext):
                     update_players_on_db(chat_id, sender + maybe_placeholder, "remove")
                     update_players_on_db(chat_id, sender, "add")
                     show_summary = True
-                    reached_target = players and len(filter_maybe_placeholders(players)) + 1 == target
+                    reached_target = players and len(exclude_maybe(players)) + 1 == target
                 else:
                     if not players or len(players) <= target - 1:
                         answer = 'Ok, ' + sender + ', ti aggiungo'
                         update_players_on_db(chat_id, sender, "add")
                         show_summary = True
-                        reached_target = players and len(filter_maybe_placeholders(players)) + 1 == target
+                        reached_target = players and len(exclude_maybe(players)) + 1 == target
                     else:
                         answer = 'Siete già in ' + str(target)
                         show_summary = False
@@ -61,13 +61,13 @@ def echo(update: Update, context: CallbackContext):
                     update_players_on_db(chat_id, to_be_added + maybe_placeholder, "remove")
                     update_players_on_db(chat_id, to_be_added, "add")
                     show_summary = True
-                    reached_target = players and len(filter_maybe_placeholders(players)) + 1 == target
+                    reached_target = players and len(exclude_maybe(players)) + 1 == target
                 else:
                     if not players or len(players) <= target - 1:
                         answer = 'Ok, aggiungo ' + to_be_added
                         update_players_on_db(chat_id, to_be_added, "add")
                         show_summary = True
-                        reached_target = players and len(filter_maybe_placeholders(players)) + 1 == target
+                        reached_target = players and len(exclude_maybe(players)) + 1 == target
                     else:
                         answer = 'Siete già in ' + str(target)
                         show_summary = False
@@ -156,12 +156,12 @@ def echo(update: Update, context: CallbackContext):
                     elif not is_already_present(chat_id, y):
                         answer = y + " non c'è"
                     else:
-                        error, teams = swap_players(teams, x, y)
-                        if error:
-                            answer = x + " e " + y + " sono nella stessa squadra!"
-                        else:
+                        try:
+                            teams = swap_players(teams, x, y)
                             update_teams_on_db(chat_id, teams)
                             answer = "Perfetto, ho scambiato " + x + " con " + y
+                        except Exception:
+                            answer = x + " e " + y + " sono nella stessa squadra!"                       
 
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=escape_markdown(answer))
 

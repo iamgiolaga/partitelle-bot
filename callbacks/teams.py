@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 from db.queries import find_all_info_by_chat_id, update_teams_on_db
-from utils.utils import filter_maybe_placeholders, format_teams, generate_teams
+from utils.utils import exclude_maybe, format_teams, generate_teams
 import json
 
 def teams(update: Update, context: CallbackContext):
@@ -18,7 +18,7 @@ def teams(update: Update, context: CallbackContext):
         if players is None:
             participants_num = 0
         else:
-            participants_num = len(filter_maybe_placeholders(players))
+            participants_num = len(exclude_maybe(players))
         reached_target = players and participants_num == target
 
         if teams is not None:
