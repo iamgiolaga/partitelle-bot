@@ -23,13 +23,12 @@ def set_day(update: Update, context: CallbackContext):
             day = flatten_args(context.args)
             update_day_on_db(chat_id, day)
             remove_job_if_exists(str(chat_id), context)
-            players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
+            players, day, time, target, _, pitch, _, bot_last_message_id = find_all_info_by_chat_id(chat_id)
             trigger_payment_reminder(update, context, day, time)
             sender = "@" + get_sender_name(update)
             answer = "Ok, " + sender + "! Ho impostato il giorno della partita il " + day
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=escape_markdown(answer))
-            players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(
-                chat_id)
+            players, day, time, target, default_message, pitch, _, bot_last_message_id = find_all_info_by_chat_id(chat_id)
             current_situation = format_summary(players, day, time, target, default_message, pitch)
             if bot_last_message_id is None:
                 msg = print_new_summary(current_situation, update, context)

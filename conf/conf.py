@@ -1,5 +1,6 @@
 import os
 
+env = os.getenv('ENV', 'local')
 token = os.getenv("PB_TG_TOKEN")
 hosting_url = os.getenv("PB_URL")
 table_name = os.getenv("PB_DB_TABLE_NAME")
