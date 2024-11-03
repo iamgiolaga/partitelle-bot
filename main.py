@@ -1,5 +1,5 @@
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
-from conf.switch import token, hosting_url, env
+from conf.conf import token, hosting_url, env
 from callbacks.start import start
 from callbacks.stop import stop
 from callbacks.set_number import set_number

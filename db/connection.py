@@ -1,5 +1,5 @@
 import psycopg2
-from conf.switch import host, database, user, password, port
+from conf.conf import host, database, user, password, port
 class Connection:
     _instance = None
 
