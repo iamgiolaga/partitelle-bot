@@ -46,8 +46,7 @@ def set_number(update: Update, context: CallbackContext):
                         update_target_on_db(chat_id, choosen_number)
                         answer = "Ok, " + sender + "! Ho impostato il numero di partecipanti a " + str(choosen_number)
                         reached_target = players and participants_num == choosen_number
-                        players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(
-                            chat_id)
+                        players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
                         current_situation = format_summary(players, day, time, target, default_message, pitch)
                         if bot_last_message_id is None:
                             msg = print_new_summary(current_situation, update, context)

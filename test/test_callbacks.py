@@ -67,7 +67,7 @@ class TestCallbacks(unittest.TestCase):
         # Test case 2: row is not None
         with self.subTest("Row is not None"):
             mock_find_row_by_chat_id.return_value = "row"
-            mock_find_all_info_by_chat_id.return_value = ("player1, player2", "day", "time", "target", "default_message", "pitch")
+            mock_find_all_info_by_chat_id.return_value = ("player1, player2", "day", "time", "target", "default_message", "pitch", None, None)
             mock_format_summary.return_value = "formatted_summary"
             mock_print_new_summary.return_value = MagicMock(message_id=123)
 
