@@ -29,7 +29,8 @@ def echo(update: Update, context: CallbackContext):
             answer = "Prima di iniziare con le danze, avvia una partita, per farlo usa /start"
             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
         else:
-            players, day, time, target, custom_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
+            players, day, time, target, _, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
+
             if new_message == 'aggiungimi':
                 sender = "@" + get_sender_name(update)
                 if is_already_present(chat_id, sender):
@@ -82,11 +83,13 @@ def echo(update: Update, context: CallbackContext):
                     update_players_on_db(chat_id, sender, "remove")
                     update_players_on_db(chat_id, sender + maybe_placeholder, "add")
                     show_summary = True
+                    revoked_teams = teams is not None
                 else:
                     if not players or len(players) <= target - 1:
                         answer = 'Ok, ' + sender + ', ti propongo'
                         update_players_on_db(chat_id, sender + maybe_placeholder, "add")
                         show_summary = True
+                        revoked_teams = teams is not None
                     else:
                         answer = 'Siete già in ' + str(target)
                         show_summary = False
@@ -101,11 +104,13 @@ def echo(update: Update, context: CallbackContext):
                     update_players_on_db(chat_id, to_be_added, "remove")
                     update_players_on_db(chat_id, to_be_added + maybe_placeholder, "add")
                     show_summary = True
+                    revoked_teams = teams is not None
                 else:
                     if not players or len(players) <= target - 1:
                         answer = 'Ok, propongo ' + to_be_added
                         update_players_on_db(chat_id, to_be_added + maybe_placeholder, "add")
                         show_summary = True
+                        revoked_teams = teams is not None
                     else:
                         answer = 'Siete già in ' + str(target)
                         show_summary = False
@@ -172,8 +177,7 @@ def echo(update: Update, context: CallbackContext):
                 context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
 
             if show_summary:
-                players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(
-                    chat_id)
+                players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
                 current_situation = format_summary(players, day, time, target, default_message, pitch)
                 if bot_last_message_id is None:
                     msg = print_new_summary(current_situation, update, context)

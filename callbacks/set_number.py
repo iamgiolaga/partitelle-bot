@@ -20,7 +20,7 @@ def set_number(update: Update, context: CallbackContext):
             if len(context.args) > 1:
                 answer = "Hai messo più di un numero, probabilmente intendevi /setnumber " + context.args[0]
             else:
-                choosen_number_str = context.args[0]
+                chosen_number_str = context.args[0]
                 sender = "@" + get_sender_name(update)
                 players = row[0]
                 if players is None:
@@ -28,14 +28,14 @@ def set_number(update: Update, context: CallbackContext):
                 else:
                     participants_num = len(exclude_maybe(players))
 
-                if choosen_number_str.isnumeric():
-                    choosen_number = int(choosen_number_str)
-                    if choosen_number <= 0 or choosen_number > 40:
+                if chosen_number_str.isnumeric():
+                    chosen_number = int(chosen_number_str)
+                    if chosen_number <= 0 or chosen_number > 40:
                         answer = "Non è un numero valido di partecipanti 🌚"
-                    elif choosen_number < participants_num:
-                        answer = "Hai ridotto i partecipanti ma c'è ancora gente nella lista. Io non saprei chi togliere, puoi farlo tu? 🙏"
-                    elif choosen_number < 2:
+                    elif chosen_number < 2:
                         answer = "Il numero che hai inserito non va bene 👎"
+                    elif chosen_number < participants_num:
+                        answer = "Hai ridotto i partecipanti ma c'è ancora gente nella lista. Io non saprei chi togliere, puoi farlo tu? 🙏"
                     else:
                         if teams is not None:
                             update_teams_on_db(chat_id, None)
@@ -43,9 +43,9 @@ def set_number(update: Update, context: CallbackContext):
                             answer = "*SQUADRE ANNULLATE*"
                             context.bot.send_message(chat_id=update.effective_chat.id, parse_mode='markdown', text=answer)
 
-                        update_target_on_db(chat_id, choosen_number)
-                        answer = "Ok, " + sender + "! Ho impostato il numero di partecipanti a " + str(choosen_number)
-                        reached_target = players and participants_num == choosen_number
+                        update_target_on_db(chat_id, chosen_number)
+                        answer = "Ok, " + sender + "! Ho impostato il numero di partecipanti a " + str(chosen_number)
+                        reached_target = players and participants_num == chosen_number
                         players, day, time, target, default_message, pitch, teams, bot_last_message_id = find_all_info_by_chat_id(chat_id)
                         current_situation = format_summary(players, day, time, target, default_message, pitch)
                         if bot_last_message_id is None:
