@@ -13,3 +13,8 @@ jobs:
         with:
           service-id: ${{ secrets.RENDER_SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
+      - name: Deploy to PartitelleBotTest
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_TEST_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_TEST_API_KEY }}
