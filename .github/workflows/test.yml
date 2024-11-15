@@ -1,12 +1,14 @@
-name: Deploy PartitelleBotTest
+name: PartitelleBotTest
 
 on:
   pull_request:
     branches:
       - main
+    types: [labeled, unlabeled, opened, synchronize]
 
 jobs:
-  build:
+  deploy:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'deploy-partitellebot-test') }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to PartitelleBotTest

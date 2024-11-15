@@ -1,11 +1,11 @@
-name: Deploy PartitelleBot
+name: PartitelleBot + PartitelleBotTest
 
 on:
   push:
     branches:
       - main
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to PartitelleBot
