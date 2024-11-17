@@ -1,0 +1,16 @@
+name: PartitelleBot
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to PartitelleBot
+        uses: johnbeynon/render-deploy-action@747373cdb7b9b3f561438e063ee0815b71584f1b
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+          wait-for-success: true
