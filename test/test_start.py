@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from callbacks.start import start
 
+
 class TestStart(unittest.TestCase):
 
     def setUp(self):
@@ -12,13 +13,11 @@ class TestStart(unittest.TestCase):
 
     def assert_send_message_called_once_with(self, text):
         self.mock_context.bot.send_message.assert_called_once_with(
-            chat_id=self.mock_update.effective_chat.id,
-            parse_mode='markdown',
-            text=text
+            chat_id=self.mock_update.effective_chat.id, parse_mode="markdown", text=text
         )
 
-    @patch('callbacks.start.create_chat_id_row')
-    @patch('callbacks.start.find_all_info_by_chat_id')
+    @patch("callbacks.start.create_chat_id_row")
+    @patch("callbacks.start.find_all_info_by_chat_id")
     def test_start(self, mock_find_all_info_by_chat_id, mock_create_chat_id_row):
 
         # Test case 1: row is None
@@ -27,8 +26,12 @@ class TestStart(unittest.TestCase):
 
             start(self.mock_update, self.mock_context)
 
-            mock_find_all_info_by_chat_id.assert_called_once_with(self.mock_update.message.chat_id)
-            mock_create_chat_id_row.assert_called_once_with(self.mock_update.message.chat_id)
+            mock_find_all_info_by_chat_id.assert_called_once_with(
+                self.mock_update.message.chat_id
+            )
+            mock_create_chat_id_row.assert_called_once_with(
+                self.mock_update.message.chat_id
+            )
             self.assert_send_message_called_once_with(
                 "Ciao bestie 😎, chi c'è per il prossimo calcetto? \n"
                 "\n"
@@ -54,7 +57,9 @@ class TestStart(unittest.TestCase):
 
             start(self.mock_update, self.mock_context)
 
-            mock_find_all_info_by_chat_id.assert_called_once_with(self.mock_update.message.chat_id)
+            mock_find_all_info_by_chat_id.assert_called_once_with(
+                self.mock_update.message.chat_id
+            )
             mock_create_chat_id_row.assert_not_called()
             self.assert_send_message_called_once_with(
                 "Ciao bestie 😎, chi c'è per il prossimo calcetto? \n"
@@ -70,5 +75,6 @@ class TestStart(unittest.TestCase):
                 "ma per farlo ricordati di aggiungermi come amministratore."
             )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
