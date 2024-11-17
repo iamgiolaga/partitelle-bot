@@ -12,7 +12,7 @@ def payment_reminder(context):
 
     try:
         context.bot.pin_chat_message(chat_id=chat_id, message_id=msg.message_id)
-    except:
+    except Exception:
         print("No admin rights to pin the message")
 
     update_bot_last_message_id_on_db(chat_id, msg.message_id)

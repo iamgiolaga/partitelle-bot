@@ -30,7 +30,7 @@ def compute_next_wednesday():
 def extract_match_day(day):
     try:
         extracted_day = parse(day, dayfirst=True)
-    except:
+    except ValueError:
         extracted_day = -1
     return extracted_day
 
@@ -38,7 +38,7 @@ def extract_match_day(day):
 def extract_match_time(time):
     try:
         extracted_time = datetime.strptime(time, "%H:%M").time()
-    except:
+    except ValueError:
         extracted_time = -1
     return extracted_time
 

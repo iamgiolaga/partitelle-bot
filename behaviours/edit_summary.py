@@ -15,5 +15,5 @@ def edit_summary(
         context.bot.pin_chat_message(
             chat_id=update.effective_chat.id, message_id=bot_last_message_id
         )
-    except:
+    except Exception:
         print("No admin rights to pin the message")

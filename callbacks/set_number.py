@@ -97,7 +97,7 @@ def set_number(update: Update, context: CallbackContext):
                 else:
                     answer = sender + ", quello ti sembra un numero? 😂"
 
-        except:
+        except Exception:
             answer = "Non hai inserito il numero: scrivi /setnumber <numero>"
     context.bot.send_message(
         chat_id=update.effective_chat.id,
