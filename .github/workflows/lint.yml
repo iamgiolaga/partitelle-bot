@@ -1,0 +1,33 @@
+name: Code checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    name: linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Read Python version
+        id: read_python_version
+        run: echo "PYTHON_VERSION=$(cat .python-version)" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+
+      - name: Install Ruff
+        run: |
+          pip install ruff
+
+      - name: Run Ruff
+        run: |
+          ruff check
