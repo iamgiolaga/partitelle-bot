@@ -13,7 +13,7 @@ def start(update: Update, context: CallbackContext):
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         parse_mode="markdown",
-        text="Ciao bestie 😎, chi c'è per il prossimo calcetto? \n"
+        text="Ciao bestie! Chi c'è per il prossimo calcetto? 😎\n"
         "\n"
         "- se sei in forse scrivi _proponimi_, \n"
         "- se vuoi proporre qualcuno scrivi _proponi <nome>_, \n"
