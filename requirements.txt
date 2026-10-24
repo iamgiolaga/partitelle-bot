@@ -14,7 +14,7 @@ psycopg-binary==3.3.6 ; implementation_name != 'pypy'
     # via psycopg
 psycopg-pool==3.3.3
     # via partitelle-bot
-python-dateutil==2.7.0
+python-dateutil==2.9.0.post0
     # via partitelle-bot
 python-telegram-bot==13.11
     # via partitelle-bot
