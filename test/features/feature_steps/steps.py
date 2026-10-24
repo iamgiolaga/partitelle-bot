@@ -102,13 +102,6 @@ def _had_sent_in(world, who, text, title):
     world.forget_calls()
 
 
-@given("the summary was already posted")
-def _summary_posted(world):
-    """Real traffic: /participants posts (and tracks) the summary message; it is not part of the scenario."""
-    world.send(next(iter(world.users)), "/participants")
-    world.forget_calls()
-
-
 def _update_match(world, column, value):
     """Direct setup of a persisted column of this chat's match (Given steps only)."""
     with world.db.conn.cursor() as cur:
@@ -390,3 +383,24 @@ def _other_match_has_no_players(world, title):
     match = world.db.fetch_match(world.chats[title].id)
     assert match is not None, f"There is no match for chat {title!r}."
     assert match["players"] is None, f"Unexpected players: {match['players']}"
+
+
+# ---- Then: how the job addresses the chat -------------------------------------------------------------
+# The job sends with `chat_id = job.name`, i.e. the chat id as a STRING, while handlers use the integer id.
+# Telegram accepts both, so the generic steps compare the id regardless of its type; this step documents
+# the actual type used by the job.
+
+
+@then("the last thing the bot did should address the chat with its id as a string")
+def _addressed_with_string_id(world):
+    call = world.bot.calls[world.consumed - 1]
+    assert isinstance(
+        call.params["chat_id"], str
+    ), f"Expected a string chat_id, got {call.params['chat_id']!r}"
+    assert call.params["chat_id"] == str(world.current_chat.id)
+
+
+@then("the match summary message should be the last message of the bot")
+def _summary_is_last(world):
+    match = world.db.fetch_match(world.current_chat.id)
+    assert match["summary_message_id"] == world.last_bot_message_id()

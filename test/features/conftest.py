@@ -15,7 +15,6 @@ pytest.register_assert_rewrite(
 from pg_harness import Database, prepare_database
 from telegram_world import World
 from feature_steps.steps import *  # noqa: F401,F403  (registers the step definitions)
-from feature_steps.teams_steps import *  # noqa: F401,F403
 from feature_steps.reminder_steps import *  # noqa: F401,F403
 
 

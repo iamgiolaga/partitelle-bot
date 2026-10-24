@@ -20,7 +20,7 @@ def _reminders_of_this_chat(world):
     )
 
 
-# ---- Given -----------------------------------------------------------------------------------------
+# ---- Then: scheduled reminders ----------------------------------------------------------------------
 
 
 @then(parsers.parse('a payment reminder should be scheduled for "{when}"'))
@@ -47,24 +47,3 @@ def _no_reminder(world):
     assert (
         _reminders_of_this_chat(world) == []
     ), f"Unexpected reminder(s): {_reminders_of_this_chat(world)}"
-
-
-# ---- Then: how the job addresses the chat -------------------------------------------------------------
-# The job sends with `chat_id = job.name`, i.e. the chat id as a STRING, while handlers use the integer id.
-# Telegram accepts both, so the generic steps compare the id regardless of its type; this step documents
-# the actual type used by the job.
-
-
-@then("the last thing the bot did should address the chat with its id as a string")
-def _addressed_with_string_id(world):
-    call = world.bot.calls[world.consumed - 1]
-    assert isinstance(
-        call.params["chat_id"], str
-    ), f"Expected a string chat_id, got {call.params['chat_id']!r}"
-    assert call.params["chat_id"] == str(world.current_chat.id)
-
-
-@then("the match summary message should be the last message of the bot")
-def _summary_is_last(world):
-    match = world.db.fetch_match(world.current_chat.id)
-    assert match["summary_message_id"] == world.last_bot_message_id()

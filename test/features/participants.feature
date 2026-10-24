@@ -97,7 +97,7 @@ Feature: Managing the participants
   Scenario: aggiungimi edits the existing summary in place and pins it again
     Given a match was started
     And the match target is 4
-    And the summary was already posted
+    And "@mario" had sent "/participants"
     When "@mario" sends "aggiungimi"
     Then the bot should send:
       """
@@ -280,7 +280,7 @@ Feature: Managing the participants
   Scenario: aggiungi <nome> accepts a name with spaces and edits the existing summary
     Given a match was started
     And the match target is 4
-    And the summary was already posted
+    And "@mario" had sent "/participants"
     When "@mario" sends "aggiungi luca rossi"
     Then the bot should send:
       """
@@ -530,7 +530,7 @@ Feature: Managing the participants
     Given a match was started
     And the match target is 4
     And the match has the players "@anna, @mario"
-    And the summary was already posted
+    And "@mario" had sent "/participants"
     When "@mario" sends "proponimi"
     Then the bot should send:
       """
@@ -769,7 +769,7 @@ Feature: Managing the participants
     Given a match was started
     And the match target is 4
     And the match has the players "@anna, @mario (maybe), luca"
-    And the summary was already posted
+    And "@mario" had sent "/participants"
     When "@mario" sends "toglimi"
     Then the bot should send:
       """
@@ -1153,7 +1153,7 @@ Feature: Managing the participants
     Given a match was started
     And the match target is 2
     And the match has the players "anna"
-    And the summary was already posted
+    And "@mario" had sent "/participants"
     When "@mario" sends "aggiungi bea"
     Then the bot should send:
       """

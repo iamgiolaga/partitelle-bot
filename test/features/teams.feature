@@ -60,7 +60,7 @@ Feature: Teams
 
   Scenario: /teams with an empty list asks to reach the target
     Given a match was started
-    And "@mario" set the target to 4
+    And the match target is 4
     When "@mario" sends "/teams"
     Then the bot should send:
       """
@@ -73,7 +73,7 @@ Feature: Teams
 
   Scenario: /teams with an incomplete list asks to reach the target
     Given a match was started
-    And "@mario" added the players "ale, bea, carlo"
+    And the match has the players "ale, bea, carlo"
     When "@mario" sends "/teams"
     Then the bot should send:
       """
@@ -87,8 +87,8 @@ Feature: Teams
 
   Scenario: /teams does not count the maybe-present people as participants
     Given a match was started
-    And "@mario" set the target to 4
-    And "@mario" added the players "ale, bea, carlo"
+    And the match target is 4
+    And the match has the players "ale, bea, carlo"
     And "@mario" had sent "proponi dino"
     When "@mario" sends "/teams"
     Then the bot should send:
@@ -102,8 +102,8 @@ Feature: Teams
 
   Scenario: /teams with an odd target refuses, even with a complete list
     Given a match was started
-    And "@mario" added the players "ale, bea, carlo"
-    And "@mario" set the target to 3
+    And the match has the players "ale, bea, carlo"
+    And the match target is 3
     When "@mario" sends "/teams"
     Then the bot should send:
       """
@@ -118,7 +118,7 @@ Feature: Teams
 
   Scenario: /teams with an odd target and an incomplete list refuses for the odd target first
     Given a match was started
-    And "@mario" set the target to 5
+    And the match target is 5
     When "@mario" sends "/teams"
     Then the bot should send:
       """
@@ -132,8 +132,8 @@ Feature: Teams
   Scenario: /teams with a complete even list draws and saves the two teams
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
     When "@mario" sends "/teams"
     Then the bot should send the text "teams ale and dino against bea and carlo"
     And the bot should send nothing else
@@ -145,9 +145,9 @@ Feature: Teams
   Scenario: /teams again shows the same teams instead of drawing new ones
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/teams"
     And the team draw is seeded with 7
     When "@mario" sends "/teams"
     Then the bot should send the text "teams ale and dino against bea and carlo"
@@ -159,9 +159,10 @@ Feature: Teams
   Scenario: Removing a player from the list cancels the teams
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/participants"
+    And "@mario" had sent "/teams"
     When "@mario" sends "togli ale"
     Then the bot should send:
       """
@@ -194,9 +195,10 @@ Feature: Teams
   Scenario: Putting a player in maybe cancels the teams
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/participants"
+    And "@mario" had sent "/teams"
     When "@mario" sends "proponi dino"
     Then the bot should send:
       """
@@ -224,9 +226,9 @@ Feature: Teams
   Scenario: A full list does not accept more players and keeps the teams
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/teams"
     When "@mario" sends "aggiungi eva"
     Then the bot should send:
       """
@@ -240,9 +242,10 @@ Feature: Teams
   Scenario: Changing the target cancels the teams
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/participants"
+    And "@mario" had sent "/teams"
     When "@mario" sends "/setnumber 6"
     Then the bot should send the text "teams cancelled"
     And the bot should edit the summary to:
@@ -278,9 +281,10 @@ Feature: Teams
   Scenario: Setting the same target again cancels the teams and invites to draw them again
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/participants"
+    And "@mario" had sent "/teams"
     When "@mario" sends "/setnumber 4"
     Then the bot should send the text "teams cancelled"
     And the bot should edit the summary to:
@@ -304,9 +308,9 @@ Feature: Teams
   Scenario: After the teams are cancelled a new draw is possible once the list is complete again
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/teams"
     And "@mario" had sent "togli ale"
     And "@mario" had sent "aggiungi ale"
     And the team draw is seeded with 7
@@ -331,9 +335,9 @@ Feature: Teams
   Scenario: scambia moves two players of different teams to each other's team
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/teams"
     When "@mario" sends "scambia ale con bea"
     Then the bot should send:
       """
@@ -360,9 +364,9 @@ Feature: Teams
   Scenario: scambia works in both directions (white player first)
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/teams"
     When "@mario" sends "scambia carlo con bea"
     Then the bot should send:
       """
@@ -382,9 +386,9 @@ Feature: Teams
   Scenario: scambia between two players of the same team is refused and changes nothing
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/teams"
     When "@mario" sends "scambia ale con dino"
     Then the bot should send:
       """
@@ -398,9 +402,9 @@ Feature: Teams
   Scenario Outline: scambia with a name that is not in the list is refused
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
-    And "@mario" asked for the teams
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/teams"
     When "@mario" sends "<message>"
     Then the bot should send:
       """
@@ -418,8 +422,8 @@ Feature: Teams
 
   Scenario: scambia before the teams exist explains that the teams are needed
     Given a match was started
-    And "@mario" added the players "ale, bea, carlo, dino"
-    And "@mario" set the target to 4
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
     When "@mario" sends "scambia ale con bea"
     Then the bot should send:
       """
@@ -443,11 +447,11 @@ Feature: Teams
     # Expected: only the confirmed players (ale, bea) are drawn.
     Given the team draw is seeded with 42
     And a match was started
-    And "@mario" set the target to 4
-    And "@mario" added the players "ale, bea"
+    And the match target is 4
+    And the match has the players "ale, bea"
     And "@mario" had sent "proponi carlo"
     And "@mario" had sent "proponi dino"
-    And "@mario" set the target to 2
+    And the match target is 2
     When "@mario" sends "/teams"
     Then the bot should send:
       """
