@@ -209,7 +209,7 @@ Feature: Managing the participants
 
   # ---- users without username ---------------------------------------------------------------------
 
-  @known-bug
+  @known-bug @issue-88
   Scenario Outline: <message> from a user without username crashes the handler
     Given a match was started
     And a user named "Luca" without username
@@ -365,7 +365,7 @@ Feature: Managing the participants
       | field   | value     |
       | players | gian_luca |
 
-  @known-bug
+  @known-bug @issue-78
   Scenario: aggiungi a,b,c adds the whole text as one name, so the same list can be added twice
     Given a match was started
     And the match target is 4
@@ -406,10 +406,10 @@ Feature: Managing the participants
     And the bot should send the text "kickoff"
     And the bot should send nothing else
     And the match should have:
-      | field   | value         |
+      | field   | value            |
       | players | a, b, c, a, b, c |
 
-  @known-bug
+  @known-bug @issue-93
   Scenario: aggiungi without a name adds an empty name and then every addition crashes
     Given a match was started
     And the match target is 4
@@ -433,7 +433,7 @@ Feature: Managing the participants
     Then the bot should fail with "InvalidTextRepresentation"
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-94
   Scenario: A chatty message starting with aggiungimi adds the following words as a name
     Given a match was started
     And the match target is 4
@@ -717,7 +717,7 @@ Feature: Managing the participants
     And the bot should pin the last message
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-93
   Scenario: proponi without a name proposes an empty name
     Given a match was started
     And the match target is 4
@@ -935,7 +935,7 @@ Feature: Managing the participants
       | field | value  |
       | teams | (none) |
 
-  @known-bug
+  @known-bug @issue-93
   Scenario: togli without a name asks whom to remove with a broken sentence
     Given a match was started
     And the match has the players "anna"
@@ -943,7 +943,7 @@ Feature: Managing the participants
     Then the bot should send the quoted text " non è nella lista. Chi dovrei togliere?"
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-94
   Scenario: A chatty message starting with toglimi is read as togli <nome>
     Given a match was started
     And the match has the players "anna"
@@ -1074,7 +1074,7 @@ Feature: Managing the participants
       """
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-95
   Scenario: scambia with a player who is in the list but not in the teams drops the other player
     Given a match was started
     And the match target is 6
@@ -1090,7 +1090,7 @@ Feature: Managing the participants
       | field | value                               |
       | teams | black: enzo, bea \| white: carlo, dino |
 
-  @known-bug
+  @known-bug @issue-95
   Scenario Outline: scambia without " con" crashes the handler
     Given a match was started
     And the bot is expected to crash on the next message
@@ -1264,7 +1264,7 @@ Feature: Managing the participants
       | field   | value            |
       | players | anna, bea (maybe) |
 
-  @known-bug
+  @known-bug @issue-96
   Scenario: A target of 1 never kicks off the match
     Given a match was started
     And the match target is 1

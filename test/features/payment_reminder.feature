@@ -368,7 +368,7 @@ Feature: Payment reminder
     And the match summary message should be the last message of the bot
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-89
   Scenario: Reaching the target after /setday schedules a second reminder
     Given a match was started
     And "@mario" had sent "/setnumber 2"
@@ -395,7 +395,7 @@ Feature: Payment reminder
     And 2 payment reminders should be scheduled for "2026-10-28 22:00"
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-89
   Scenario: Reaching the target after /setday makes the reminder fire twice
     Given a match was started
     And "@mario" had sent "/setnumber 2"
@@ -478,7 +478,7 @@ Feature: Payment reminder
     And a payment reminder should be scheduled for "2026-10-28 22:00"
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-90
   Scenario: /stop does not cancel the reminder: it still fires for the deleted match
     Given a match was started
     And "@mario" had sent "/setday 28/10/2026"
@@ -495,7 +495,7 @@ Feature: Payment reminder
     And there should be no match for this chat
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-91
   Scenario: After the reminder fired, the next summary update edits the pinned reminder message
     Given a match was started
     And "@mario" had sent "/setday 28/10/2026"

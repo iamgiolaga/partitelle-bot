@@ -386,7 +386,7 @@ Feature: Match settings
       """
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-89
   Scenario: Reaching the target after /setday schedules a second payment reminder, so it is sent twice
     Given a match was started
     And "@mario" had sent "/setday 25/10/2026"
@@ -695,7 +695,7 @@ Feature: Match settings
     When the scheduled jobs run
     Then the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-91
   Scenario: The payment reminder replaces the summary as the message edited by later changes
     Given a match was started
     And "@mario" had sent "/setday 25/10/2026"
@@ -787,7 +787,7 @@ Feature: Match settings
     And the bot should pin the last message
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-92
   Scenario Outline: /settime does not validate the time: "<text>" is stored as it is
     Given a match was started
     And "@mario" had sent "/setday 25/10/2026"
@@ -1101,7 +1101,7 @@ Feature: Match settings
 
   # ---- users without a username ----------------------------------------------------------------
 
-  @known-bug
+  @known-bug @issue-88
   Scenario: /setnumber from a user without username claims the number is missing
     Given a match was started
     And a user named "Luca" without username
@@ -1115,7 +1115,7 @@ Feature: Match settings
       | field  | value |
       | target | 10    |
 
-  @known-bug
+  @known-bug @issue-88
   Scenario Outline: <command> from a user without username saves the change and then crashes without answering
     Given a match was started
     And a user named "Luca" without username
