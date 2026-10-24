@@ -16,18 +16,18 @@ Giovanni
 
 ## Init the environment
 
-To init the environment, run the following commands:
+This project uses [uv](https://docs.astral.sh/uv/) to manage Python and dependencies. After [installing uv](https://docs.astral.sh/uv/getting-started/installation/), run:
 
 ```bash
-pyenv install
-pyenv local
-pip install -r requirements.txt
+uv sync
 ```
 
-Make sure that the python version is the one specified in the `.python-version` file:
+This installs the python version specified in the `.python-version` file and all the dependencies (including the dev ones) in a local `.venv`.
+
+If you change the dependencies in `pyproject.toml`, run `uv lock` and regenerate `requirements.txt` (used by Render):
 
 ```bash
-python --version
+uv export --no-dev --no-hashes --format requirements-txt -o requirements.txt
 ```
 
 Create a `.env` file and fill it with the correct values. You can use the `default.env` file as a template.
@@ -37,7 +37,7 @@ Create a `.env` file and fill it with the correct values. You can use the `defau
 To run the tests, run the following command:
 
 ```bash
-python -m unittest discover test
+uv run pytest
 ```
 
 ## Run the bot
@@ -45,7 +45,7 @@ python -m unittest discover test
 To run the bot, run the following command:
 
 ```bash
-python main.py
+uv run python main.py
 ```
 
 If you're running the bot locally (ENV = local), the bot will start polling messages from Telegram.
