@@ -121,6 +121,7 @@ class World:
     _message_ids: dict = field(default_factory=dict)
     _update_id: int = 0
     clock: object = None
+    texts: dict = field(default_factory=dict)  # named texts of the scenario (see steps.py)
 
     def __post_init__(self):
         from handlers import (

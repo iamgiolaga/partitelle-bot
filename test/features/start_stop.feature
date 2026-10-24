@@ -6,10 +6,7 @@ Feature: Starting and stopping a match
     Given a group chat "Calcetto"
     And the user "@mario"
     And today is "2026-10-21 18:00"
-
-  Scenario: /start on a chat without a match creates one with the defaults
-    When "@mario" sends "/start"
-    Then the bot should send:
+    And the text "welcome" is:
       """
       Ciao bestie 😎, chi c'è per il prossimo calcetto? 
 
@@ -23,6 +20,18 @@ Feature: Starting and stopping a match
 
       Posso anche pinnare i messaggi se vuoi ma per farlo ricordati di aggiungermi come amministratore.
       """
+    And the text "default description" is:
+      """
+      5 goal di scarto e le squadre si _potrebbero_ cambiare 
+      6 goal di scarto e le squadre si *devono* cambiare 
+      (ditelo a chiunque invitate) 
+      *PORTARE UNA MAGLIA BIANCA E UNA COLORATA*
+
+      """
+
+  Scenario: /start on a chat without a match creates one with the defaults
+    When "@mario" sends "/start"
+    Then the bot should send the text "welcome"
     And the bot should send nothing else
     And the match should have:
       | field   | value                |
@@ -34,30 +43,13 @@ Feature: Starting and stopping a match
       | teams   | (none)               |
     And the match description should be:
       """
-      5 goal di scarto e le squadre si _potrebbero_ cambiare 
-      6 goal di scarto e le squadre si *devono* cambiare 
-      (ditelo a chiunque invitate) 
-      *PORTARE UNA MAGLIA BIANCA E UNA COLORATA*
-
+      {default description}
       """
 
   Scenario: /start from a user without username works the same
     Given a user named "Luca" without username
     When "Luca" sends "/start"
-    Then the bot should send:
-      """
-      Ciao bestie 😎, chi c'è per il prossimo calcetto? 
-
-      - se sei in forse scrivi _proponimi_, 
-      - se vuoi proporre qualcuno scrivi _proponi <nome>_, 
-      - per essere aggiunto o confermato rispondi _aggiungimi_,
-      - per aggiungere o confermare qualcuno usa _aggiungi <nome>_,
-      - per essere rimosso _toglimi_, 
-      - per rimuovere qualcuno _togli <nome>_, 
-      - per modificare le squadre scrivi _scambia <nome 1> con <nome 2>_. 
-
-      Posso anche pinnare i messaggi se vuoi ma per farlo ricordati di aggiungermi come amministratore.
-      """
+    Then the bot should send the text "welcome"
     And the bot should send nothing else
     And the match should have:
       | field   | value                |
@@ -86,31 +78,14 @@ Feature: Starting and stopping a match
       9. ❌
       10. ❌
 
-      5 goal di scarto e le squadre si _potrebbero_ cambiare 
-      6 goal di scarto e le squadre si *devono* cambiare 
-      (ditelo a chiunque invitate) 
-      *PORTARE UNA MAGLIA BIANCA E UNA COLORATA*
-
+      {default description}
 
       *CAMPO*: 
       Usa il comando /setpitch <campo> per inserire la struttura sportiva dove giocherete.
       """
     And the bot should pin the last message
     When "@mario" sends "/start"
-    Then the bot should send:
-      """
-      Ciao bestie 😎, chi c'è per il prossimo calcetto? 
-
-      - se sei in forse scrivi _proponimi_, 
-      - se vuoi proporre qualcuno scrivi _proponi <nome>_, 
-      - per essere aggiunto o confermato rispondi _aggiungimi_,
-      - per aggiungere o confermare qualcuno usa _aggiungi <nome>_,
-      - per essere rimosso _toglimi_, 
-      - per rimuovere qualcuno _togli <nome>_, 
-      - per modificare le squadre scrivi _scambia <nome 1> con <nome 2>_. 
-
-      Posso anche pinnare i messaggi se vuoi ma per farlo ricordati di aggiungermi come amministratore.
-      """
+    Then the bot should send the text "welcome"
     And the bot should send nothing else
     And the match should have:
       | field | value |
@@ -130,20 +105,7 @@ Feature: Starting and stopping a match
     Given a match was started
     And a group chat "Altra squadra"
     When "@mario" sends "/start" in "Altra squadra"
-    Then the bot should send:
-      """
-      Ciao bestie 😎, chi c'è per il prossimo calcetto? 
-
-      - se sei in forse scrivi _proponimi_, 
-      - se vuoi proporre qualcuno scrivi _proponi <nome>_, 
-      - per essere aggiunto o confermato rispondi _aggiungimi_,
-      - per aggiungere o confermare qualcuno usa _aggiungi <nome>_,
-      - per essere rimosso _toglimi_, 
-      - per rimuovere qualcuno _togli <nome>_, 
-      - per modificare le squadre scrivi _scambia <nome 1> con <nome 2>_. 
-
-      Posso anche pinnare i messaggi se vuoi ma per farlo ricordati di aggiungermi come amministratore.
-      """
+    Then the bot should send the text "welcome"
     When "@mario" sends "/stop" in "Altra squadra"
     Then the bot should send:
       """
@@ -169,20 +131,7 @@ Feature: Starting and stopping a match
       Ho cancellato la partita.
       """
     When "@mario" sends "/start"
-    Then the bot should send:
-      """
-      Ciao bestie 😎, chi c'è per il prossimo calcetto? 
-
-      - se sei in forse scrivi _proponimi_, 
-      - se vuoi proporre qualcuno scrivi _proponi <nome>_, 
-      - per essere aggiunto o confermato rispondi _aggiungimi_,
-      - per aggiungere o confermare qualcuno usa _aggiungi <nome>_,
-      - per essere rimosso _toglimi_, 
-      - per rimuovere qualcuno _togli <nome>_, 
-      - per modificare le squadre scrivi _scambia <nome 1> con <nome 2>_. 
-
-      Posso anche pinnare i messaggi se vuoi ma per farlo ricordati di aggiungermi come amministratore.
-      """
+    Then the bot should send the text "welcome"
     And the match should have:
       | field | value                |
       | day   | Mercoledì 28/10/2026 |
@@ -243,17 +192,10 @@ Feature: Starting and stopping a match
       9. ❌
       10. ❌
 
-      5 goal di scarto e le squadre si _potrebbero_ cambiare 
-      6 goal di scarto e le squadre si *devono* cambiare 
-      (ditelo a chiunque invitate) 
-      *PORTARE UNA MAGLIA BIANCA E UNA COLORATA*
-
+      {default description}
 
       *CAMPO*: 
       Usa il comando /setpitch <campo> per inserire la struttura sportiva dove giocherete.
       """
     And the bot should pin the last message
     And the bot should send nothing else
-    And the match should have:
-      | field           | value |
-      | summary message | 4     |

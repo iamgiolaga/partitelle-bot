@@ -1,14 +1,11 @@
 """Real-Postgres support for the feature tests (harness only: the .feature files never see any of this)."""
 
 import os
-from pathlib import Path
 
 import psycopg2
 import pytest
 from psycopg2 import sql
 
-SCHEMA_FILE = Path(__file__).resolve().parents[2] / "db" / "schema.sql"
-TABLES = ("all_players", "all_players_test")
 
 
 def _params(database):
@@ -21,14 +18,15 @@ def _params(database):
     }
 
 
-def _connect(database):
-    conn = psycopg2.connect(connect_timeout=5, **_params(database))
+def _connect(database, schema=None):
+    options = {"options": f"-c search_path={schema}"} if schema else {}
+    conn = psycopg2.connect(connect_timeout=5, **_params(database), **options)
     conn.autocommit = True
     return conn
 
 
 def prepare_database():
-    """Create the dedicated test database if missing and (re)load db/schema.sql into it."""
+    """Create the test database if missing, then rebuild the bot schema through the real migrations."""
     name = os.environ["PB_DB_NAME"]
     if not name.endswith("_test"):
         pytest.fail(
@@ -51,27 +49,29 @@ def prepare_database():
         cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
     admin.close()
 
+    schema = os.environ["PB_DB_SCHEMA"]
     conn = _connect(name)
-    cur = conn.cursor()
-    cur.execute("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;")
-    cur.execute(SCHEMA_FILE.read_text())
+    conn.cursor().execute(
+        sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(sql.Identifier(schema))
+    )
     conn.close()
+
+    # imported only now: conf.conf reads the environment at import time (set by test/conftest.py)
+    from db.migrate import migrate
+
+    migrate()
 
 
 class Database:
     """Independent connection used by the harness to reset and inspect the persisted state."""
 
     def __init__(self):
-        self.conn = _connect(os.environ["PB_DB_NAME"])
+        self.conn = _connect(os.environ["PB_DB_NAME"], os.environ["PB_DB_SCHEMA"])
         self.table = os.environ["PB_DB_TABLE_NAME"]
 
     def truncate(self):
         with self.conn.cursor() as cur:
-            cur.execute(
-                sql.SQL("TRUNCATE {}").format(
-                    sql.SQL(", ").join(sql.Identifier(t) for t in TABLES)
-                )
-            )
+            cur.execute(sql.SQL("TRUNCATE {}").format(sql.Identifier(self.table)))
 
     def fetch_match(self, chat_id):
         """The persisted match of a chat as a dict, or None when there is none."""

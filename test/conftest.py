@@ -18,7 +18,8 @@ TEST_ENV_DEFAULTS = {
     "PB_DB_USER": "partitelle",
     "PB_DB_PASSWORD": "partitelle",
     "PB_DB_NAME": "partitelle_test",
-    "PB_DB_TABLE_NAME": "all_players_test",
+    "PB_DB_SCHEMA": "staging",  # mirrors prod: the schema is built by the real migrations
+    "PB_DB_TABLE_NAME": "all_players",
 }
 
 for _key, _value in TEST_ENV_DEFAULTS.items():

@@ -1,12 +1,43 @@
 """Step definitions. Wording is behaviour-level; everything PTB/DB specific lives behind `world`."""
 
+import re
+
 from pytest_bdd import given, parsers, then, when
 
 HEADER = ["field", "value"]
 NONE = "(none)"
 MAYBE_MARKER = "%is%maybe%present"  # how a "maybe" player is persisted
 
+# ---- Named texts ------------------------------------------------------------------------------------
+# `Given the text "welcome" is:` defines a text (in a Background: for the whole file); any docstring
+# used by a Then-step can then contain `{welcome}`. Pure string substitution: the comparison stays exact.
+
+PLACEHOLDER_RE = re.compile(r"\{([a-z0-9][a-z0-9 _-]*)\}")
+
+
+def interpolate(world, text):
+    """Replaces every `{name}` with the named text; other braces stay literal."""
+
+    def _replace(found):
+        name = found.group(1)
+        if name not in world.texts:
+            defined = ", ".join(sorted(world.texts)) or "(none)"
+            raise AssertionError(
+                f"Undefined text placeholder {{{name}}}. Defined texts: {defined}. "
+                'Define it with: Given the text "<name>" is:'
+            )
+        return world.texts[name]
+
+    return PLACEHOLDER_RE.sub(_replace, text)
+
+
 # ---- Given -----------------------------------------------------------------------------------------
+
+
+@given(parsers.parse('the text "{name}" is:'))
+def _define_text(world, name, docstring):
+    """Names a text for this scenario; it may use the texts defined before it."""
+    world.texts[name] = interpolate(world, docstring)
 
 
 @given(parsers.parse('a group chat "{title}"'))
@@ -84,14 +115,24 @@ def _assert_message(call, text, parse_mode, keys):
 @then("the bot should send:")
 def _bot_sends(world, docstring):
     """Next outgoing message: Markdown text, exactly this."""
+    _send_markdown(world, interpolate(world, docstring))
+
+
+@then(parsers.parse('the bot should send the text "{name}"'))
+def _bot_sends_named(world, name):
+    """Same as `the bot should send:` with a text defined by `the text "<name>" is:`."""
+    _send_markdown(world, interpolate(world, "{" + name + "}"))
+
+
+def _send_markdown(world, text):
     call = _next_call_as(world, "send_message")
-    _assert_message(call, docstring, "markdown", {"chat_id", "parse_mode", "text"})
+    _assert_message(call, text, "markdown", {"chat_id", "parse_mode", "text"})
 
 
 @then("the bot should send plain text:")
 def _bot_sends_plain(world, docstring):
     call = _next_call_as(world, "send_message")
-    _assert_message(call, docstring, None, {"chat_id", "text"})
+    _assert_message(call, interpolate(world, docstring), None, {"chat_id", "text"})
 
 
 @then("the bot should edit the summary to:")
@@ -105,7 +146,10 @@ def _bot_edits_summary(world, docstring):
         f"but the summary is message {match['summary_message_id']}"
     )
     _assert_message(
-        call, docstring, "markdown", {"chat_id", "message_id", "parse_mode", "text"}
+        call,
+        interpolate(world, docstring),
+        "markdown",
+        {"chat_id", "message_id", "parse_mode", "text"},
     )
 
 
@@ -181,7 +225,7 @@ def _match_has(world, datatable):
 
 @then(parsers.re(r"the match (?P<field>description|pitch) should be:$"))
 def _match_text_field(world, field, docstring):
-    assert _render(field, _match_of_this_chat(world)) == docstring
+    assert _render(field, _match_of_this_chat(world)) == interpolate(world, docstring)
 
 
 @then("there should be no match for this chat")
