@@ -47,6 +47,7 @@ Rules:
 - never edit a migration that has already been applied/merged: add a new one
 - staging and prod migrate at their own deploys, so a migration must be backward compatible with the code currently deployed in the other environment (e.g. add nullable columns, do not drop or rename columns in the same release)
 - `PB_DB_SCHEMA` unset or `public` is the legacy layout: migrations are skipped
+- the Render database setup, the one-time move to schemas and the monthly recreation are described in [docs/render-db-recreation.md](docs/render-db-recreation.md)
 
 On Render, the start command of both services must be:
 

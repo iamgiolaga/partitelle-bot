@@ -1,7 +1,7 @@
 -- depends:
 -- Baseline: the table as it was created by hand on Render.
 -- Unqualified name: it lands in the schema of the connection's search_path (PB_DB_SCHEMA).
--- IF NOT EXISTS: on the environments moved by db/oneoff/move_tables_to_schemas.sql the table already exists.
+-- IF NOT EXISTS: keeps the migration idempotent if the table already exists in the schema.
 -- No rollback on purpose: dropping the table would delete production data.
 CREATE TABLE IF NOT EXISTS all_players (
     chat_id int8 NOT NULL,
