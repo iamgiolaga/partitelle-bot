@@ -18,8 +18,10 @@ Env vars live in the Render environment groups `PB_ENV_VARS` (service `partitell
 
 Goal: move from the legacy tables `public.all_players` (prod) and `public.all_players_test` (staging) in the `postgres` database to a user-owned database with the `staging` and `prod` schemas. `CREATE SCHEMA` is not permitted in `postgres`, but the current instance already contains a user-owned database with a generated name that the bots do not use, so this can be done now without waiting for the monthly wipe.
 
+Prerequisite: prod must run code that reads `PB_DB_SCHEMA`, and prod is only deployed on releases. If this change shipped as a `chore:` (no release), force one by adding a `Release-As: <version>` line to the squash commit message, then merge the release PR before step 4.
+
 1. **Start command.** On Render set the Start Command of both services to `python -m db.migrate && python main.py`. This is safe immediately: with `PB_DB_SCHEMA` unset, migrations are skipped.
-2. **Staging.** In `PB_TEST_ENV_VARS` set `PB_DB_NAME=<generated db name>` (Render dashboard, database, Connections), `PB_DB_SCHEMA=staging`, `PB_DB_TABLE_NAME=all_players`. Run Manual Deploy: it creates `staging.all_players` (empty, test data is not migrated). Smoke test `/start` on the test bot.
+2. **Staging.** In `PB_TEST_ENV_VARS` set `PB_DB_NAME=<generated db name>` (Render dashboard, database, Connections), `PB_DB_SCHEMA=staging`, `PB_DB_TABLE_NAME=all_players`. Save with "Save, rebuild, and deploy": it creates `staging.all_players` (empty, test data is not migrated). Smoke test `/start` on the test bot.
 3. **Prod, prepare.** From a laptop, run the migrations against the new database using the external connection values:
 
    ```bash
@@ -36,8 +38,8 @@ Goal: move from the legacy tables `public.all_players` (prod) and `public.all_pl
    ```
 
    Verify with `SELECT count(*)` on `public.all_players` (legacy) and `prod.all_players` (new): the counts must match.
-4. **Prod, switch.** In `PB_ENV_VARS` set `PB_DB_NAME=<generated db name>`, `PB_DB_SCHEMA=prod`, keep `PB_DB_TABLE_NAME=all_players`. Run Manual Deploy and smoke test. Rows written to the old table between steps 3 and 4 are lost, so do the two steps back to back (or `TRUNCATE prod.all_players` and re-copy right before the switch).
-5. **Stats tracker.** Update `PB_DB_NAME` and add `PB_DB_SCHEMA=prod` in its secrets. It needs the search_path code change, tracked separately.
+4. **Prod, switch.** In `PB_ENV_VARS` set `PB_DB_NAME=<generated db name>`, `PB_DB_SCHEMA=prod`, keep `PB_DB_TABLE_NAME=all_players`. Save with "Save, rebuild, and deploy" (redeploys the current release) and smoke test. Rows written to the old table between steps 3 and 4 are lost, so do the two steps back to back (or `TRUNCATE prod.all_players` and re-copy right before the switch).
+5. **Stats tracker.** Its `PB_DB_SCHEMA` support must be merged before step 4. Then update `PB_DB_NAME` and add `PB_DB_SCHEMA=prod` in its secrets.
 6. **Cleanup (optional, later).** Drop the legacy tables in `postgres`.`public`.
 
 ## B. Monthly recreation
