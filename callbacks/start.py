@@ -1,16 +1,16 @@
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 from db.queries import find_all_info_by_chat_id, create_chat_id_row
 
 
-def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     row = find_all_info_by_chat_id(chat_id)
 
     if row is None:
         create_chat_id_row(chat_id)
 
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         parse_mode="markdown",
         text="Ciao bestie 😎, chi c'è per il prossimo calcetto? \n"

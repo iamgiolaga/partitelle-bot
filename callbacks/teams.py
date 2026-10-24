@@ -1,16 +1,16 @@
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 from db.queries import find_all_info_by_chat_id, update_teams_on_db
 from utils.utils import exclude_maybe, format_teams, generate_teams
 import json
 
 
-def teams(update: Update, context: CallbackContext):
+async def teams(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     row = find_all_info_by_chat_id(chat_id)
 
     if row is None:
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=update.effective_chat.id,
             parse_mode="markdown",
             text="Prima di iniziare con le danze, avvia una partita, per farlo usa /start",
@@ -33,6 +33,6 @@ def teams(update: Update, context: CallbackContext):
             update_teams_on_db(chat_id, generated_teams)
             answer = format_teams(generated_teams)
 
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id, parse_mode="markdown", text=answer
     )

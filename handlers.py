@@ -1,4 +1,4 @@
-from telegram.ext import CommandHandler, MessageHandler, Filters
+from telegram.ext import CommandHandler, MessageHandler, filters
 from callbacks.start import start
 from callbacks.stop import stop
 from callbacks.set_number import set_number
@@ -13,40 +13,40 @@ from callbacks.echo import echo
 from callbacks.bamboo import bamboo
 
 
-def register_handlers(dispatcher):
-    """Wire every command/message handler to the dispatcher (shared by main.py and the feature tests)."""
+def register_handlers(application):
+    """Wire every command/message handler to the application (shared by main.py and the feature tests)."""
     start_handler = CommandHandler("start", start)
-    dispatcher.add_handler(start_handler)
+    application.add_handler(start_handler)
 
     set_number_handler = CommandHandler("setnumber", set_number)
-    dispatcher.add_handler(set_number_handler)
+    application.add_handler(set_number_handler)
 
     set_day_handler = CommandHandler("setday", set_day)
-    dispatcher.add_handler(set_day_handler)
+    application.add_handler(set_day_handler)
 
     set_time_handler = CommandHandler("settime", set_time)
-    dispatcher.add_handler(set_time_handler)
+    application.add_handler(set_time_handler)
 
     set_description_handler = CommandHandler("setdescription", set_description)
-    dispatcher.add_handler(set_description_handler)
+    application.add_handler(set_description_handler)
 
     set_pitch_handler = CommandHandler("setpitch", set_pitch)
-    dispatcher.add_handler(set_pitch_handler)
+    application.add_handler(set_pitch_handler)
 
     participants_handler = CommandHandler("participants", participants)
-    dispatcher.add_handler(participants_handler)
+    application.add_handler(participants_handler)
 
     teams_handler = CommandHandler("teams", teams)
-    dispatcher.add_handler(teams_handler)
+    application.add_handler(teams_handler)
 
     stop_handler = CommandHandler("stop", stop)
-    dispatcher.add_handler(stop_handler)
+    application.add_handler(stop_handler)
 
     help_handler = CommandHandler("help", help_func)
-    dispatcher.add_handler(help_handler)
+    application.add_handler(help_handler)
 
-    echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
-    dispatcher.add_handler(echo_handler)
+    echo_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, echo)
+    application.add_handler(echo_handler)
 
     bamboo_handler = CommandHandler("bamboo", bamboo)
-    dispatcher.add_handler(bamboo_handler)
+    application.add_handler(bamboo_handler)

@@ -1,6 +1,6 @@
 from telegram import Update
-from telegram.ext import CallbackContext
-from telegram.utils.helpers import escape_markdown
+from telegram.ext import ContextTypes
+from telegram.helpers import escape_markdown
 from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
 from db.queries import (
@@ -12,12 +12,12 @@ from db.queries import (
 from utils.utils import flatten_args, get_sender_name, format_summary
 
 
-def set_description(update: Update, context: CallbackContext):
+async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     row = find_row_by_chat_id(chat_id)
 
     if row is None:
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=update.effective_chat.id,
             parse_mode="markdown",
             text="Prima di iniziare con le danze, avvia una partita, per farlo usa /start",
@@ -25,7 +25,7 @@ def set_description(update: Update, context: CallbackContext):
         return
 
     if len(context.args) == 0:
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=update.effective_chat.id,
             parse_mode="markdown",
             text="Non hai inserito la descrizione: scrivi /setdescription <descrizione>",
@@ -35,7 +35,7 @@ def set_description(update: Update, context: CallbackContext):
     description = flatten_args(context.args) + "\n"
     update_description_on_db(chat_id, description)
     sender = "@" + get_sender_name(update)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         parse_mode="markdown",
         text=escape_markdown(f"Ok, {sender}! Ho aggiornato la descrizione!"),
@@ -49,7 +49,7 @@ def set_description(update: Update, context: CallbackContext):
     )
 
     if bot_last_message_id is None:
-        msg = print_new_summary(current_situation, update, context)
+        msg = await print_new_summary(current_situation, update, context)
         update_bot_last_message_id_on_db(chat_id, msg.message_id)
     else:
-        edit_summary(current_situation, bot_last_message_id, update, context)
+        await edit_summary(current_situation, bot_last_message_id, update, context)

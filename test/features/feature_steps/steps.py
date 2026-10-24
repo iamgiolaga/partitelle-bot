@@ -155,7 +155,7 @@ def _match_was_started(world):
 
 @given("the bot is not an administrator of the chat")
 def _bot_not_admin(world):
-    world.bot.can_pin = False
+    world.telegram.can_pin = False
 
 
 # ---- When ------------------------------------------------------------------------------------------
@@ -263,12 +263,12 @@ def _bot_edits_summary(world, docstring):
 def _bot_pins_last(world):
     """Pins the message of the most recent `send_message` already asserted by the scenario."""
     sent_so_far = sum(
-        c.method == "send_message" for c in world.bot.calls[: world.consumed]
+        c.method == "send_message" for c in world.telegram.calls[: world.consumed]
     )
     assert (
         sent_so_far
     ), "The scenario asserted no message sent by the bot before the pin."
-    expected = world.bot.sent_ids[sent_so_far - 1]
+    expected = world.telegram.sent_ids[sent_so_far - 1]
     call = _next_call_as(world, "pin_chat_message")
     assert set(call.params) == {"chat_id", "message_id"}
     assert call.params["message_id"] == expected, (
@@ -393,7 +393,7 @@ def _other_match_has_no_players(world, title):
 
 @then("the last thing the bot did should address the chat with its id as a string")
 def _addressed_with_string_id(world):
-    call = world.bot.calls[world.consumed - 1]
+    call = world.telegram.calls[world.consumed - 1]
     assert isinstance(
         call.params["chat_id"], str
     ), f"Expected a string chat_id, got {call.params['chat_id']!r}"

@@ -1,8 +1,8 @@
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 
 
-def help_func(update: Update, context: CallbackContext):
+async def help_func(update: Update, context: ContextTypes.DEFAULT_TYPE):
     answer = (
         "Ecco a te la lista completa dei comandi di questo bot: \n"
         "- se sei in forse scrivi _proponimi_, \n"
@@ -27,6 +27,6 @@ def help_func(update: Update, context: CallbackContext):
         "/help - Mostra la lista di comandi disponibili"
     )
 
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id, parse_mode="markdown", text=answer
     )

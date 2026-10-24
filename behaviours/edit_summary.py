@@ -1,18 +1,18 @@
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 
 
-def edit_summary(
-    current_situation, bot_last_message_id, update: Update, context: CallbackContext
+async def edit_summary(
+    current_situation, bot_last_message_id, update: Update, context: ContextTypes.DEFAULT_TYPE
 ):
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         chat_id=update.effective_chat.id,
         message_id=bot_last_message_id,
         parse_mode="markdown",
         text=current_situation,
     )
     try:
-        context.bot.pin_chat_message(
+        await context.bot.pin_chat_message(
             chat_id=update.effective_chat.id, message_id=bot_last_message_id
         )
     except Exception:
