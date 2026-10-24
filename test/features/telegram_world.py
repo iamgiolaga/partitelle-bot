@@ -67,6 +67,12 @@ class FakeTelegram(BaseRequest):
         self.calls = []
         self.sent_ids = []
         self.can_pin = True
+        self.failures = (
+            {}
+        )  # method -> Telegram error descriptions to answer with, once each
+
+    def fail_next(self, method, description):
+        self.failures.setdefault(method, []).append(description)
 
     async def initialize(self):
         pass
@@ -110,6 +116,16 @@ class FakeTelegram(BaseRequest):
         params = dict(request_data.parameters) if request_data else {}
         method = _snake(endpoint)
         self.calls.append(Call(method, params))
+
+        if self.failures.get(method):
+            return self._reply(
+                400,
+                {
+                    "ok": False,
+                    "error_code": 400,
+                    "description": f"Bad Request: {self.failures[method].pop(0)}",
+                },
+            )
 
         if method in ("send_message", "edit_message_text"):
             chat = self.world.chats_by_id[int(params["chat_id"])]

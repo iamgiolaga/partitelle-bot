@@ -3,7 +3,9 @@ from telegram.ext import ContextTypes
 from telegram.helpers import escape_markdown
 
 
-async def print_new_summary(current_situation, update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def print_new_summary(
+    current_situation, update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     error_message = (
         "Sembra che tu abbia inserito nella descrizione un carattere speciale di telegram (`, *, _).\n"
         "Per favore cambiala con /setdescription <descrizione> assicurandoti di non inserire uno di questi caratteri.\n"

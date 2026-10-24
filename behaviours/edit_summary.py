@@ -3,7 +3,10 @@ from telegram.ext import ContextTypes
 
 
 async def edit_summary(
-    current_situation, bot_last_message_id, update: Update, context: ContextTypes.DEFAULT_TYPE
+    current_situation,
+    bot_last_message_id,
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
 ):
     await context.bot.edit_message_text(
         chat_id=update.effective_chat.id,

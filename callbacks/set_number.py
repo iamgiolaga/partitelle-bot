@@ -80,7 +80,9 @@ async def set_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             players, day, time, target, default_message, pitch
                         )
                         if bot_last_message_id is None:
-                            msg = await print_new_summary(current_situation, update, context)
+                            msg = await print_new_summary(
+                                current_situation, update, context
+                            )
                             update_bot_last_message_id_on_db(chat_id, msg.message_id)
                         else:
                             await edit_summary(

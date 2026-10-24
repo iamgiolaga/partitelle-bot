@@ -1,6 +1,6 @@
 # Feature tests
 
-Behaviour-level scenarios (Gherkin, pytest-bdd) run against the REAL handlers, dispatcher, job queue and a REAL Postgres. Only the Telegram network edge and the clock are faked.
+Behaviour-level scenarios (Gherkin, pytest-bdd) run against the REAL handlers, python-telegram-bot `Application`, job queue and a REAL Postgres. Only the Telegram network edge and the clock are faked.
 
 ## Run locally
 
@@ -16,8 +16,8 @@ Any `PB_*` variable can be overridden from the environment (defaults: `test/conf
 ## How the harness works
 
 - `pg_harness.py`: creates the test database if missing, rebuilds the schema with the real migrations (`db/migrate.py`), truncates it before every scenario.
-- `telegram_world.py`: `FakeBot` records every outgoing API call (send, edit, pin, ...) and answers with plausible payloads; an unsupported call fails the scenario. Handlers are registered through the real `register_handlers`.
-- `World.send` feeds a message into the real dispatcher synchronously; `World.run_scheduled_jobs` runs the jobs captured by the (never started) job queue.
+- `telegram_world.py`: `FakeTelegram` (a `telegram.request.BaseRequest`) records every outgoing Bot API call (send, edit, pin, ...) and answers with plausible JSON; an unsupported call fails the scenario. Handlers are registered through the real `register_handlers` on a real `Application`.
+- The steps are synchronous: every coroutine runs on a dedicated event loop owned by the `World` (one per scenario). `World.send` feeds a message with `application.process_update`; `World.run_scheduled_jobs` awaits the jobs captured by the (never started) job queue. `test_python_only_paths.py` holds plain pytest tests for the few paths no scenario describes.
 - Every call is recorded in order and each `Then the bot should ...` step consumes the next one. After each scenario (`conftest.py`) any unconsumed bot call, or any recorded handler exception that was not asserted, fails the scenario.
 - Given steps that replay messages (`had sent`, `a match was started`) or write the DB directly are setup: their bot traffic is forgotten and is not part of the expectations.
 

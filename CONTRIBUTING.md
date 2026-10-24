@@ -73,7 +73,9 @@ uv run python main.py
 
 If you're running the bot locally (ENV = local), the bot will start polling messages from Telegram.
 
-If you're running the bot on other environments (ENV != local), the bot will start a webhook listener instead.
+If you're running the bot on other environments (ENV != local), the bot will start a webhook listener instead: it registers `$PB_URL/telegram` with Telegram at startup (`setWebhook`) and only accepts calls carrying the secret token, `PB_WEBHOOK_SECRET` if set (optional) or a value derived from the bot token otherwise. The bot token is never part of the URL.
+
+The bot uses the async API of python-telegram-bot (handlers are `async def` and await every bot call). The database layer is still synchronous (psycopg pool), which is fine for the current traffic.
 
 This is useful to test the bot on a local environment before pushing the changes to the remote server.
 
@@ -102,5 +104,5 @@ Deploys call the Render API with an explicit commit SHA (`.github/scripts/render
 
 ### One-time setup (owner)
 
-- Render: turn OFF auto-deploy on both services and set `PYTHON_VERSION=3.11.9`.
+- Render: turn OFF auto-deploy on both services and set `PYTHON_VERSION=3.12.12` (it must match `.python-version`).
 - Secrets: `RENDER_SERVICE_ID`, `RENDER_API_KEY`, `RENDER_TEST_SERVICE_ID`, `RENDER_TEST_API_KEY`.

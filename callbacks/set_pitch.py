@@ -56,4 +56,6 @@ async def set_pitch(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 msg = await print_new_summary(current_situation, update, context)
                 update_bot_last_message_id_on_db(chat_id, msg.message_id)
             else:
-                await edit_summary(current_situation, bot_last_message_id, update, context)
+                await edit_summary(
+                    current_situation, bot_last_message_id, update, context
+                )
