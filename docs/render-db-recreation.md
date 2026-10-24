@@ -18,7 +18,7 @@ Env vars live in the Render environment groups `PB_ENV_VARS` (service `partitell
 
 Goal: move from the legacy tables `public.all_players` (prod) and `public.all_players_test` (staging) in the `postgres` database to a user-owned database with the `staging` and `prod` schemas. `CREATE SCHEMA` is not permitted in `postgres`, but the current instance already contains a user-owned database with a generated name that the bots do not use, so this can be done now without waiting for the monthly wipe.
 
-Prerequisite: prod must run code that reads `PB_DB_SCHEMA`, and prod is only deployed on releases. If this change shipped as a `chore:` (no release), force one by adding a `Release-As: <version>` line to the squash commit message, then merge the release PR before step 4.
+Prerequisite: prod must run code that reads `PB_DB_SCHEMA`, and prod is only deployed by "Promote to prod". Promote the commit containing this change (Actions > "Promote to prod", optionally with an explicit `version`) before step 4.
 
 1. **Start command.** On Render set the Start Command of both services to `python -m db.migrate && python main.py`. This is safe immediately: with `PB_DB_SCHEMA` unset, migrations are skipped.
 2. **Staging.** In `PB_TEST_ENV_VARS` set `PB_DB_NAME=<generated db name>` (Render dashboard, database, Connections), `PB_DB_SCHEMA=staging`, `PB_DB_TABLE_NAME=all_players`. Save with "Save, rebuild, and deploy": it creates `staging.all_players` (empty, test data is not migrated). Smoke test `/start` on the test bot.
@@ -58,7 +58,7 @@ Prerequisites: Docker (to run `pg_dump`/`psql` 17 regardless of the local client
 3. **Update env vars.** In `PB_ENV_VARS` and `PB_TEST_ENV_VARS` change `PB_DB_HOST` (the new hostname) and `PB_DB_PASSWORD`. The first time after the one-time transition also set `PB_DB_NAME=partitelle` and `PB_DB_USER=partitelle`, which then never change again. `PB_DB_SCHEMA`, `PB_DB_TABLE_NAME` and `PB_DB_PORT` stay as they are.
 4. **Deploy.** The migrations recreate the schemas and tables; the deploy logs show `Applying to schema '<schema>': [...]` then `Migrations applied`.
    - Staging: Manual Deploy, "Deploy latest commit".
-   - Prod: "Restart service" (or save the env vars with "Save, rebuild, and deploy"). Never "Deploy latest commit": it could ship unreleased code from `main`.
+   - Prod: "Restart service" (or save the env vars with "Save, rebuild, and deploy"). Never "Deploy latest commit": it could ship unpromoted code from `main`.
 5. **Restore prod data**, right after the prod deploy, and check that the row count matches step 1. Then smoke test `/participants` in a group with an open match.
 
    ```bash

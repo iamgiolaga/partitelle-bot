@@ -1,0 +1,171 @@
+name: Promote to prod
+
+# Manual: promotes the commit currently live on staging (PartitelleBotTest) to prod (PartitelleBot).
+# Deploys it, then creates the git tag (no `v` prefix) and the GitHub release with notes generated from Conventional Commits.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version override (X.Y.Z, must be greater than the latest tag). Empty = computed from commit types."
+        required: false
+        type: string
+      dry_run:
+        description: "Only show the version and release notes, deploy nothing"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # tag + release
+  actions: read # check the CI run of the staging commit
+
+concurrency:
+  group: deploy-partitellebot
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: promote-partitellebot
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Require main
+        if: ${{ github.ref != 'refs/heads/main' }}
+        run: |
+          echo "::error::Run this workflow on the main branch (selected: ${GITHUB_REF})"
+          exit 1
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Read the commit live on staging
+        id: staging
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_TEST_API_KEY }}
+          RENDER_TEST_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }}
+        run: |
+          sha="$(.github/scripts/render-live-commit.sh "$RENDER_TEST_SERVICE_ID")"
+          echo "Staging is running ${sha}"
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the staging commit is on main and green
+        env:
+          SHA: ${{ steps.staging.outputs.sha }}
+        run: |
+          git fetch --quiet origin main
+          if ! git cat-file -e "${SHA}^{commit}" 2>/dev/null \
+            || ! git merge-base --is-ancestor "$SHA" origin/main; then
+            echo "::error::Staging is running ${SHA}, which is not on main (probably a PR branch deployed with the deploy-partitellebot-test label). Merge the PR, or redeploy main to staging (re-run the latest CI run on main), then promote again."
+            exit 1
+          fi
+
+          # Successful ci.yml push run on main for this exact commit (unit-test, lint and the staging deploy all passed).
+          runs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${SHA}&branch=main&event=push&status=success&per_page=1" --jq '.total_count')"
+          if [ "$runs" -lt 1 ]; then
+            echo "::error::No successful CI run on main found for ${SHA}. Wait for CI to pass (or fix it) before promoting."
+            exit 1
+          fi
+          echo "${SHA} is on main and its CI run is green"
+
+      - name: Compute version and release notes
+        id: plan
+        env:
+          SHA: ${{ steps.staging.outputs.sha }}
+          VERSION_INPUT: ${{ inputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          semver='^[0-9]+\.[0-9]+\.[0-9]+$'
+          latest="$(git tag --list '[0-9]*.[0-9]*.[0-9]*' | grep -E "$semver" | sort -V | tail -n1 || true)"
+          if [ -z "$latest" ]; then
+            echo "::error::No release tag (X.Y.Z) found"
+            exit 1
+          fi
+          latest_sha="$(git rev-list -n1 "$latest")"
+          echo "Latest release: ${latest} (${latest_sha})"
+
+          if [ "$latest_sha" = "$SHA" ]; then
+            echo "::notice::Nothing to promote: staging runs ${SHA}, which is already released as ${latest}"
+            echo "## Nothing to promote" >> "$GITHUB_STEP_SUMMARY"
+            echo "Staging runs \`${SHA}\`, already released as \`${latest}\`." >> "$GITHUB_STEP_SUMMARY"
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor "$latest_sha" "$SHA"; then
+            echo "::error::Staging (${SHA}) is behind or diverged from the latest release ${latest}. Redeploy main to staging first."
+            exit 1
+          fi
+
+          # Work from the commit being promoted, so git-cliff only sees history up to it.
+          git checkout --quiet --detach "$SHA"
+          if [ -n "$VERSION_INPUT" ]; then
+            version="$VERSION_INPUT"
+            if ! [[ "$version" =~ $semver ]]; then
+              echo "::error::Invalid version '${version}': expected X.Y.Z"
+              exit 1
+            fi
+            if [ "$(printf '%s\n%s\n' "$latest" "$version" | sort -V | tail -n1)" != "$version" ] || [ "$version" = "$latest" ]; then
+              echo "::error::Version ${version} must be greater than the latest release ${latest}"
+              exit 1
+            fi
+          else
+            version="$(uvx git-cliff@2.14.2 --bumped-version | tail -n1)"
+          fi
+          if ! [[ "$version" =~ $semver ]]; then
+            echo "::error::Could not compute a valid version (got '${version}')"
+            exit 1
+          fi
+
+          {
+            uvx git-cliff@2.14.2 --unreleased --tag "$version" --strip all
+            echo
+            echo "**Full changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${latest}...${version}"
+          } > "${RUNNER_TEMP}/release-notes.md"
+
+          {
+            echo "## Promote to prod: ${version}$([ "$DRY_RUN" = "true" ] && echo ' (dry run)')"
+            echo
+            echo "- Commit: [\`${SHA:0:7}\`](https://github.com/${GITHUB_REPOSITORY}/commit/${SHA})"
+            echo "- Previous release: \`${latest}\`"
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "- Dry run: nothing is deployed or tagged. A real run would deploy the commit to prod, then create tag and release \`${version}\`."
+            fi
+            echo
+            echo "### Release notes"
+            echo
+            cat "${RUNNER_TEMP}/release-notes.md"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          {
+            echo "promote=true"
+            echo "version=${version}"
+            echo "notes_file=${RUNNER_TEMP}/release-notes.md"
+          } >> "$GITHUB_OUTPUT"
+
+      # Deploy first, release after: a failed deploy leaves no tag/release claiming a version that never reached prod.
+      - name: Deploy ${{ steps.staging.outputs.sha }} to PartitelleBot (prod)
+        if: ${{ steps.plan.outputs.promote == 'true' && !inputs.dry_run }}
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          SHA: ${{ steps.staging.outputs.sha }}
+        run: .github/scripts/render-deploy.sh "$RENDER_SERVICE_ID" "$SHA"
+
+      - name: Create tag and GitHub release
+        if: ${{ steps.plan.outputs.promote == 'true' && !inputs.dry_run }}
+        env:
+          SHA: ${{ steps.staging.outputs.sha }}
+          VERSION: ${{ steps.plan.outputs.version }}
+          NOTES_FILE: ${{ steps.plan.outputs.notes_file }}
+        run: |
+          # Idempotent: a re-run after a partial failure must not fail on an existing release.
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Release ${VERSION} already exists, nothing to create"
+          else
+            gh release create "$VERSION" --target "$SHA" --title "$VERSION" --notes-file "$NOTES_FILE" --latest
+          fi
+          echo "### Released" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deployed to prod and released: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${VERSION}" >> "$GITHUB_STEP_SUMMARY"
