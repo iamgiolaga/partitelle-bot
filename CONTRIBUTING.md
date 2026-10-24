@@ -81,7 +81,7 @@ This is useful to test the bot on a local environment before pushing the changes
 
 1. Open a PR with a Conventional Commits title; CI runs `unit-test` and `linter`.
 2. Squash-merge to `main`: after tests and lint pass, that commit is deployed to PartitelleBotTest (staging).
-3. [release-please](https://github.com/googleapis/release-please) keeps a release PR open that bumps the version (`pyproject.toml`, `uv.lock`) and updates `CHANGELOG.md` (`feat` = minor, `fix`/`perf` = patch, `!` or `BREAKING CHANGE` = major).
+3. [release-please](https://github.com/googleapis/release-please) keeps a release PR open that bumps the version in `pyproject.toml` and updates `CHANGELOG.md` (`feat` = minor, `fix`/`perf` = patch, `!` or `BREAKING CHANGE` = major). The CI `release-please` job then runs `uv lock` on the release PR branch and pushes a `chore: update uv.lock for release` commit, so `uv.lock` stays in sync automatically.
 4. Merging the release PR creates the tag (no `v` prefix) and the GitHub release, then deploys that exact commit to PartitelleBot (prod).
 5. Emergency: create the release by hand, then run the `CI` workflow manually (Actions > CI > Run workflow) selecting the tag/branch to deploy to prod.
 

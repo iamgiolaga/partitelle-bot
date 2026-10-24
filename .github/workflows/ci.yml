@@ -122,6 +122,35 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      # release-please cannot update uv.lock itself, and CI runs `uv sync --locked`:
+      # refresh the lock on the release PR branch (no-op when nothing changed).
+      - name: Checkout release PR branch
+        if: ${{ steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != '' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Set up uv
+        if: ${{ steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != '' }}
+        uses: astral-sh/setup-uv@v6
+
+      - name: Sync uv.lock on release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != '' }}
+        env:
+          HEAD_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+        run: |
+          uv lock
+          if git diff --quiet -- uv.lock; then
+            echo "uv.lock already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git commit -m "chore: update uv.lock for release"
+          git push origin "HEAD:${HEAD_BRANCH}"
+
   # Prod: only when release-please just created a release (exact release commit), or manually.
   deploy:
     name: deploy-partitellebot
