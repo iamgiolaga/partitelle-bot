@@ -2,4 +2,5 @@
 *Describe what is your aim with this pull request* 
 
 ## Checklist
-- [ ] I have deployed to PartitelleBotTest by adding `deploy-partitellebot-test` label in the PR and checked that it works
+- [ ] The PR title follows Conventional Commits (`feat: ...` | `fix: ...` | `chore: ...` | `doc: ...` | `test: ...`)
+- [ ] If useful, deployed via the `deploy-partitellebot-test` label and checked it works on PartitelleBotTest

@@ -4,3 +4,6 @@
 __pycache__
 venv
 conf/local.py
+.coverage
+coverage.xml
+.venv
