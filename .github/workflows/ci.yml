@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [labeled, unlabeled, opened, synchronize, reopened]
+
+jobs:
+  # NOTE: job ids/names are referenced by branch protection required checks, do not rename.
+  unit-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Run tests
+        run: uv run pytest test --cov --cov-report=term --cov-report=xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+
+  lint:
+    name: linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Run Ruff
+        run: uv run ruff check
+
+  # Deploys run only if tests and lint passed.
+  deploy:
+    name: deploy-partitellebot
+    needs: [unit-test, lint]
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to PartitelleBot
+        uses: johnbeynon/render-deploy-action@747373cdb7b9b3f561438e063ee0815b71584f1b
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+          wait-for-success: true
+
+  deploy-test:
+    name: deploy-partitellebot-test
+    needs: [unit-test, lint]
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'deploy-partitellebot-test') }}
+    runs-on: ubuntu-latest
+    steps:
+      # KNOWN LIMITATION (#76): the action calls the Render deploy API, which deploys the branch
+      # configured on the Render service (main), not the PR branch.
+      - name: Deploy to PartitelleBotTest
+        uses: johnbeynon/render-deploy-action@747373cdb7b9b3f561438e063ee0815b71584f1b
+        with:
+          service-id: ${{ secrets.RENDER_TEST_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_TEST_API_KEY }}
+          wait-for-success: true
