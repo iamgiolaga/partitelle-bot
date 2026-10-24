@@ -5,7 +5,8 @@ description = "Telegram bot to organize football matches"
 readme = "README.rst"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "psycopg2==2.9.5",
+    "psycopg[binary]>=3.2",
+    "psycopg-pool>=3.2",
     "python-telegram-bot==13.11",
     "python-dateutil==2.7.0",
     # apscheduler 3.6.3 (via python-telegram-bot 13.11) imports pkg_resources, removed in setuptools 82

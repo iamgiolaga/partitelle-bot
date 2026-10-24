@@ -1,6 +1,6 @@
 """Top-level test configuration.
 
-`conf.conf` reads the environment at import time and `db.connection.Connection` is a singleton, so the
+`conf.conf` reads the environment at import time and `db.connection` builds its pool lazily from them, so the
 environment MUST be in place before any application module is imported. pytest imports this conftest
 before collecting anything, which makes it the right (and only) place to do it.
 
