@@ -9,7 +9,7 @@ on:
   pull_request:
     branches:
       - main
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled]
 
 permissions:
   contents: read
@@ -65,13 +65,40 @@ jobs:
     needs: [unit-test, lint]
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
-    concurrency: deploy-partitellebot-test
+    concurrency:
+      group: render-partitellebot-test
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - name: Deploy ${{ github.sha }} to PartitelleBotTest
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_TEST_API_KEY }}
-        run: .github/scripts/render-deploy.sh "${{ secrets.RENDER_TEST_SERVICE_ID }}" "${{ github.sha }}"
+        run: .github/scripts/render-deploy.sh "${{ secrets.RENDER_TEST_SERVICE_ID }}" "${{ github.sha }}" main
+
+  # Pre-merge: a PR labeled `deploy-partitellebot-test` is deployed to the test bot (branch + exact head SHA).
+  # Same-repo PRs only (fork PRs get no secrets).
+  # Tests/lint also run on label events (simple, and guarantees the deploy is gated on green checks).
+  deploy-test-pr:
+    name: deploy-partitellebot-test-pr
+    needs: [unit-test, lint]
+    if: >-
+      ${{ github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && contains(github.event.pull_request.labels.*.name, 'deploy-partitellebot-test')
+      && (github.event.action != 'labeled' || github.event.label.name == 'deploy-partitellebot-test')
+      }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: render-partitellebot-test
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy ${{ github.event.pull_request.head.sha }} (${{ github.event.pull_request.head.ref }}) to PartitelleBotTest
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_TEST_API_KEY }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: .github/scripts/render-deploy.sh "${{ secrets.RENDER_TEST_SERVICE_ID }}" "$PR_SHA" "$PR_BRANCH"
 
   # Opens/updates the release PR; when that PR is merged it tags and publishes the GitHub release.
   # Tags/releases made with GITHUB_TOKEN do not trigger other workflows, so the prod deploy below

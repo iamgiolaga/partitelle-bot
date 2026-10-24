@@ -1,21 +1,35 @@
 #!/usr/bin/env bash
 # Deploy a specific commit to a Render service and wait until it is live.
 #
-# Usage: RENDER_API_KEY=... render-deploy.sh <service-id> <commit-sha>
+# Usage: RENDER_API_KEY=... render-deploy.sh <service-id> <commit-sha> [<branch>]
+# If <branch> is given, the service's tracked branch is first set to it (PATCH /v1/services/{id}),
+# because Render only deploys commits reachable from the configured branch.
 # Env:   RENDER_API_KEY (required), DEPLOY_TIMEOUT_SECONDS (default 900), POLL_INTERVAL_SECONDS (default 10)
 set -euo pipefail
 
-if [ "$#" -ne 2 ]; then
-  echo "usage: RENDER_API_KEY=... $0 <service-id> <commit-sha>" >&2
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+  echo "usage: RENDER_API_KEY=... $0 <service-id> <commit-sha> [<branch>]" >&2
   exit 2
 fi
 
 service_id="$1"
 commit_sha="$2"
+branch="${3:-}"
 : "${RENDER_API_KEY:?RENDER_API_KEY is not set}"
 timeout="${DEPLOY_TIMEOUT_SECONDS:-900}"
 interval="${POLL_INTERVAL_SECONDS:-10}"
-api="https://api.render.com/v1/services/${service_id}/deploys"
+service_api="https://api.render.com/v1/services/${service_id}"
+api="${service_api}/deploys"
+
+if [ -n "$branch" ]; then
+  echo "Setting branch of service ${service_id} to ${branch}"
+  curl --silent --show-error --fail-with-body --output /dev/null \
+    --request PATCH "$service_api" \
+    --header "Authorization: Bearer ${RENDER_API_KEY}" \
+    --header "Accept: application/json" \
+    --header "Content-Type: application/json" \
+    --data "$(jq -n --arg branch "$branch" '{branch: $branch}')"
+fi
 
 echo "Triggering deploy of ${commit_sha} on service ${service_id}"
 response="$(curl --silent --show-error --fail-with-body \

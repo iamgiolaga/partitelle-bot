@@ -64,6 +64,8 @@ This is useful to test the bot on a local environment before pushing the changes
 
 Deploys call the Render API with an explicit commit SHA (`.github/scripts/render-deploy.sh`).
 
+To try a PR on PartitelleBotTest before merging, add the `deploy-partitellebot-test` label: once tests and lint pass, CI points the test service at the PR branch and deploys its head commit (and redeploys on every new push while the label is present). The test service is shared, so if two PRs are labeled the last deploy wins; it goes back to `main` on the next merge. Fork PRs are not deployed.
+
 ### One-time setup (owner)
 
 - Render: turn OFF auto-deploy on both services and set `PYTHON_VERSION=3.11.9`.
