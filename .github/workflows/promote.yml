@@ -42,6 +42,10 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      # uvx runs git-cliff (version bump and release notes)
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
       # Pressing the button right after a merge is fine: wait for the CI run on main (which also deploys
       # staging) to finish, so that the commit read from staging below is the latest main.
       - name: Wait for the CI run on main
