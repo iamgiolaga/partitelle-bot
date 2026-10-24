@@ -1005,7 +1005,7 @@ Feature: Match settings
     And the bot should pin the summary
     And the bot should send nothing else
 
-  @known-bug
+  @known-bug @issue-99
   Scenario: /setdescription on several lines collapses them into a single line
     Given a match was started
     When "@mario" sends the message:
