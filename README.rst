@@ -137,10 +137,11 @@ Prerequisites: `uv <https://docs.astral.sh/uv/>`_ and `Docker <https://www.docke
 
 1. create your own bot with `BotFather <https://t.me/BotFather>`_ and copy its token
 2. ``cp default.env .env`` and set ``PB_TG_TOKEN`` to your token
-3. ``docker compose up -d`` starts a local PostgreSQL and creates the tables defined in ``db/schema.sql`` on first start
+3. ``docker compose up -d`` starts a local PostgreSQL
 4. ``uv sync`` installs the dependencies
-5. ``uv run --env-file .env python main.py`` starts the bot (with ``ENV=local`` it uses polling instead of a webhook)
-6. ``uv run pytest`` runs the tests
+5. ``uv run --env-file .env python -m db.migrate`` creates the ``PB_DB_SCHEMA`` schema and applies the migrations in ``migrations/``
+6. ``uv run --env-file .env python main.py`` starts the bot (with ``ENV=local`` it uses polling instead of a webhook)
+7. ``uv run pytest`` runs the tests
 
 The ``.env`` file is not loaded automatically by the code: pass it with ``uv run --env-file .env`` as above (or export the variables in your shell).
 Use ``docker compose down -v`` to also drop the local data.
@@ -151,7 +152,8 @@ Variable            Meaning
 ENV                 ``local`` runs the bot in polling mode, any other value uses a webhook
 PB_TG_TOKEN         Telegram bot token
 PB_URL              public URL of the hosting, used for the webhook (not needed locally)
-PB_DB_TABLE_NAME    table used by the bot: ``all_players`` (prod) or ``all_players_test``
+PB_DB_SCHEMA        PostgreSQL schema of the environment: ``prod`` or ``staging`` (unset = ``public``, legacy layout, migrations skipped)
+PB_DB_TABLE_NAME    table used by the bot: ``all_players``
 PB_DB_HOST          PostgreSQL host
 PB_DB_NAME          PostgreSQL database name
 PB_DB_USER          PostgreSQL user

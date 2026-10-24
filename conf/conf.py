@@ -9,3 +9,5 @@ database = os.getenv("PB_DB_NAME")
 user = os.getenv("PB_DB_USER")
 password = os.getenv("PB_DB_PASSWORD")
 port = os.getenv("PB_DB_PORT")
+# Postgres schema holding the bot tables: `staging`, `prod`, or `public` (legacy layout, default)
+db_schema = os.getenv("PB_DB_SCHEMA") or "public"

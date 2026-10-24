@@ -32,6 +32,28 @@ uv export --no-dev --no-hashes --format requirements-txt -o requirements.txt
 
 Create a `.env` file and fill it with the correct values. You can use the `default.env` file as a template.
 
+## Database migrations
+
+The database structure is managed with [yoyo-migrations](https://ollycope.com/software/yoyo/latest/). Each environment (`staging`, `prod`) is a Postgres schema of the same database, selected by `PB_DB_SCHEMA`, with its own migration history (`<schema>._yoyo_migration`).
+
+To change the structure, add a file `migrations/000N_<name>.sql` (next number, plain SQL, unqualified table names) starting with `-- depends: 000M_<previous name>`. Then apply it locally:
+
+```bash
+uv run --env-file .env python -m db.migrate
+```
+
+Rules:
+
+- never edit a migration that has already been applied/merged: add a new one
+- staging and prod migrate at their own deploys, so a migration must be backward compatible with the code currently deployed in the other environment (e.g. add nullable columns, do not drop or rename columns in the same release)
+- `PB_DB_SCHEMA` unset or `public` is the legacy layout: migrations are skipped
+
+On Render, the start command of both services must be:
+
+```bash
+python -m db.migrate && python main.py
+```
+
 ## Run the tests
 
 To run the tests, run the following command:
