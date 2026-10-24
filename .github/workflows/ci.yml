@@ -124,22 +124,30 @@ jobs:
 
       # release-please cannot update uv.lock itself, and CI runs `uv sync --locked`:
       # refresh the lock on the release PR branch (no-op when nothing changed).
-      - name: Checkout release PR branch
-        if: ${{ steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != '' }}
+      # No fromJSON() in step inputs/env: they are evaluated even when the step is skipped,
+      # and `pr` is empty when no release PR was created or updated.
+      - name: Checkout repository for the release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
         uses: actions/checkout@v4
         with:
-          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Set up uv
-        if: ${{ steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != '' }}
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
         uses: astral-sh/setup-uv@v6
 
       - name: Sync uv.lock on release PR
-        if: ${{ steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != '' }}
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
         env:
-          HEAD_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
         run: |
+          head_branch="$(jq -r '.headBranchName // empty' <<<"$RELEASE_PR")"
+          if [ -z "$head_branch" ]; then
+            echo "No release PR branch in the release-please output"
+            exit 0
+          fi
+          git fetch origin "$head_branch"
+          git checkout -B "$head_branch" "origin/$head_branch"
           uv lock
           if git diff --quiet -- uv.lock; then
             echo "uv.lock already up to date"
@@ -149,7 +157,7 @@ jobs:
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           git add uv.lock
           git commit -m "chore: update uv.lock for release"
-          git push origin "HEAD:${HEAD_BRANCH}"
+          git push origin "HEAD:${head_branch}"
 
   # Prod: only when release-please just created a release (exact release commit), or manually.
   deploy:
