@@ -19,6 +19,34 @@ jobs:
   unit-test:
     runs-on: ubuntu-latest
 
+    # Real Postgres for the feature tests (test/features); same credentials as docker-compose.yml.
+    # The suite creates its own `partitelle_test` database and rebuilds its `staging` schema through the real migrations (db/migrate.py).
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: partitelle
+          POSTGRES_PASSWORD: partitelle
+          POSTGRES_DB: partitelle
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U partitelle -d partitelle"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      ENV: local
+      PB_TG_TOKEN: "123456:TEST"
+      PB_DB_HOST: localhost
+      PB_DB_PORT: "5432"
+      PB_DB_USER: partitelle
+      PB_DB_PASSWORD: partitelle
+      PB_DB_NAME: partitelle_test
+      PB_DB_SCHEMA: staging
+      PB_DB_TABLE_NAME: all_players
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
