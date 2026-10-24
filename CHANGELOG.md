@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/iamgiolaga/partitelle-bot/compare/1.3.0...1.3.1) (2026-10-24)
+
+
+### Code Refactoring
+
+* switch to psycopg 3 with a connection pool ([#101](https://github.com/iamgiolaga/partitelle-bot/issues/101)) ([8e648aa](https://github.com/iamgiolaga/partitelle-bot/commit/8e648aaf57bd5f0bdfb385119c954d09bb6eb56a))
+
 ## [1.3.0](https://github.com/iamgiolaga/partitelle-bot/compare/1.2.17...1.3.0) (2026-10-24)
 
 
