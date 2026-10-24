@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:17
+    ports:
+      - "${PB_DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: partitelle
+      POSTGRES_PASSWORD: partitelle
+      POSTGRES_DB: partitelle
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # executed only on the first start, when the data volume is empty
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U partitelle -d partitelle"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
