@@ -20,6 +20,8 @@ dev = [
     "ruff==0.7.4",
     "black==24.10.0",
     "pre-commit==3.3.0",
+    "pytest-bdd>=9.0.0",
+    "time-machine>=3.5.1",
 ]
 
 [tool.uv]
