@@ -44,30 +44,30 @@ Prerequisite: prod must run code that reads `PB_DB_SCHEMA`, and prod is only dep
 
 ## B. Monthly recreation
 
-1. **Export prod data.** Keep the dump private and local: it contains personal data, never commit it.
+Prerequisites: Docker (to run `pg_dump`/`psql` 17 regardless of the local client version). If the database is already suspended, skip step 1: its data can no longer be exported.
+
+1. **Export prod data.** Export only the data table, never the `_yoyo_*` tables: the deploy recreates them, and restoring them would fail with duplicate keys. Keep the dump private and local: it contains personal data, never commit it.
 
    ```bash
-   pg_dump --data-only --schema=prod "<external URL>" > prod-data-YYYY-MM.sql
+   docker run --rm postgres:17 pg_dump --data-only --table=prod.all_players "<external URL>" > prod-data-YYYY-MM.sql
+   docker run --rm postgres:17 psql "<external URL>" -tc "SELECT count(*) FROM prod.all_players"
    ```
 
-   The client version must be at least the server version. If the local client is older, use Docker:
-
-   ```bash
-   docker run --rm postgres:17 pg_dump --data-only --schema=prod "<external URL>" > prod-data-YYYY-MM.sql
-   ```
-
-   Dumping the `staging` schema too is usually not needed.
+   Note the row count to verify the restore.
 2. **Recreate the instance.** Delete the Render database and create a new one with the fixed values in the table above.
-3. **Update env vars.** In `PB_ENV_VARS` and `PB_TEST_ENV_VARS` change only `PB_DB_HOST` (internal host) and `PB_DB_PASSWORD`. Do the same for the stats-tracker secrets.
-4. **Deploy.** Manual Deploy staging, then prod: the migrations recreate the schemas and tables.
-5. **Restore prod data.**
+3. **Update env vars.** In `PB_ENV_VARS` and `PB_TEST_ENV_VARS` change `PB_DB_HOST` (the new hostname) and `PB_DB_PASSWORD`. The first time after the one-time transition also set `PB_DB_NAME=partitelle` and `PB_DB_USER=partitelle`, which then never change again. `PB_DB_SCHEMA`, `PB_DB_TABLE_NAME` and `PB_DB_PORT` stay as they are.
+4. **Deploy.** The migrations recreate the schemas and tables; the deploy logs show `Applying to schema '<schema>': [...]` then `Migrations applied`.
+   - Staging: Manual Deploy, "Deploy latest commit".
+   - Prod: "Restart service" (or save the env vars with "Save, rebuild, and deploy"). Never "Deploy latest commit": it could ship unreleased code from `main`.
+5. **Restore prod data**, right after the prod deploy, and check that the row count matches step 1. Then smoke test `/participants` in a group with an open match.
 
    ```bash
-   psql "<external URL>" -f prod-data-YYYY-MM.sql
+   docker run --rm -i -v "$PWD":/dump postgres:17 psql "<external URL>" -f /dump/prod-data-YYYY-MM.sql
+   docker run --rm postgres:17 psql "<external URL>" -tc "SELECT count(*) FROM prod.all_players"
    ```
 
-   Or, with an older local client: `docker run --rm -i -v "$PWD":/dump postgres:17 psql "<external URL>" -f /dump/prod-data-YYYY-MM.sql`. Verify that the row count of `prod.all_players` matches the one noted in step 1.
-6. **DBeaver.** Connect to the database `partitelle`, not `postgres`.
+6. **Stats tracker.** Update the same values (`PB_DB_HOST`, `PB_DB_PASSWORD`, and the first time `PB_DB_NAME`/`PB_DB_USER`) in its GitHub Actions secrets.
+7. **DBeaver.** Connect to the database `partitelle` (not `postgres`) with user `partitelle`.
 
 ## C. Troubleshooting
 
