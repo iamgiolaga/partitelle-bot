@@ -1,9 +1,29 @@
+import atexit
+import logging
 import re
+import threading
+from contextlib import ExitStack, contextmanager
 
-import psycopg2
+from psycopg import OperationalError
+from psycopg_pool import ConnectionPool, PoolTimeout
+
 from conf.conf import host, database, user, password, port, db_schema
 
+logger = logging.getLogger(__name__)
+
 SCHEMA_NAME_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
+
+POOL_MIN_SIZE = 1
+POOL_MAX_SIZE = 4
+CONNECT_TIMEOUT = 10  # seconds, for a single connection attempt
+POOL_TIMEOUT = 10  # seconds, to wait for a free connection / for the pool to open
+
+_pool = None
+_pool_lock = threading.Lock()
+
+
+class DatabaseUnavailable(Exception):
+    """The database cannot be reached (wrong host/credentials, server down, pool exhausted)."""
 
 
 def validate_schema(schema):
@@ -14,38 +34,75 @@ def validate_schema(schema):
     return schema
 
 
-class Connection:
-    _instance = None
+def _unavailable(error):
+    return DatabaseUnavailable(
+        f"Cannot connect to the database {database!r} on {host}:{port or 5432}: {error}"
+    )
 
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
-    def __init__(self):
-        self.cursor = self.connect()
+def _create_pool():
+    schema = validate_schema(db_schema)
+    pool = ConnectionPool(
+        min_size=POOL_MIN_SIZE,
+        max_size=POOL_MAX_SIZE,
+        timeout=POOL_TIMEOUT,
+        # drop connections closed by the server (e.g. idle timeouts) before handing them out
+        check=ConnectionPool.check_connection,
+        open=False,
+        kwargs={
+            "host": host,
+            "dbname": database,
+            "user": user,
+            "password": password,
+            "port": port,
+            "options": f"-c search_path={schema}",
+            "connect_timeout": CONNECT_TIMEOUT,
+            # every statement is committed on its own, as it always was
+            "autocommit": True,
+        },
+    )
+    try:
+        pool.open(wait=True, timeout=POOL_TIMEOUT)
+    except PoolTimeout as error:
+        pool.close()
+        raise _unavailable(error) from error
+    try:
+        with pool.connection() as conn:
+            version = conn.execute("SELECT version()").fetchone()[0]
+        print(f"PostgreSQL database version: {version}")
+    except (PoolTimeout, OperationalError) as error:
+        pool.close()
+        raise _unavailable(error) from error
+    return pool
 
-    def connect(self):
-        conn = None
-        schema = validate_schema(db_schema)
+
+def get_pool():
+    """The shared connection pool, created and opened on first use (never at import time)."""
+    global _pool
+    with _pool_lock:
+        if _pool is None:
+            _pool = _create_pool()
+        return _pool
+
+
+def close_pool():
+    global _pool
+    with _pool_lock:
+        pool, _pool = _pool, None
+    if pool is not None:
+        pool.close()
+
+
+atexit.register(close_pool)
+
+
+@contextmanager
+def connection():
+    """Check a (autocommit) connection out of the pool for the duration of the block."""
+    pool = get_pool()
+    with ExitStack() as stack:
         try:
-            conn = psycopg2.connect(
-                **{
-                    "host": host,
-                    "database": database,
-                    "user": user,
-                    "password": password,
-                    "port": port,
-                    "options": f"-c search_path={schema}",
-                }
-            )
-            conn.autocommit = True
-            cur = conn.cursor()
-            print("PostgreSQL database version:")
-            cur.execute("SELECT version()")
-            db_version = cur.fetchone()
-            print(db_version)
-            return cur
-        except (Exception, psycopg2.DatabaseError) as error:
-            print("There was an issue during the db connection:")
-            print(error)
+            conn = stack.enter_context(pool.connection())
+        except (PoolTimeout, OperationalError) as error:
+            raise _unavailable(error) from error
+        yield conn

@@ -2,10 +2,9 @@
 
 import os
 
-import psycopg2
+import psycopg
 import pytest
-from psycopg2 import sql
-
+from psycopg import sql
 
 
 def _params(database):
@@ -20,8 +19,9 @@ def _params(database):
 
 def _connect(database, schema=None):
     options = {"options": f"-c search_path={schema}"} if schema else {}
-    conn = psycopg2.connect(connect_timeout=5, **_params(database), **options)
-    conn.autocommit = True
+    conn = psycopg.connect(
+        connect_timeout=5, autocommit=True, **_params(database), **options
+    )
     return conn
 
 
@@ -36,7 +36,7 @@ def prepare_database():
         )
     try:
         admin = _connect("postgres")
-    except psycopg2.OperationalError as error:
+    except psycopg.OperationalError as error:
         pytest.fail(
             "Cannot reach Postgres for the feature tests "
             f"({os.environ['PB_DB_HOST']}:{os.environ['PB_DB_PORT']}). "

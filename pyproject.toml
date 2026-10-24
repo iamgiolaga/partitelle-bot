@@ -5,9 +5,10 @@ description = "Telegram bot to organize football matches"
 readme = "README.rst"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "psycopg2==2.9.5",
+    "psycopg[binary]>=3.2",
+    "psycopg-pool>=3.2",
     "python-telegram-bot==13.11",
-    "python-dateutil==2.7.0",
+    "python-dateutil==2.9.0.post0",
     # apscheduler 3.6.3 (via python-telegram-bot 13.11) imports pkg_resources, removed in setuptools 82
     "setuptools<81",
     "yoyo-migrations>=9.0.0",
@@ -19,7 +20,7 @@ dev = [
     "pytest-cov",
     "ruff==0.7.4",
     "black==24.10.0",
-    "pre-commit==3.3.0",
+    "pre-commit==4.7.0",
     "pytest-bdd>=9.0.0",
     "time-machine>=3.5.1",
 ]
