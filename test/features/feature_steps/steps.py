@@ -1,6 +1,8 @@
 """Step definitions. Wording is behaviour-level; everything PTB/DB specific lives behind `world`."""
 
+import json
 import re
+import random
 
 from pytest_bdd import given, parsers, then, when
 
@@ -61,6 +63,88 @@ def _today(freeze_time, when):
     freeze_time(when)
 
 
+@given(parsers.parse('the clock moves to "{when}"'))
+def _clock_moves(world, freeze_time, when):
+    """Re-freezes the clock (YYYY-MM-DD HH:MM, Europe/Rome) after `today is` was already used."""
+    if world.clock is not None:
+        world.clock.stop()
+        world.clock = None
+    freeze_time(when)
+
+
+@given(parsers.parse("the team draw is seeded with {seed:d}"))
+def _seed_team_draw(request, seed):
+    """Makes the random team draw deterministic: seeds Python's `random` and restores it afterwards."""
+    previous = random.getstate()
+    request.addfinalizer(lambda: random.setstate(previous))
+    random.seed(seed)
+
+
+@given(parsers.parse('the current chat is "{title}"'))
+@then(parsers.parse('the current chat is "{title}"'))
+def _current_chat(world, title):
+    """Switches the chat the following steps and assertions refer to."""
+    world.current_chat = world.chats[title]
+
+
+@given(parsers.re(r'"(?P<who>[^"]+)" had sent "(?P<text>[^"]*)"$'))
+def _had_sent(world, who, text):
+    """Setup traffic: the message is really processed, but the bot's answers are not part of the expectations."""
+    world.send(who, text)
+    world.forget_calls()
+
+
+@given(
+    parsers.re(r'"(?P<who>[^"]+)" had sent "(?P<text>[^"]*)" in "(?P<title>[^"]+)"$')
+)
+def _had_sent_in(world, who, text, title):
+    world.send(who, text, chat=world.chats[title])
+    world.forget_calls()
+
+
+def _update_match(world, column, value):
+    """Direct setup of a persisted column of this chat's match (Given steps only)."""
+    with world.db.conn.cursor() as cur:
+        cur.execute(
+            f"UPDATE {world.db.table} SET {column} = %s WHERE chat_id = %s",
+            [value, world.current_chat.id],
+        )
+
+
+@given(parsers.parse("the match target is {target:d}"))
+def _match_target(world, target):
+    _update_match(world, "target", target)
+
+
+@given(parsers.parse('the match has the players "{players}"'))
+def _match_players(world, players):
+    """Comma separated, in order; a trailing ` (maybe)` marks a player who is only maybe present."""
+    stored = []
+    for player in (p.strip() for p in players.split(",")):
+        if player.endswith(" (maybe)"):
+            player = player[: -len(" (maybe)")] + MAYBE_MARKER
+        stored.append(player)
+    _update_match(world, "players", stored)
+
+
+@given(
+    parsers.parse('the match has the black team "{black}" and the white team "{white}"')
+)
+def _match_teams(world, black, white):
+    teams = {
+        "black": [p.strip() for p in black.split(",")],
+        "white": [p.strip() for p in white.split(",")],
+    }
+    _update_match(world, "teams", json.dumps(teams))
+
+
+@given("the bot is expected to crash on the next message")
+def _expect_crash(world):
+    """Handler exceptions are part of the scenario: they are recorded (not re-raised) and each one must
+    be asserted with `Then the bot should fail with "<ExceptionType>"`."""
+    world.expect_failures = True
+
+
 @given("a match was started")
 def _match_was_started(world):
     if not world.users:
@@ -87,6 +171,12 @@ def _sends_in(world, who, text, title):
     world.send(who, text, chat=world.chats[title])
 
 
+@when(parsers.re(r'"(?P<who>[^"]+)" sends the message:$'))
+def _sends_multiline(world, who, docstring):
+    """Like `sends "<text>"`, for texts spanning several lines."""
+    world.send(who, interpolate(world, docstring))
+
+
 @when("the scheduled jobs run")
 def _jobs_run(world):
     world.run_scheduled_jobs()
@@ -98,8 +188,9 @@ def _jobs_run(world):
 def _next_call_as(world, method):
     call = world.next_call()
     assert call.method == method, f"Expected the bot to {method}, but it did: {call}"
+    # jobs address the chat with its id as a string (see reminder_steps.py): compare the id, not the type
     assert (
-        call.params["chat_id"] == world.current_chat.id
+        int(call.params["chat_id"]) == world.current_chat.id
     ), f"Wrong chat: expected {world.current_chat.id}, got {call.params['chat_id']}"
     return call
 
@@ -135,6 +226,21 @@ def _bot_sends_plain(world, docstring):
     _assert_message(call, interpolate(world, docstring), None, {"chat_id", "text"})
 
 
+@then(parsers.parse('the bot should send the plain text "{name}"'))
+def _bot_sends_plain_named(world, name):
+    """Same as `the bot should send plain text:` with a text defined by `the text "<name>" is:`."""
+    call = _next_call_as(world, "send_message")
+    _assert_message(
+        call, interpolate(world, "{" + name + "}"), None, {"chat_id", "text"}
+    )
+
+
+@then(parsers.re(r'the bot should send the quoted text "(?P<text>[^"]*)"$'))
+def _bot_sends_quoted(world, text):
+    """Like `the bot should send:` for one-line texts whose leading/trailing spaces a docstring would lose."""
+    _send_markdown(world, text)
+
+
 @then("the bot should edit the summary to:")
 def _bot_edits_summary(world, docstring):
     """Edit of the message the bot keeps as the match summary (the one tracked for the chat)."""
@@ -155,12 +261,42 @@ def _bot_edits_summary(world, docstring):
 
 @then("the bot should pin the last message")
 def _bot_pins_last(world):
+    """Pins the message of the most recent `send_message` already asserted by the scenario."""
+    sent_so_far = sum(
+        c.method == "send_message" for c in world.bot.calls[: world.consumed]
+    )
+    assert (
+        sent_so_far
+    ), "The scenario asserted no message sent by the bot before the pin."
+    expected = world.bot.sent_ids[sent_so_far - 1]
     call = _next_call_as(world, "pin_chat_message")
     assert set(call.params) == {"chat_id", "message_id"}
-    assert call.params["message_id"] == world.last_bot_message_id(), (
+    assert call.params["message_id"] == expected, (
         f"Pinned message {call.params['message_id']}, "
-        f"but the bot's last message is {world.last_bot_message_id()}"
+        f"but the message just sent is {expected}"
     )
+
+
+@then("the bot should pin the summary")
+def _bot_pins_summary(world):
+    """Pins the message the bot tracks as the match summary (after an edit it is not the bot's last one)."""
+    call = _next_call_as(world, "pin_chat_message")
+    summary_id = _match_of_this_chat(world)["summary_message_id"]
+    assert set(call.params) == {"chat_id", "message_id"}
+    assert (
+        call.params["message_id"] == summary_id
+    ), f"Pinned message {call.params['message_id']}, but the summary is message {summary_id}"
+
+
+@then(parsers.parse('the bot should fail with "{exception_type}"'))
+def _bot_failed(world, exception_type):
+    """Consumes the oldest recorded handler exception, which must be of this type."""
+    assert world.errors, "Expected the bot to crash, but no exception was raised."
+    actual = type(world.errors[0]).__name__
+    assert (
+        actual == exception_type
+    ), f"Expected {exception_type}, the bot raised {actual}"
+    world.errors.pop(0)
 
 
 @then("the bot should send nothing else")
@@ -240,3 +376,31 @@ def _match_exists_for(world, title):
     assert (
         world.db.fetch_match(world.chats[title].id) is not None
     ), f"There is no match for chat {title!r}."
+
+
+@then(parsers.parse('the match of "{title}" should have no players'))
+def _other_match_has_no_players(world, title):
+    match = world.db.fetch_match(world.chats[title].id)
+    assert match is not None, f"There is no match for chat {title!r}."
+    assert match["players"] is None, f"Unexpected players: {match['players']}"
+
+
+# ---- Then: how the job addresses the chat -------------------------------------------------------------
+# The job sends with `chat_id = job.name`, i.e. the chat id as a STRING, while handlers use the integer id.
+# Telegram accepts both, so the generic steps compare the id regardless of its type; this step documents
+# the actual type used by the job.
+
+
+@then("the last thing the bot did should address the chat with its id as a string")
+def _addressed_with_string_id(world):
+    call = world.bot.calls[world.consumed - 1]
+    assert isinstance(
+        call.params["chat_id"], str
+    ), f"Expected a string chat_id, got {call.params['chat_id']!r}"
+    assert call.params["chat_id"] == str(world.current_chat.id)
+
+
+@then("the match summary message should be the last message of the bot")
+def _summary_is_last(world):
+    match = world.db.fetch_match(world.current_chat.id)
+    assert match["summary_message_id"] == world.last_bot_message_id()

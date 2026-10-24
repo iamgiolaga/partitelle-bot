@@ -60,7 +60,11 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests
-        run: uv run pytest test --cov --cov-report=term --cov-report=xml
+        # Line coverage of the application modules only (not the tests); measured 97% when the gate was added.
+        run: >-
+          uv run pytest test
+          --cov=callbacks --cov=behaviours --cov=jobs --cov=db --cov=utils --cov=handlers
+          --cov-report=term-missing --cov-report=xml --cov-fail-under=97
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

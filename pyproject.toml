@@ -30,3 +30,23 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["test"]
 pythonpath = ["."]
+markers = [
+    "known-bug: scenario that documents CURRENT (buggy) behaviour; it will need updating when the bug is fixed",
+    "payment-reminder: payment reminder feature",
+    "issue-8: GitHub issue 8",
+    "issue-34: GitHub issue 34",
+    "issue-60: GitHub issue 60",
+    "issue-61: GitHub issue 61",
+    "issue-78: GitHub issue 78",
+    "issue-88: GitHub issue 88",
+    "issue-89: GitHub issue 89",
+    "issue-90: GitHub issue 90",
+    "issue-91: GitHub issue 91",
+    "issue-92: GitHub issue 92",
+    "issue-93: GitHub issue 93",
+    "issue-94: GitHub issue 94",
+    "issue-95: GitHub issue 95",
+    "issue-96: GitHub issue 96",
+    "issue-97: GitHub issue 97",
+    "issue-99: GitHub issue 99",
+]

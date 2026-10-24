@@ -121,7 +121,11 @@ class World:
     _message_ids: dict = field(default_factory=dict)
     _update_id: int = 0
     clock: object = None
-    texts: dict = field(default_factory=dict)  # named texts of the scenario (see steps.py)
+    texts: dict = field(
+        default_factory=dict
+    )  # named texts of the scenario (see steps.py)
+    # a scenario declares an unhandled handler exception (see `the bot is expected to crash` in steps.py)
+    expect_failures: bool = False
 
     def __post_init__(self):
         from handlers import (
@@ -188,13 +192,13 @@ class World:
             {"update_id": self._update_id, "message": message}, self.bot
         )
         self.dispatcher.process_update(update)
-        if self.errors:
+        if self.errors and not self.expect_failures:
             raise self.errors[0]
 
     def run_scheduled_jobs(self):
         for job in self.job_queue.jobs():
             job.run(self.dispatcher)
-        if self.errors:
+        if self.errors and not self.expect_failures:
             raise self.errors[0]
 
     # assertions helpers -------------------------------------------------------------------------
