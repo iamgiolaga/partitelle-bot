@@ -6,6 +6,8 @@ cachetools==4.2.2
     # via python-telegram-bot
 certifi==2026.10.23
     # via python-telegram-bot
+importlib-metadata==10.1.0
+    # via yoyo-migrations
 psycopg2==2.9.5
     # via partitelle-bot
 python-dateutil==2.7.0
@@ -24,9 +26,17 @@ six==1.17.0
     # via
     #   apscheduler
     #   python-dateutil
+sqlparse==0.6.0
+    # via yoyo-migrations
+tabulate==0.10.0
+    # via yoyo-migrations
 tornado==6.6
     # via python-telegram-bot
 tzdata==2026.5 ; sys_platform == 'win32'
     # via tzlocal
 tzlocal==5.4.5
     # via apscheduler
+yoyo-migrations==9.0.0
+    # via partitelle-bot
+zipp==4.1.2
+    # via importlib-metadata

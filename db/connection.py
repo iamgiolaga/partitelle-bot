@@ -1,5 +1,17 @@
+import re
+
 import psycopg2
-from conf.conf import host, database, user, password, port
+from conf.conf import host, database, user, password, port, db_schema
+
+SCHEMA_NAME_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
+
+
+def validate_schema(schema):
+    if not SCHEMA_NAME_RE.match(schema or ""):
+        raise ValueError(
+            f"Invalid PB_DB_SCHEMA {schema!r}: it must match {SCHEMA_NAME_RE.pattern}"
+        )
+    return schema
 
 
 class Connection:
@@ -15,6 +27,7 @@ class Connection:
 
     def connect(self):
         conn = None
+        schema = validate_schema(db_schema)
         try:
             conn = psycopg2.connect(
                 **{
@@ -23,6 +36,7 @@ class Connection:
                     "user": user,
                     "password": password,
                     "port": port,
+                    "options": f"-c search_path={schema}",
                 }
             )
             conn.autocommit = True
