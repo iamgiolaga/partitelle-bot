@@ -4,10 +4,15 @@ on:
   push:
     branches:
       - main
+  # Manual prod deploy (e.g. a release created by hand in an emergency). Run it on the tag/ref to deploy.
+  workflow_dispatch:
   pull_request:
     branches:
       - main
-    types: [labeled, unlabeled, opened, synchronize, reopened]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
 
 jobs:
   # NOTE: job ids/names are referenced by branch protection required checks, do not rename.
@@ -54,31 +59,53 @@ jobs:
       - name: Run Ruff
         run: uv run ruff check
 
-  # Deploys run only if tests and lint passed.
-  deploy:
-    name: deploy-partitellebot
-    needs: [unit-test, lint]
-    if: ${{ github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to PartitelleBot
-        uses: johnbeynon/render-deploy-action@747373cdb7b9b3f561438e063ee0815b71584f1b
-        with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
-          wait-for-success: true
-
+  # Staging: every push to main (after tests and lint) deploys the commit to partitelle-bot-test.
   deploy-test:
     name: deploy-partitellebot-test
     needs: [unit-test, lint]
-    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'deploy-partitellebot-test') }}
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
+    concurrency: deploy-partitellebot-test
     steps:
-      # KNOWN LIMITATION (#76): the action calls the Render deploy API, which deploys the branch
-      # configured on the Render service (main), not the PR branch.
-      - name: Deploy to PartitelleBotTest
-        uses: johnbeynon/render-deploy-action@747373cdb7b9b3f561438e063ee0815b71584f1b
+      - uses: actions/checkout@v4
+      - name: Deploy ${{ github.sha }} to PartitelleBotTest
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_TEST_API_KEY }}
+        run: .github/scripts/render-deploy.sh "${{ secrets.RENDER_TEST_SERVICE_ID }}" "${{ github.sha }}"
+
+  # Opens/updates the release PR; when that PR is merged it tags and publishes the GitHub release.
+  # Tags/releases made with GITHUB_TOKEN do not trigger other workflows, so the prod deploy below
+  # is a job of this same run, gated on `release_created`.
+  release-please:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
         with:
-          service-id: ${{ secrets.RENDER_TEST_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_TEST_API_KEY }}
-          wait-for-success: true
+          # Optional PAT so release PRs trigger CI; falls back to GITHUB_TOKEN.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # Prod: only when release-please just created a release (exact release commit), or manually.
+  deploy:
+    name: deploy-partitellebot
+    needs: [unit-test, lint, release-please]
+    if: ${{ always() && needs.unit-test.result == 'success' && needs.lint.result == 'success' && (github.event_name == 'workflow_dispatch' || needs.release-please.outputs.release_created == 'true') }}
+    runs-on: ubuntu-latest
+    concurrency: deploy-partitellebot
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy ${{ needs.release-please.outputs.sha || github.sha }} to PartitelleBot
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          DEPLOY_SHA: ${{ needs.release-please.outputs.sha || github.sha }}
+        run: .github/scripts/render-deploy.sh "${{ secrets.RENDER_SERVICE_ID }}" "$DEPLOY_SHA"

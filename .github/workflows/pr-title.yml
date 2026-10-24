@@ -1,0 +1,33 @@
+name: PR title
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  semantic-title:
+    name: semantic-pr-title
+    runs-on: ubuntu-latest
+    steps:
+      # PRs are squash-merged, so the PR title becomes the commit message release-please reads.
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            chore
+            doc
+            docs
+            test
+            ci
+            build
+            revert
