@@ -15,6 +15,8 @@ pytest.register_assert_rewrite(
 from pg_harness import Database, prepare_database
 from telegram_world import World
 from feature_steps.steps import *  # noqa: F401,F403  (registers the step definitions)
+from feature_steps.teams_steps import *  # noqa: F401,F403
+from feature_steps.reminder_steps import *  # noqa: F401,F403
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -65,6 +67,8 @@ def pytest_bdd_after_scenario(request, feature, scenario):
     ):  # the scenario already failed, do not mask the real error
         return
     world = request.getfixturevalue("world")
+    if world.errors:
+        raise AssertionError(f"Unasserted bot crash(es): {world.errors}")
     extra = world.unconsumed()
     if extra:
         lines = "\n".join(f"  - {call}" for call in extra)
