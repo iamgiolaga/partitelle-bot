@@ -5,14 +5,12 @@ name = "partitelle-bot"
 version = "0.0.0"
 description = "Telegram bot to organize football matches"
 readme = "README.rst"
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "psycopg[binary]>=3.2",
     "psycopg-pool>=3.2",
-    "python-telegram-bot==13.11",
+    "python-telegram-bot[job-queue,webhooks]==22.8",
     "python-dateutil==2.9.0.post0",
-    # apscheduler 3.6.3 (via python-telegram-bot 13.11) imports pkg_resources, removed in setuptools 82
-    "setuptools<81",
     "yoyo-migrations>=9.0.0",
 ]
 

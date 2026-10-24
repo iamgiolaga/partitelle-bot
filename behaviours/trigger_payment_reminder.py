@@ -21,5 +21,5 @@ def trigger_payment_reminder(update, context, day, time):
 
     if reminder_time_from_now > 0:
         context.job_queue.run_once(
-            payment_reminder, reminder_time_from_now, context=context, name=str(chat_id)
+            payment_reminder, reminder_time_from_now, name=str(chat_id)
         )

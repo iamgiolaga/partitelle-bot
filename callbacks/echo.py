@@ -1,6 +1,6 @@
 from telegram import Update
-from telegram.ext import CallbackContext
-from telegram.utils.helpers import escape_markdown
+from telegram.ext import ContextTypes
+from telegram.helpers import escape_markdown
 from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
 from behaviours.remove_job_if_exists import remove_job_if_exists
@@ -23,7 +23,7 @@ from utils.utils import (
 from utils.constants import maybe_placeholder
 
 
-def echo(update: Update, context: CallbackContext):
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     new_message = update.message.text.lower()
     chat_id = update.message.chat_id
     answer = None
@@ -41,7 +41,7 @@ def echo(update: Update, context: CallbackContext):
         row = find_row_by_chat_id(chat_id)
         if row is None:
             answer = "Prima di iniziare con le danze, avvia una partita, per farlo usa /start"
-            context.bot.send_message(
+            await context.bot.send_message(
                 chat_id=update.effective_chat.id, parse_mode="markdown", text=answer
             )
         else:
@@ -208,7 +208,7 @@ def echo(update: Update, context: CallbackContext):
                         except Exception:
                             answer = x + " e " + y + " sono nella stessa squadra!"
 
-            context.bot.send_message(
+            await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 parse_mode="markdown",
                 text=escape_markdown(answer),
@@ -218,7 +218,7 @@ def echo(update: Update, context: CallbackContext):
                 update_teams_on_db(chat_id, None)
                 remove_job_if_exists(str(chat_id), context)
                 answer = "*SQUADRE ANNULLATE*"
-                context.bot.send_message(
+                await context.bot.send_message(
                     chat_id=update.effective_chat.id, parse_mode="markdown", text=answer
                 )
 
@@ -237,16 +237,16 @@ def echo(update: Update, context: CallbackContext):
                     players, day, time, target, default_message, pitch
                 )
                 if bot_last_message_id is None:
-                    msg = print_new_summary(current_situation, update, context)
+                    msg = await print_new_summary(current_situation, update, context)
                     update_bot_last_message_id_on_db(chat_id, msg.message_id)
                 else:
-                    edit_summary(
+                    await edit_summary(
                         current_situation, bot_last_message_id, update, context
                     )
 
                 if reached_target:
                     trigger_payment_reminder(update, context, day, time)
-                    context.bot.send_message(
+                    await context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         parse_mode="markdown",
                         text="🚀 *SI GIOCA* 🚀 facciamo le squadre? /teams 😎",

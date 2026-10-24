@@ -1,22 +1,26 @@
-"""A fake Telegram world around the REAL dispatcher wiring (harness only).
+"""A fake Telegram world around the REAL python-telegram-bot Application (harness only).
 
-The only things faked are the network edge (`FakeBot._post`, nothing ever leaves the process) and the
-clock/scheduler start. Handlers, dispatcher and job queue are the real python-telegram-bot objects.
+The only things faked are the network edge (`FakeTelegram`, a `BaseRequest` that never leaves the process) and
+the clock. Handlers, application and job queue are the real python-telegram-bot objects; the job queue is
+never started, so jobs are only captured and run by `World.run_scheduled_jobs`.
+
+The steps are synchronous: every coroutine runs on a dedicated event loop owned by the `World`.
 """
 
+import asyncio
+import json
 import re
 import time
-import warnings
 import zlib
-from queue import Queue
 from dataclasses import dataclass, field
 
-import telegram.error
-from telegram import Bot, Update, User
-from telegram.ext import Dispatcher, JobQueue
+from telegram import Update
+from telegram.ext import Application
+from telegram.request import BaseRequest
 
 BOT_ID = 424242
 BOT_USERNAME = "partitelle_test_bot"
+BOT_TOKEN = "123456:TEST"
 
 
 def _snake(endpoint):
@@ -55,24 +59,73 @@ class Person:
         return data
 
 
-class FakeBot(Bot):
-    """Records every outgoing API call and answers with plausible Telegram payloads. No network."""
+class FakeTelegram(BaseRequest):
+    """Records every outgoing Bot API call and answers with plausible Telegram payloads. No network."""
 
     def __init__(self, world):
-        super().__init__(token="123456:TEST")
         self.world = world
-        self._bot = User(BOT_ID, "Partitelle", True, username=BOT_USERNAME)
         self.calls = []
         self.sent_ids = []
         self.can_pin = True
+        self.failures = (
+            {}
+        )  # method -> Telegram error descriptions to answer with, once each
 
-    def _post(self, endpoint, data=None, timeout=None, api_kwargs=None):
-        data = dict(data or {})
-        data.update(api_kwargs or {})
-        self._insert_defaults(data, timeout)
-        params = {k: v for k, v in data.items() if v is not None}
+    def fail_next(self, method, description):
+        self.failures.setdefault(method, []).append(description)
+
+    async def initialize(self):
+        pass
+
+    async def shutdown(self):
+        pass
+
+    @property
+    def read_timeout(self):
+        return None
+
+    @staticmethod
+    def _reply(status, body):
+        return status, json.dumps(body).encode()
+
+    def _ok(self, result):
+        return self._reply(200, {"ok": True, "result": result})
+
+    def _bot_json(self):
+        return {
+            "id": BOT_ID,
+            "is_bot": True,
+            "first_name": "Partitelle",
+            "username": BOT_USERNAME,
+        }
+
+    async def do_request(
+        self,
+        url,
+        method,
+        request_data=None,
+        read_timeout=BaseRequest.DEFAULT_NONE,
+        write_timeout=BaseRequest.DEFAULT_NONE,
+        connect_timeout=BaseRequest.DEFAULT_NONE,
+        pool_timeout=BaseRequest.DEFAULT_NONE,
+    ):
+        endpoint = url.rsplit("/", 1)[1]
+        if endpoint == "getMe":  # Bot.initialize(), not part of the scenario
+            return self._ok(self._bot_json())
+
+        params = dict(request_data.parameters) if request_data else {}
         method = _snake(endpoint)
         self.calls.append(Call(method, params))
+
+        if self.failures.get(method):
+            return self._reply(
+                400,
+                {
+                    "ok": False,
+                    "error_code": 400,
+                    "description": f"Bad Request: {self.failures[method].pop(0)}",
+                },
+            )
 
         if method in ("send_message", "edit_message_text"):
             chat = self.world.chats_by_id[int(params["chat_id"])]
@@ -83,30 +136,34 @@ class FakeBot(Bot):
             )
             if method == "send_message":
                 self.sent_ids.append(message_id)
-            return {
-                "message_id": message_id,
-                "date": self.world.now_ts(),
-                "chat": chat.to_json(),
-                "from": {
-                    "id": BOT_ID,
-                    "is_bot": True,
-                    "first_name": "Partitelle",
-                    "username": BOT_USERNAME,
-                },
-                "text": params["text"],
-            }
+            return self._ok(
+                {
+                    "message_id": message_id,
+                    "date": self.world.now_ts(),
+                    "chat": chat.to_json(),
+                    "from": self._bot_json(),
+                    "text": params["text"],
+                }
+            )
         if method == "pin_chat_message":
             if not self.can_pin:
-                raise telegram.error.BadRequest("Not enough rights to pin a message")
-            return True
+                return self._reply(
+                    400,
+                    {
+                        "ok": False,
+                        "error_code": 400,
+                        "description": "Bad Request: not enough rights to pin a message",
+                    },
+                )
+            return self._ok(True)
         if method in (
             "unpin_chat_message",
             "unpin_all_chat_messages",
             "delete_message",
         ):
-            return True
+            return self._ok(True)
         raise AssertionError(
-            f"Network call attempted by the app, not supported by the fake bot: {method} {params}"
+            f"Network call attempted by the app, not supported by the fake Telegram: {method} {params}"
         )
 
 
@@ -132,22 +189,31 @@ class World:
             register_handlers,
         )  # imported late: env is set by test/conftest.py
 
-        self.bot = FakeBot(self)
-        with (
-            warnings.catch_warnings()
-        ):  # "no worker threads": we process updates synchronously
-            warnings.simplefilter("ignore")
-            self.job_queue = JobQueue()
-            self.dispatcher = Dispatcher(
-                self.bot, Queue(), workers=0, job_queue=self.job_queue, use_context=True
-            )
-        self.job_queue.set_dispatcher(
-            self.dispatcher
-        )  # NOT started: jobs are only captured
-        register_handlers(self.dispatcher)
-        self.dispatcher.add_error_handler(
-            lambda update, context: self.errors.append(context.error)
+        self.loop = asyncio.new_event_loop()
+        self.telegram = FakeTelegram(self)
+        self.application = (
+            Application.builder()
+            .token(BOT_TOKEN)
+            .request(self.telegram)
+            .get_updates_request(FakeTelegram(self))
+            .updater(None)  # no polling/webhook: updates are fed by `send`
+            .build()
         )
+        # the job queue is never started: jobs are only captured, `run_scheduled_jobs` runs them
+        self.job_queue = self.application.job_queue
+        register_handlers(self.application)
+        self.application.add_error_handler(self._record_error)
+        self.run(self.application.initialize())
+
+    async def _record_error(self, update, context):
+        self.errors.append(context.error)
+
+    def run(self, coroutine):
+        return self.loop.run_until_complete(coroutine)
+
+    def close(self):
+        self.run(self.application.shutdown())
+        self.loop.close()
 
     # ids and time -------------------------------------------------------------------------------
     def next_message_id(self, chat_id):
@@ -189,36 +255,36 @@ class World:
             ]
         self._update_id += 1
         update = Update.de_json(
-            {"update_id": self._update_id, "message": message}, self.bot
+            {"update_id": self._update_id, "message": message}, self.application.bot
         )
-        self.dispatcher.process_update(update)
+        self.run(self.application.process_update(update))
         if self.errors and not self.expect_failures:
             raise self.errors[0]
 
     def run_scheduled_jobs(self):
         for job in self.job_queue.jobs():
-            job.run(self.dispatcher)
+            self.run(job.run(self.application))
         if self.errors and not self.expect_failures:
             raise self.errors[0]
 
     # assertions helpers -------------------------------------------------------------------------
     def next_call(self):
-        if self.consumed >= len(self.bot.calls):
+        if self.consumed >= len(self.telegram.calls):
             raise AssertionError(
                 "Expected the bot to do something, but it did nothing more."
             )
-        call = self.bot.calls[self.consumed]
+        call = self.telegram.calls[self.consumed]
         self.consumed += 1
         return call
 
     def unconsumed(self):
-        return self.bot.calls[self.consumed :]
+        return self.telegram.calls[self.consumed :]
 
     def forget_calls(self):
         """Used by Given steps: setup traffic is not part of the scenario's expectations."""
-        self.consumed = len(self.bot.calls)
+        self.consumed = len(self.telegram.calls)
 
     def last_bot_message_id(self):
-        if not self.bot.sent_ids:
+        if not self.telegram.sent_ids:
             raise AssertionError("The bot has not sent any message yet.")
-        return self.bot.sent_ids[-1]
+        return self.telegram.sent_ids[-1]

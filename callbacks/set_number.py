@@ -1,6 +1,6 @@
 from telegram import Update
-from telegram.ext import CallbackContext
-from telegram.utils.helpers import escape_markdown
+from telegram.ext import ContextTypes
+from telegram.helpers import escape_markdown
 from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
 from behaviours.remove_job_if_exists import remove_job_if_exists
@@ -14,7 +14,7 @@ from db.queries import (
 from utils.utils import get_sender_name, exclude_maybe, format_summary
 
 
-def set_number(update: Update, context: CallbackContext):
+async def set_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     row = find_all_info_by_chat_id(chat_id)
 
@@ -52,7 +52,7 @@ def set_number(update: Update, context: CallbackContext):
                             update_teams_on_db(chat_id, None)
                             remove_job_if_exists(str(chat_id), context)
                             answer = "*SQUADRE ANNULLATE*"
-                            context.bot.send_message(
+                            await context.bot.send_message(
                                 chat_id=update.effective_chat.id,
                                 parse_mode="markdown",
                                 text=answer,
@@ -80,16 +80,18 @@ def set_number(update: Update, context: CallbackContext):
                             players, day, time, target, default_message, pitch
                         )
                         if bot_last_message_id is None:
-                            msg = print_new_summary(current_situation, update, context)
+                            msg = await print_new_summary(
+                                current_situation, update, context
+                            )
                             update_bot_last_message_id_on_db(chat_id, msg.message_id)
                         else:
-                            edit_summary(
+                            await edit_summary(
                                 current_situation, bot_last_message_id, update, context
                             )
 
                         if reached_target:
                             trigger_payment_reminder(update, context, day, time)
-                            context.bot.send_message(
+                            await context.bot.send_message(
                                 chat_id=update.effective_chat.id,
                                 parse_mode="markdown",
                                 text="🚀 *SI GIOCA* 🚀 facciamo le squadre? /teams 😎",
@@ -99,7 +101,7 @@ def set_number(update: Update, context: CallbackContext):
 
         except Exception:
             answer = "Non hai inserito il numero: scrivi /setnumber <numero>"
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         parse_mode="markdown",
         text=escape_markdown(answer),

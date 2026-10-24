@@ -1,9 +1,9 @@
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 from db.queries import find_row_by_chat_id, delete_row_on_db
 
 
-def stop(update: Update, context: CallbackContext):
+async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     row = find_row_by_chat_id(chat_id)
 
@@ -14,6 +14,6 @@ def stop(update: Update, context: CallbackContext):
     else:
         answer = "Ho cancellato la partita."
         delete_row_on_db(chat_id)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id, parse_mode="markdown", text=answer
     )

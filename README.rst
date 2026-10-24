@@ -28,7 +28,7 @@ Table of contents
 Architecture
 =================
 
-This is a *Python* project relying on `python-telegram-bot <https://github.com/python-telegram-bot/python-telegram-bot>`_ library.
+This is a *Python* 3.12 project relying on the async API of the `python-telegram-bot <https://github.com/python-telegram-bot/python-telegram-bot>`_ library (v22).
 Data storage is handled through *PostgreSQL*.
 The application and the mentioned database are both hosted on `Render <https://dashboard.render.com>`_.
 
@@ -152,6 +152,7 @@ Variable            Meaning
 ENV                 ``local`` runs the bot in polling mode, any other value uses a webhook
 PB_TG_TOKEN         Telegram bot token
 PB_URL              public URL of the hosting, used for the webhook (not needed locally)
+PB_WEBHOOK_SECRET   optional secret Telegram sends with every webhook call (``[A-Za-z0-9_-]``, 1-256 chars); when unset it is derived from ``PB_TG_TOKEN``
 PB_DB_SCHEMA        PostgreSQL schema of the environment: ``prod`` or ``staging`` (unset = ``public``, legacy layout, migrations skipped)
 PB_DB_TABLE_NAME    table used by the bot: ``all_players``
 PB_DB_HOST          PostgreSQL host

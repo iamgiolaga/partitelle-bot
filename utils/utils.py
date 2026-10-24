@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 from telegram import Update
-from telegram.utils.helpers import escape_markdown
+from telegram.helpers import escape_markdown
 from utils.constants import maybe_placeholder
 import random
 import json

@@ -36,6 +36,7 @@ def world(db):
     world = World()
     world.db = db
     yield world
+    world.close()
     if world.clock is not None:
         world.clock.stop()
         world.clock = None
