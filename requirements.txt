@@ -26,7 +26,7 @@ psycopg-binary==3.3.6 ; implementation_name != 'pypy'
     # via psycopg
 psycopg-pool==3.3.3
     # via partitelle-bot
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0
     # via partitelle-bot
 python-telegram-bot==22.8
     # via partitelle-bot
@@ -43,9 +43,10 @@ typing-extensions==4.16.0
     #   anyio
     #   psycopg
     #   psycopg-pool
-tzdata==2026.5 ; sys_platform == 'win32'
+tzdata==2026.5
     # via
     #   psycopg
+    #   python-dateutil
     #   tzlocal
 tzlocal==5.4.5
     # via apscheduler
