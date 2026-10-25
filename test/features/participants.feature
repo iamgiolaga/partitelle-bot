@@ -1639,35 +1639,108 @@ Feature: Managing the participants
     And the bot should pin the last message
     And the bot should send nothing else
 
-  @known-bug @issue-60
-  Scenario: Siete già in N is said even when maybe present players fill the list
+  Scenario: Siete già in N when a maybe present player holds the last place
     Given a match was started
     And the match target is 2
     And the match has the players "anna, bea (maybe)"
     When "@mario" sends "aggiungimi"
     Then the bot should send:
       """
-      Siete già in 2
+      Siete già in 2 (1 in forse)
       """
     And the bot should send nothing else
     And the match should have:
-      | field   | value            |
+      | field   | value             |
       | players | anna, bea (maybe) |
 
-  @known-bug @issue-96
-  Scenario: A target of 1 never kicks off the match
+  Scenario: Siete già in N tells how many players are maybe present
     Given a match was started
-    And the match target is 1
+    And the match target is 2
+    And the match has the players "anna, bea, carlo (maybe), dino (maybe)"
     When "@mario" sends "aggiungimi"
     Then the bot should send:
       """
-      Ok, @mario, ti aggiungo
+      Siete già in 2 (2 in forse)
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                                  |
+      | players | anna, bea, carlo (maybe), dino (maybe) |
+
+  Scenario: A new player is refused while a maybe present player holds the place
+    Given a match was started
+    And the match target is 10
+    And the match has the players "a, b, c, d, e, f, g, h, i, j (maybe)"
+    When "@mario" sends "aggiungimi"
+    Then the bot should send:
+      """
+      Siete già in 10 (1 in forse)
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                                |
+      | players | a, b, c, d, e, f, g, h, i, j (maybe) |
+
+  Scenario Outline: <message> while a maybe present player holds the place is refused
+    Given a match was started
+    And the match target is 3
+    And the match has the players "anna, bea, carlo (maybe)"
+    When "@mario" sends "<message>"
+    Then the bot should send:
+      """
+      Siete già in 3 (1 in forse)
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                    |
+      | players | anna, bea, carlo (maybe) |
+
+    Examples:
+      | message             |
+      | aggiungi luca       |
+      | aggiungi luca, dino |
+      | proponimi           |
+      | proponi luca        |
+      | proponi luca, dino  |
+
+  Scenario: aggiungi a list says who did not fit without mentioning the maybe present players
+    Given a match was started
+    And the match target is 3
+    And the match has the players "anna, bea (maybe)"
+    When "@mario" sends "aggiungi carlo, dino"
+    Then the bot should send:
+      """
+      Ok, aggiungo carlo. Ma aspetta! Non posso aggiungere dino perché siete già in 3
       """
     And the bot should send:
       """
       {header}
 
-      1. @mario ✅
+      1. anna ✅
+      2. bea ❓
+      3. carlo ✅
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+
+  Scenario: proponi a list says who did not fit without mentioning the maybe present players
+    Given a match was started
+    And the match target is 3
+    And the match has the players "anna, bea (maybe)"
+    When "@mario" sends "proponi carlo, dino"
+    Then the bot should send:
+      """
+      Ok, propongo carlo. Ma aspetta! Non posso proporre dino perché siete già in 3
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. anna ✅
+      2. bea ❓
+      3. carlo ❓
 
       {footer}
       """

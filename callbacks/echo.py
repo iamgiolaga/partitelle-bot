@@ -19,7 +19,8 @@ from utils.utils import (
     join_names,
     is_command_name,
     get_sender_name,
-    exclude_maybe,
+    confirmed_count,
+    already_in_message,
     swap_players,
     format_summary,
 )
@@ -64,19 +65,17 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     update_players_on_db(chat_id, sender + maybe_placeholder, "remove")
                     update_players_on_db(chat_id, sender, "add")
                     show_summary = True
-                    reached_target = (
-                        players and len(exclude_maybe(players)) + 1 == target
-                    )
+                    reached_target = players and confirmed_count(players) + 1 == target
                 else:
-                    if not players or len(players) <= target - 1:
+                    if len(players or []) < target:
                         answer = "Ok, " + sender + ", ti aggiungo"
                         update_players_on_db(chat_id, sender, "add")
                         show_summary = True
                         reached_target = (
-                            players and len(exclude_maybe(players)) + 1 == target
+                            players and confirmed_count(players) + 1 == target
                         )
                     else:
-                        answer = "Siete già in " + str(target)
+                        answer = already_in_message(players, target)
                         show_summary = False
 
             elif command == "aggiungi":
@@ -104,14 +103,14 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             update_players_on_db(chat_id, to_be_added, "add")
                             step_summary = True
                             step_reached = (
-                                players and len(exclude_maybe(players)) + 1 == target
+                                players and confirmed_count(players) + 1 == target
                             )
-                        elif not players or len(players) <= target - 1:
+                        elif len(players or []) < target:
                             added.append(to_be_added)
                             update_players_on_db(chat_id, to_be_added, "add")
                             step_summary = True
                             step_reached = (
-                                players and len(exclude_maybe(players)) + 1 == target
+                                players and confirmed_count(players) + 1 == target
                             )
                         else:
                             full.append(to_be_added)
@@ -150,7 +149,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                 + str(target)
                             )
                         else:
-                            sentences.append("Siete già in " + str(target))
+                            sentences.append(already_in_message(players, target))
                     answer = escape_markdown(". ".join(sentences))
                     answer_is_escaped = True
 
@@ -166,13 +165,13 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     show_summary = True
                     revoked_teams = teams is not None
                 else:
-                    if not players or len(players) <= target - 1:
+                    if len(players or []) < target:
                         answer = "Ok, " + sender + ", ti propongo"
                         update_players_on_db(chat_id, sender + maybe_placeholder, "add")
                         show_summary = True
                         revoked_teams = teams is not None
                     else:
-                        answer = "Siete già in " + str(target)
+                        answer = already_in_message(players, target)
                         show_summary = False
 
             elif command == "proponi":
@@ -198,7 +197,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             )
                             step_summary = True
                             step_revoked = teams is not None
-                        elif not players or len(players) <= target - 1:
+                        elif len(players or []) < target:
                             proposed.append(to_be_added)
                             update_players_on_db(
                                 chat_id, to_be_added + maybe_placeholder, "add"
@@ -234,7 +233,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                 + str(target)
                             )
                         else:
-                            sentences.append("Siete già in " + str(target))
+                            sentences.append(already_in_message(players, target))
                     answer = escape_markdown(". ".join(sentences))
                     answer_is_escaped = True
 

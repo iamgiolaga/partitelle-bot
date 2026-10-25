@@ -149,6 +149,18 @@ def exclude_maybe(players):
     return [player for player in players if maybe_placeholder not in player]
 
 
+def confirmed_count(players):
+    return len(exclude_maybe(players or []))
+
+
+def already_in_message(players, target):
+    message = "Siete già in " + str(target)
+    maybe = len(players or []) - confirmed_count(players)
+    if maybe:
+        message += " (" + str(maybe) + " in forse)"
+    return message
+
+
 def format_teams(teams):
     json_teams = json.loads(teams)
 
