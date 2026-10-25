@@ -30,6 +30,13 @@ If you change the dependencies in `pyproject.toml`, run `uv lock` and regenerate
 uv export --no-dev --no-hashes --format requirements-txt -o requirements.txt
 ```
 
+Code is formatted and linted with [ruff](https://docs.astral.sh/ruff/) (`ruff format` replaces black); CI runs both checks:
+
+```bash
+uv run ruff format .   # format
+uv run ruff check .    # lint
+```
+
 Create a `.env` file and fill it with the correct values. You can use the `default.env` file as a template.
 
 ## Database migrations
@@ -79,6 +86,10 @@ The bot uses the async API of python-telegram-bot (handlers are `async def` and 
 
 This is useful to test the bot on a local environment before pushing the changes to the remote server.
 
+## Dependencies
+
+[Dependabot](.github/dependabot.yml) checks `uv` and GitHub Actions dependencies every Monday. Patch and minor updates are grouped in one PR and auto-merged once CI is green (they only reach staging; prod stays behind the manual `Promote to prod` workflow). Major updates get their own PR and are reviewed manually. Auto-merge needs the `AUTOMERGE_TOKEN` Dependabot secret (see the one-time setup below).
+
 ## Release & deploy flow
 
 1. Open a PR with a Conventional Commits title; CI runs `unit-test` and `linter`.
@@ -106,3 +117,4 @@ Deploys call the Render API with an explicit commit SHA (`.github/scripts/render
 
 - Render: turn OFF auto-deploy on both services and set `PYTHON_VERSION=3.12.12` (it must match `.python-version`).
 - Secrets: `RENDER_SERVICE_ID`, `RENDER_API_KEY`, `RENDER_TEST_SERVICE_ID`, `RENDER_TEST_API_KEY`.
+- Secret `AUTOMERGE_TOKEN` (Dependabot secret, not an Actions one): fine-grained PAT with `Contents` and `Pull requests` write on this repo, used by `dependabot-auto-merge.yml`. It is a PAT because merges made with `GITHUB_TOKEN` do not trigger the `push` workflow on `main`, so staging would not be deployed.

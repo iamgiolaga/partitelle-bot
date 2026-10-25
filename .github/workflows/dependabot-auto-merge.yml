@@ -1,0 +1,33 @@
+name: Dependabot auto-merge
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  auto-merge:
+    name: dependabot-auto-merge
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v3
+        with:
+          # AUTOMERGE_TOKEN (a fine-grained PAT stored as a Dependabot secret) instead of GITHUB_TOKEN:
+          # a merge done with GITHUB_TOKEN does not trigger the `push` workflow on main, so CI would not
+          # deploy staging and "Promote to prod" would then block on the missing CI run.
+          github-token: ${{ secrets.AUTOMERGE_TOKEN }}
+
+      # Patch and minor updates are merged once the required checks pass; majors are left for manual review.
+      - name: Enable auto-merge
+        if: ${{ steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor' }}
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
+        run: gh pr merge --auto --squash "$PR_URL"
