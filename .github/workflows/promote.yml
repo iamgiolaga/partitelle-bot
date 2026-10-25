@@ -46,7 +46,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v10.3.2
         with:
-          version: "0.9.18"
+          version: "0.13.5"
 
       # Pressing the button right after a merge is fine: wait for the CI run on main (which also deploys
       # staging) to finish, so that the commit read from staging below is the latest main.

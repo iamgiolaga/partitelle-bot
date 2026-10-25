@@ -12,7 +12,9 @@ permissions:
 jobs:
   auto-merge:
     name: dependabot-auto-merge
-    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    # github.actor, not the PR author: the regenerate step's own push re-triggers this workflow as the PAT owner,
+    # and that run must be skipped (Dependabot secrets are not available to it, and there is nothing left to do).
+    if: ${{ github.actor == 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Fetch Dependabot metadata
@@ -23,6 +25,32 @@ jobs:
           # a merge done with GITHUB_TOKEN does not trigger the `push` workflow on main, so CI would not
           # deploy staging and "Promote to prod" would then block on the missing CI run.
           github-token: ${{ secrets.AUTOMERGE_TOKEN }}
+
+      # Dependabot updates pyproject.toml/uv.lock but not requirements.txt (the file Render installs from), so
+      # regenerate it on the PR branch, majors included (on GitHub Actions PRs it finds no diff). Pushing with AUTOMERGE_TOKEN (not GITHUB_TOKEN) re-triggers
+      # CI. The follow-up run finds no diff, so it does not commit again.
+      - name: Check out PR branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.AUTOMERGE_TOKEN }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10.3.2
+        with:
+          version: "0.13.5"
+
+      - name: Regenerate requirements.txt
+        run: |
+          uv export --no-dev --no-hashes --format requirements-txt -o requirements.txt
+          if git diff --quiet requirements.txt; then
+            echo "requirements.txt already up to date"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore(deps): regenerate requirements.txt" requirements.txt
+            git push
+          fi
 
       # Patch and minor updates are merged once the required checks pass; majors are left for manual review.
       - name: Enable auto-merge

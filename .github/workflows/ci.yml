@@ -52,7 +52,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v10.3.2
         with:
-          version: "0.9.18"
+          version: "0.13.5"
           enable-cache: true
 
       - name: Install dependencies
@@ -82,11 +82,23 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v10.3.2
         with:
-          version: "0.9.18"
+          version: "0.13.5"
           enable-cache: true
 
       - name: Install dependencies
         run: uv sync --locked
+
+      - name: Check uv.lock is up to date
+        run: uv lock --check
+
+      # Render installs from requirements.txt, so it must match uv.lock.
+      - name: Check requirements.txt is in sync with uv.lock
+        run: |
+          uv export --no-dev --no-hashes --format requirements-txt -o requirements.txt
+          if ! git diff --exit-code requirements.txt; then
+            echo "::error file=requirements.txt::requirements.txt is out of sync with uv.lock. Regenerate it with: uv export --no-dev --no-hashes --format requirements-txt -o requirements.txt"
+            exit 1
+          fi
 
       - name: Run Ruff linter
         run: uv run ruff check

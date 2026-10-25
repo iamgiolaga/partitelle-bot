@@ -88,7 +88,7 @@ This is useful to test the bot on a local environment before pushing the changes
 
 ## Dependencies
 
-[Dependabot](.github/dependabot.yml) checks `uv` and GitHub Actions dependencies every Monday. Patch and minor updates are grouped in one PR and auto-merged once CI is green (they only reach staging; prod stays behind the manual `Promote to prod` workflow). Major updates get their own PR and are reviewed manually. Auto-merge needs the `AUTOMERGE_TOKEN` Dependabot secret (see the one-time setup below).
+[Dependabot](.github/dependabot.yml) checks `uv` and GitHub Actions dependencies every Monday. Patch and minor updates are grouped in one PR and auto-merged once CI is green (they only reach staging; prod stays behind the manual `Promote to prod` workflow). Major updates get their own PR and are reviewed manually. Dependabot does not touch `requirements.txt`, so the workflow regenerates it on every Dependabot PR (majors included) and CI fails if it is out of sync with `uv.lock`. Auto-merge needs the `AUTOMERGE_TOKEN` Dependabot secret (see the one-time setup below).
 
 ## Release & deploy flow
 
@@ -117,4 +117,4 @@ Deploys call the Render API with an explicit commit SHA (`.github/scripts/render
 
 - Render: turn OFF auto-deploy on both services and set `PYTHON_VERSION=3.12.12` (it must match `.python-version`).
 - Secrets: `RENDER_SERVICE_ID`, `RENDER_API_KEY`, `RENDER_TEST_SERVICE_ID`, `RENDER_TEST_API_KEY`.
-- Secret `AUTOMERGE_TOKEN` (Dependabot secret, not an Actions one): fine-grained PAT with `Contents` and `Pull requests` write on this repo, used by `dependabot-auto-merge.yml`. It is a PAT because merges made with `GITHUB_TOKEN` do not trigger the `push` workflow on `main`, so staging would not be deployed.
+- Secret `AUTOMERGE_TOKEN` (Dependabot secret, not an Actions one): fine-grained PAT limited to this repo with `Contents`, `Pull requests` and `Workflows` read and write (`Workflows` is needed to merge GitHub Actions bumps and push to their branches), no expiration, used by `dependabot-auto-merge.yml`. It is a PAT because merges made with `GITHUB_TOKEN` do not trigger the `push` workflow on `main`, so staging would not be deployed.
