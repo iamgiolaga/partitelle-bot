@@ -1,6 +1,5 @@
 """Step definitions. Wording is behaviour-level; everything PTB/DB specific lives behind `world`."""
 
-import json
 import re
 import random
 
@@ -8,7 +7,6 @@ from pytest_bdd import given, parsers, then, when
 
 HEADER = ["field", "value"]
 NONE = "(none)"
-MAYBE_MARKER = "%is%maybe%present"  # how a "maybe" player is persisted
 
 # ---- Named texts ------------------------------------------------------------------------------------
 # `Given the text "welcome" is:` defines a text (in a Background: for the whole file); any docstring
@@ -109,46 +107,36 @@ def _had_sent_in(world, who, text, title):
     world.forget_calls()
 
 
-def _update_match(world, column, value):
-    """Direct setup of a persisted column of this chat's match (Given steps only)."""
-    with world.db.conn.cursor() as cur:
-        cur.execute(
-            f"UPDATE {world.db.table} SET {column} = %s WHERE chat_id = %s",
-            [value, world.current_chat.id],
-        )
-
-
 @given(parsers.parse("the match target is {target:d}"))
 def _match_target(world, target):
-    _update_match(world, "target", target)
+    world.db.set_target(world.current_chat.id, target)
 
 
 @given(parsers.parse('the match time was stored as "{time}"'))
 def _match_time(world, time):
     """Legacy data: before /settime validated its input any text could be stored as the time."""
-    _update_match(world, "time", time)
+    world.db.set_time(world.current_chat.id, time)
 
 
 @given(parsers.parse('the match has the players "{players}"'))
 def _match_players(world, players):
     """Comma separated, in order; a trailing ` (maybe)` marks a player who is only maybe present."""
-    stored = []
+    parsed = []
     for player in (p.strip() for p in players.split(",")):
-        if player.endswith(" (maybe)"):
-            player = player[: -len(" (maybe)")] + MAYBE_MARKER
-        stored.append(player)
-    _update_match(world, "players", stored)
+        is_maybe = player.endswith(" (maybe)")
+        parsed.append((player[: -len(" (maybe)")] if is_maybe else player, is_maybe))
+    world.db.set_players(world.current_chat.id, parsed)
 
 
 @given(
     parsers.parse('the match has the black team "{black}" and the white team "{white}"')
 )
 def _match_teams(world, black, white):
-    teams = {
-        "black": [p.strip() for p in black.split(",")],
-        "white": [p.strip() for p in white.split(",")],
-    }
-    _update_match(world, "teams", json.dumps(teams))
+    world.db.set_teams(
+        world.current_chat.id,
+        [p.strip() for p in black.split(",")],
+        [p.strip() for p in white.split(",")],
+    )
 
 
 @given("the bot is expected to crash on the next message")
@@ -327,8 +315,7 @@ def _render(field, match):
         return NONE
     if field == "players":
         return ", ".join(
-            p[: -len(MAYBE_MARKER)] + " (maybe)" if p.endswith(MAYBE_MARKER) else p
-            for p in value
+            f"{name} (maybe)" if is_maybe else name for name, is_maybe in value
         )
     if field == "teams":
         return " | ".join(

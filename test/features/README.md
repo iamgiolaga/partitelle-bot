@@ -15,7 +15,7 @@ Any `PB_*` variable can be overridden from the environment (defaults: `test/conf
 
 ## How the harness works
 
-- `pg_harness.py`: creates the test database if missing, rebuilds the schema with the real migrations (`db/migrate.py`), truncates it before every scenario.
+- `pg_harness.py`: the only place that knows the DB schema and encodings (`Database` helpers take and return plain test values); creates the test database if missing, rebuilds the schema with the real migrations (`db/migrate.py`), truncates it before every scenario.
 - `telegram_world.py`: `FakeTelegram` (a `telegram.request.BaseRequest`) records every outgoing Bot API call (send, edit, pin, ...) and answers with plausible JSON; an unsupported call fails the scenario. Handlers are registered through the real `register_handlers` on a real `Application`.
 - The steps are synchronous: every coroutine runs on a dedicated event loop owned by the `World` (one per scenario). `World.send` feeds a message with `application.process_update`; `World.run_scheduled_jobs` awaits the jobs captured by the (never started) job queue. `test_python_only_paths.py` holds plain pytest tests for the few paths no scenario describes.
 - Every call is recorded in order and each `Then the bot should ...` step consumes the next one. After each scenario (`conftest.py`) any unconsumed bot call, or any recorded handler exception that was not asserted, fails the scenario.
@@ -44,7 +44,7 @@ Any `PB_*` variable can be overridden from the environment (defaults: `test/conf
 - `"<user>" had sent "<text>"` / `... in "<chat>"`: really sends the message as setup; traffic forgotten.
 - `the match target is <n>`: sets the target directly in the DB.
 - `the match time was stored as "<text>"`: sets the time directly in the DB, bypassing the /settime validation (legacy values).
-- `the match has the players "<a, b (maybe), ...>"`: sets the list directly, in order; ` (maybe)` marks a maybe-present player.
+- `the match has the players "<a, b (maybe), ...>"`: sets the list directly, in order; ` (maybe)` marks a maybe-present player (the persisted encoding lives only in `pg_harness.py`).
 - `the match has the black team "<...>" and the white team "<...>"`: sets the teams directly.
 - `the bot is not an administrator of the chat`: pinning fails with "not enough rights".
 - `today is "<YYYY-MM-DD HH:MM>"`: freezes the clock (Europe/Rome).
