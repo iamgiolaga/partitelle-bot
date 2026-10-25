@@ -11,7 +11,12 @@ from db.queries import (
     update_time_on_db,
     update_bot_last_message_id_on_db,
 )
-from utils.utils import flatten_args, get_sender_name, format_summary
+from utils.utils import (
+    flatten_args,
+    get_sender_name,
+    format_summary,
+    normalize_match_time,
+)
 
 
 async def set_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -31,8 +36,16 @@ async def set_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 chat_id=update.effective_chat.id, parse_mode="markdown", text=answer
             )
+        elif normalize_match_time(flatten_args(context.args)) is None:
+            answer = (
+                "L'orario non è valido: scrivi /settime <orario> nel formato HH:MM, "
+                "ad esempio /settime 21:30"
+            )
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id, parse_mode="markdown", text=answer
+            )
         else:
-            time = flatten_args(context.args)
+            time = normalize_match_time(flatten_args(context.args))
             update_time_on_db(chat_id, time)
             remove_job_if_exists(str(chat_id), context)
             players, day, time, target, _, pitch, _, bot_last_message_id = (

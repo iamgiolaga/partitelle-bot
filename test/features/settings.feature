@@ -6,7 +6,7 @@ Feature: Match settings
   Background:
     Given a group chat "Calcetto"
     And the user "@mario"
-    And today is "2026-10-21 18:00"
+    And today is "2026-10-21 21:00"
     And the text "default description" is:
       """
       5 goal di scarto e le squadre si _potrebbero_ cambiare 
@@ -421,8 +421,7 @@ Feature: Match settings
     And the bot should pin the last message
     And the bot should send nothing else
 
-  @known-bug @issue-8
-  Scenario: Reaching the target with the default day never schedules the payment reminder
+  Scenario: Reaching the target with the default day schedules the payment reminder
     Given a match was started
     And "@mario" had sent "aggiungi anna"
     And "@mario" had sent "aggiungi bea"
@@ -443,7 +442,12 @@ Feature: Match settings
       Ok, @mario! Ho impostato il numero di partecipanti a 2
       """
     When the scheduled jobs run
-    Then the bot should send nothing else
+    Then the bot should send plain text:
+      """
+      {payment reminder}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
 
   Scenario: Changing the target cancels the teams and the payment reminder
     Given a match was started
@@ -675,8 +679,7 @@ Feature: Match settings
     When the scheduled jobs run
     Then the bot should send nothing else
 
-  @known-bug @issue-8
-  Scenario: The day written by the bot itself cannot be read back, so no payment reminder is ever scheduled
+  Scenario: The day written by the bot itself is read back, so the payment reminder is scheduled
     Given a match was started
     When "@mario" sends "/settime 21:00"
     Then the bot should send:
@@ -693,7 +696,12 @@ Feature: Match settings
       """
     And the bot should pin the summary
     When the scheduled jobs run
-    Then the bot should send nothing else
+    Then the bot should send plain text:
+      """
+      {payment reminder}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
 
   @known-bug @issue-91
   Scenario: The payment reminder replaces the summary as the message edited by later changes
@@ -787,18 +795,17 @@ Feature: Match settings
     And the bot should pin the last message
     And the bot should send nothing else
 
-  @known-bug @issue-92
-  Scenario Outline: /settime does not validate the time: "<text>" is stored as it is
+  Scenario Outline: /settime "<text>" is stored as <stored>
     Given a match was started
     And "@mario" had sent "/setday 25/10/2026"
     When "@mario" sends "/settime <text>"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato l'orario della partita alle <text>
+      Ok, @mario! Ho impostato l'orario della partita alle <stored>
       """
     And the bot should edit the summary to:
       """
-      *GIORNO*: 25/10/2026 | <text>
+      *GIORNO*: 25/10/2026 | <stored>
 
       {ten empty slots}
 
@@ -807,17 +814,48 @@ Feature: Match settings
     And the bot should pin the summary
     And the bot should send nothing else
     And the match should have:
-      | field | value  |
-      | time  | <text> |
+      | field | value    |
+      | time  | <stored> |
 
     Examples:
-      | text      |
-      | 25:99     |
-      | stasera   |
-      | alle 21   |
-      | 9:30      |
+      | text  | stored |
+      | 21:30 | 21:30  |
+      | 9:30  | 09:30  |
+      | 09:05 | 09:05  |
+      | 0:00  | 00:00  |
+      | 23:59 | 23:59  |
+      | 21.30 | 21:30  |
+      | 9.05  | 09:05  |
 
-  Scenario: /settime with an unreadable time still schedules the payment reminder from the day
+  Scenario Outline: /settime with the invalid time "<text>" is refused and the time is not changed
+    Given a match was started
+    And "@mario" had sent "/setday 25/10/2026"
+    And "@mario" had sent "/settime 21:30"
+    When "@mario" sends "/settime <text>"
+    Then the bot should send:
+      """
+      L'orario non è valido: scrivi /settime <orario> nel formato HH:MM, ad esempio /settime 21:30
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field | value |
+      | time  | 21:30 |
+
+    Examples:
+      | text     |
+      | 25:99    |
+      | 24:00    |
+      | 21:60    |
+      | stasera  |
+      | alle 21  |
+      | 21       |
+      | 21:5     |
+      | 21:300   |
+      | 21 30    |
+      | 21:30:00 |
+      | -1:30    |
+
+  Scenario: An invalid /settime keeps the payment reminder scheduled before
     Given a match was started
     And "@mario" had sent "/setday 25/10/2026"
     And "@mario" had sent "/settime stasera"
@@ -1150,10 +1188,24 @@ Feature: Match settings
       | 2026-10-20 23:59 | Mercoledì 21/10/2026 |
       | 2026-10-22 09:00 | Mercoledì 28/10/2026 |
       | 2026-10-25 12:00 | Mercoledì 28/10/2026 |
-      | 2026-12-30 18:00 | Mercoledì 06/01/2027 |
+      | 2026-12-30 21:00 | Mercoledì 06/01/2027 |
 
-  @known-bug @issue-34
-  Scenario Outline: /start on a Wednesday at <time> skips to the following Wednesday, even before the match could happen
+  Scenario Outline: /start on a Wednesday at <time>, before the default match time, keeps the same day
+    Given the clock moves to "2026-10-21 <time>"
+    When "@mario" sends "/start"
+    Then the bot should send the text "welcome"
+    And the bot should send nothing else
+    And the match should have:
+      | field | value                |
+      | day   | Mercoledì 21/10/2026 |
+
+    Examples:
+      | time  |
+      | 00:01 |
+      | 08:00 |
+      | 19:59 |
+
+  Scenario Outline: /start on a Wednesday at <time>, from the default match time on, skips to the following Wednesday
     Given the clock moves to "2026-10-21 <time>"
     When "@mario" sends "/start"
     Then the bot should send the text "welcome"
@@ -1164,9 +1216,8 @@ Feature: Match settings
 
     Examples:
       | time  |
-      | 00:01 |
-      | 08:00 |
-      | 19:59 |
+      | 20:00 |
+      | 20:01 |
       | 23:59 |
 
   Scenario: The default day is computed once, when the match is started

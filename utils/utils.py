@@ -5,29 +5,56 @@ from telegram.helpers import escape_markdown
 from utils.constants import maybe_placeholder
 import random
 import json
+import re
 
 
-def get_next_weekday(startdate: str, weekday: int) -> str:
+def get_next_weekday(startdate: str, weekday: int, now=None, match_time=None) -> str:
     """
     Get the next weekday from a given date
     @param startdate: the starting date
     @param weekday: the weekday to find (0 = Monday, 1 = Tuesday, ..., 6 = Sunday)
+    @param now: the current moment, needed only together with match_time
+    @param match_time: the time (datetime.time) of the match: when startdate is already
+    that weekday and now is before it, startdate itself is returned (from the match time on, it is the following week)
     @return: the date of the next specified weekday in the format 'dd/mm/yyyy'
 
     """
     format = "%d/%m/%Y"
     d = datetime.strptime(startdate, format)
     days_ahead = weekday - d.weekday()
+    if days_ahead == 0 and match_time is not None and now.time() < match_time:
+        return d.strftime(format)
     if days_ahead <= 0:
         days_ahead += 7
     return (d + timedelta(days_ahead)).strftime(format)
 
 
-def compute_next_wednesday():
-    return get_next_weekday((datetime.today().strftime("%d/%m/%Y")), 2)
+def compute_next_wednesday(time=None):
+    """
+    @param time: the match time as 'HH:MM'; when it is a valid time and today is Wednesday
+    before it, the result is today, otherwise the following Wednesday
+    """
+    now = datetime.today()
+    match_time = extract_match_time(time) if time else -1
+    return get_next_weekday(
+        now.strftime("%d/%m/%Y"),
+        2,
+        now,
+        None if match_time == -1 else match_time,
+    )
+
+
+ITALIAN_WEEKDAY = re.compile(
+    r"^\s*(luned[iì]|marted[iì]|mercoled[iì]|gioved[iì]|venerd[iì]|sabato|domenica)"
+    r"\s+(?=\d{1,2}[/.-]\d{1,2})",
+    re.IGNORECASE,
+)
 
 
 def extract_match_day(day):
+    # dateutil does not know the Italian weekdays (e.g. the default "Mercoledì 28/10/2026"):
+    # drop a leading one, but only when a date follows (a weekday alone is still unreadable)
+    day = ITALIAN_WEEKDAY.sub("", day)
     try:
         extracted_day = parse(day, dayfirst=True)
     except ValueError:
@@ -41,6 +68,20 @@ def extract_match_time(time):
     except ValueError:
         extracted_time = -1
     return extracted_time
+
+
+def normalize_match_time(text):
+    """
+    Validate the time written by a user and return it as 'HH:MM', or None when invalid.
+    Accepted: H:MM, HH:MM, H.MM, HH.MM (e.g. '9:30' -> '09:30', '21.30' -> '21:30')
+    """
+    found = re.fullmatch(r"(\d{1,2})[:.](\d{2})", text.strip())
+    if found is None:
+        return None
+    hours, minutes = int(found.group(1)), int(found.group(2))
+    if hours > 23 or minutes > 59:
+        return None
+    return f"{hours:02d}:{minutes:02d}"
 
 
 def compute_seconds_from_now(destination_date):

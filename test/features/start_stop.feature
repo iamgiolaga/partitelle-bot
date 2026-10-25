@@ -5,7 +5,7 @@ Feature: Starting and stopping a match
   Background:
     Given a group chat "Calcetto"
     And the user "@mario"
-    And today is "2026-10-21 18:00"
+    And today is "2026-10-21 21:00"
     And the text "welcome" is:
       """
       Ciao bestie 😎, chi c'è per il prossimo calcetto? 

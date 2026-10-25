@@ -2,14 +2,15 @@
 Feature: Payment reminder
   When a match is fully booked, or when its day or time change, the bot schedules a reminder
   for the group: 2 hours after the match time, or 36 hours after the start of the match day when
-  the time is not a valid HH:MM. When it fires it asks who has not paid yet and pins the message.
+  the stored time is not a valid HH:MM (only legacy data: /settime refuses invalid times).
+  When it fires it asks who has not paid yet and pins the message.
   A reminder is scheduled only if the match day is a date the bot can understand and the
   resulting moment is still in the future.
 
   Background:
     Given a group chat "Calcetto"
     And the user "@mario"
-    And today is "2026-10-21 18:00"
+    And today is "2026-10-21 21:00"
     And the text "default description" is:
       """
       5 goal di scarto e le squadre si _potrebbero_ cambiare 
@@ -93,15 +94,15 @@ Feature: Payment reminder
     And a payment reminder should be scheduled for "2026-10-29 23:30"
     And the bot should send nothing else
 
-  Scenario: /setday after an invalid time falls back to 36 hours after the start of the day
+  Scenario: /setday after a legacy invalid time falls back to 36 hours after the start of the day
     Given a match was started
-    And "@mario" had sent "/settime sera"
+    And the match time was stored as "sera"
     When "@mario" sends "/setday 27/10/2026"
     Then the bot should send:
           """
           Ok, @mario! Ho impostato il giorno della partita il 27/10/2026
           """
-    And the bot should edit the summary to:
+    And the bot should send:
           """
           *GIORNO*: 27/10/2026 | sera
     
@@ -111,43 +112,21 @@ Feature: Payment reminder
     
           {campo}
           """
-    And the bot should pin the summary
+    And the bot should pin the last message
     And a payment reminder should be scheduled for "2026-10-28 12:00"
     And the bot should send nothing else
 
-  Scenario: /settime with an invalid time falls back to 36 hours after the start of the day
-    Given a match was started
-    And "@mario" had sent "/setday 27/10/2026"
-    When "@mario" sends "/settime sera"
-    Then the bot should send:
-          """
-          Ok, @mario! Ho impostato l'orario della partita alle sera
-          """
-    And the bot should edit the summary to:
-          """
-          *GIORNO*: 27/10/2026 | sera
-    
-          {empty slots}
-    
-          {default description}
-    
-          {campo}
-          """
-    And the bot should pin the summary
-    And a payment reminder should be scheduled for "2026-10-28 12:00"
-    And the bot should send nothing else
-
-  Scenario: A time written with a dot is not valid: the 36 hours fallback is used
+  Scenario: /settime with a time written with a dot is normalised and schedules the reminder 2 hours after it
     Given a match was started
     And "@mario" had sent "/setday 27/10/2026"
     When "@mario" sends "/settime 21.30"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato l'orario della partita alle 21.30
+          Ok, @mario! Ho impostato l'orario della partita alle 21:30
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 27/10/2026 | 21.30
+          *GIORNO*: 27/10/2026 | 21:30
     
           {empty slots}
     
@@ -156,11 +135,10 @@ Feature: Payment reminder
           {campo}
           """
     And the bot should pin the summary
-    And a payment reminder should be scheduled for "2026-10-28 12:00"
+    And a payment reminder should be scheduled for "2026-10-27 23:30"
     And the bot should send nothing else
 
-  @known-bug @issue-8
-  Scenario: /settime with the default day schedules no reminder
+  Scenario: /settime with the default day schedules the reminder 2 hours after the new time
     Given a match was started
     When "@mario" sends "/settime 21:30"
     Then the bot should send:
@@ -178,11 +156,10 @@ Feature: Payment reminder
           {campo}
           """
     And the bot should pin the last message
-    And no payment reminder should be scheduled
+    And a payment reminder should be scheduled for "2026-10-28 23:30"
     And the bot should send nothing else
 
-  @known-bug @issue-8
-  Scenario: Reaching the target with the default day schedules no reminder
+  Scenario: Reaching the target with the default day schedules the reminder 2 hours after the default time
     Given a match was started
     And "@mario" had sent "/setnumber 2"
     And "@mario" had sent "aggiungi anna"
@@ -204,7 +181,29 @@ Feature: Payment reminder
           """
     And the bot should pin the summary
     And the bot should send the text "kickoff"
-    And no payment reminder should be scheduled
+    And a payment reminder should be scheduled for "2026-10-28 22:00"
+    And the bot should send nothing else
+
+  Scenario: Starting on a Wednesday before the match time makes today the default day, with its reminder
+    Given the clock moves to "2026-10-21 19:00"
+    And a match was started
+    When "@mario" sends "/settime 21:00"
+    Then the bot should send:
+          """
+          Ok, @mario! Ho impostato l'orario della partita alle 21:00
+          """
+    And the bot should send:
+          """
+          *GIORNO*: Mercoledì 21/10/2026 | 21:00
+    
+          {empty slots}
+    
+          {default description}
+    
+          {campo}
+          """
+    And the bot should pin the last message
+    And a payment reminder should be scheduled for "2026-10-21 23:00"
     And the bot should send nothing else
 
   Scenario: /setday with a date in the past schedules no reminder
