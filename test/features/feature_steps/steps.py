@@ -116,6 +116,12 @@ def _match_target(world, target):
     _update_match(world, "target", target)
 
 
+@given(parsers.parse('the match time was stored as "{time}"'))
+def _match_time(world, time):
+    """Legacy data: before /settime validated its input any text could be stored as the time."""
+    _update_match(world, "time", time)
+
+
 @given(parsers.parse('the match has the players "{players}"'))
 def _match_players(world, players):
     """Comma separated, in order; a trailing ` (maybe)` marks a player who is only maybe present."""

@@ -6,6 +6,7 @@ from utils.utils import (
     get_next_weekday,
     compute_next_wednesday,
     extract_match_day,
+    normalize_match_time,
     get_sender_name,
     swap_players,
     generate_teams,
@@ -123,6 +124,20 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(extract_match_day("Mercoledì"), -1)
         self.assertEqual(extract_match_day("sabato 20:00"), -1)
         self.assertEqual(extract_match_day("prossima settimana"), -1)
+
+    def test_normalize_match_time(self):
+        for text, expected in [
+            ("21:30", "21:30"),
+            ("9:30", "09:30"),
+            ("0:00", "00:00"),
+            ("23:59", "23:59"),
+            ("21.30", "21:30"),
+            ("9.05", "09:05"),
+            (" 21:30 ", "21:30"),
+        ]:
+            self.assertEqual(normalize_match_time(text), expected)
+        for text in ["25:99", "24:00", "21:60", "stasera", "alle 21", "21", "21:5", ""]:
+            self.assertIsNone(normalize_match_time(text))
 
     def test_get_sender_name(self):
         mock_update = MagicMock(spec=Update)

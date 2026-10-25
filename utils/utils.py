@@ -70,6 +70,20 @@ def extract_match_time(time):
     return extracted_time
 
 
+def normalize_match_time(text):
+    """
+    Validate the time written by a user and return it as 'HH:MM', or None when invalid.
+    Accepted: H:MM, HH:MM, H.MM, HH.MM (e.g. '9:30' -> '09:30', '21.30' -> '21:30')
+    """
+    found = re.fullmatch(r"(\d{1,2})[:.](\d{2})", text.strip())
+    if found is None:
+        return None
+    hours, minutes = int(found.group(1)), int(found.group(2))
+    if hours > 23 or minutes > 59:
+        return None
+    return f"{hours:02d}:{minutes:02d}"
+
+
 def compute_seconds_from_now(destination_date):
     return destination_date.timestamp() - datetime.now().timestamp()
 

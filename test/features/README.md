@@ -42,6 +42,7 @@ Any `PB_*` variable can be overridden from the environment (defaults: `test/conf
 - `a match was started`: really sends `/start` (creates an organizer user if none exists); traffic forgotten.
 - `"<user>" had sent "<text>"` / `... in "<chat>"`: really sends the message as setup; traffic forgotten.
 - `the match target is <n>`: sets the target directly in the DB.
+- `the match time was stored as "<text>"`: sets the time directly in the DB, bypassing the /settime validation (legacy values).
 - `the match has the players "<a, b (maybe), ...>"`: sets the list directly, in order; ` (maybe)` marks a maybe-present player.
 - `the match has the black team "<...>" and the white team "<...>"`: sets the teams directly.
 - `the bot is not an administrator of the chat`: pinning fails with "not enough rights".

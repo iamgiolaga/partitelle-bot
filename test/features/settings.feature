@@ -795,18 +795,17 @@ Feature: Match settings
     And the bot should pin the last message
     And the bot should send nothing else
 
-  @known-bug @issue-92
-  Scenario Outline: /settime does not validate the time: "<text>" is stored as it is
+  Scenario Outline: /settime "<text>" is stored as <stored>
     Given a match was started
     And "@mario" had sent "/setday 25/10/2026"
     When "@mario" sends "/settime <text>"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato l'orario della partita alle <text>
+      Ok, @mario! Ho impostato l'orario della partita alle <stored>
       """
     And the bot should edit the summary to:
       """
-      *GIORNO*: 25/10/2026 | <text>
+      *GIORNO*: 25/10/2026 | <stored>
 
       {ten empty slots}
 
@@ -815,17 +814,48 @@ Feature: Match settings
     And the bot should pin the summary
     And the bot should send nothing else
     And the match should have:
-      | field | value  |
-      | time  | <text> |
+      | field | value    |
+      | time  | <stored> |
 
     Examples:
-      | text      |
-      | 25:99     |
-      | stasera   |
-      | alle 21   |
-      | 9:30      |
+      | text  | stored |
+      | 21:30 | 21:30  |
+      | 9:30  | 09:30  |
+      | 09:05 | 09:05  |
+      | 0:00  | 00:00  |
+      | 23:59 | 23:59  |
+      | 21.30 | 21:30  |
+      | 9.05  | 09:05  |
 
-  Scenario: /settime with an unreadable time still schedules the payment reminder from the day
+  Scenario Outline: /settime with the invalid time "<text>" is refused and the time is not changed
+    Given a match was started
+    And "@mario" had sent "/setday 25/10/2026"
+    And "@mario" had sent "/settime 21:30"
+    When "@mario" sends "/settime <text>"
+    Then the bot should send:
+      """
+      L'orario non è valido: scrivi /settime <orario> nel formato HH:MM, ad esempio /settime 21:30
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field | value |
+      | time  | 21:30 |
+
+    Examples:
+      | text     |
+      | 25:99    |
+      | 24:00    |
+      | 21:60    |
+      | stasera  |
+      | alle 21  |
+      | 21       |
+      | 21:5     |
+      | 21:300   |
+      | 21 30    |
+      | 21:30:00 |
+      | -1:30    |
+
+  Scenario: An invalid /settime keeps the payment reminder scheduled before
     Given a match was started
     And "@mario" had sent "/setday 25/10/2026"
     And "@mario" had sent "/settime stasera"
