@@ -1464,8 +1464,7 @@ Feature: Managing the participants
       """
     And the bot should send nothing else
 
-  @known-bug @issue-95
-  Scenario: scambia with a player who is in the list but not in the teams drops the other player
+  Scenario: scambia with a player who is in the list but not in the teams is refused and drops nobody
     Given a match was started
     And the match target is 6
     And the match has the players "anna, bea, carlo, dino, enzo"
@@ -1473,25 +1472,74 @@ Feature: Managing the participants
     When "@mario" sends "scambia anna con enzo"
     Then the bot should send:
       """
-      Perfetto, ho scambiato anna con enzo
+      enzo non è in nessuna squadra
       """
     And the bot should send nothing else
     And the match should have:
       | field | value                               |
-      | teams | black: enzo, bea \| white: carlo, dino |
+      | teams | black: anna, bea \| white: carlo, dino |
 
-  @known-bug @issue-95
-  Scenario Outline: scambia without " con" crashes the handler
+  Scenario: scambia with a first player who is in the list but not in the teams is refused
     Given a match was started
-    And the bot is expected to crash on the next message
-    When "@mario" sends "<message>"
-    Then the bot should fail with "ValueError"
+    And the match target is 6
+    And the match has the players "anna, bea, carlo, dino, enzo"
+    And the match has the black team "anna, bea" and the white team "carlo, dino"
+    When "@mario" sends "scambia enzo con carlo"
+    Then the bot should send:
+      """
+      enzo non è in nessuna squadra
+      """
     And the bot should send nothing else
+    And the match should have:
+      | field | value                               |
+      | teams | black: anna, bea \| white: carlo, dino |
+
+  Scenario Outline: scambia with the wrong syntax explains the usage
+    Given a match was started
+    And the match target is 4
+    And the match has the players "anna, bea, carlo, dino"
+    And the match has the black team "anna, bea" and the white team "carlo, dino"
+    When "@mario" sends "<message>"
+    Then the bot should send:
+      """
+      Per scambiare due giocatori scrivi: scambia <nome 1> con <nome 2>
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field | value                               |
+      | teams | black: anna, bea \| white: carlo, dino |
 
     Examples:
-      | message      |
-      | scambia      |
-      | scambia anna |
+      | message                       |
+      | scambia                       |
+      | scambia anna                  |
+      | scambia anna con              |
+      | scambia con anna              |
+      | scambia anna con bea con dino |
+
+  Scenario: scambia with the wrong syntax explains the usage even before the teams exist
+    Given a match was started
+    When "@mario" sends "scambia anna"
+    Then the bot should send:
+      """
+      Per scambiare due giocatori scrivi: scambia <nome 1> con <nome 2>
+      """
+    And the bot should send nothing else
+
+  Scenario: scambia a player with himself is refused and changes nothing
+    Given a match was started
+    And the match target is 4
+    And the match has the players "anna, bea, carlo, dino"
+    And the match has the black team "anna, bea" and the white team "carlo, dino"
+    When "@mario" sends "scambia anna con anna"
+    Then the bot should send:
+      """
+      anna e anna sono nella stessa squadra!
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field | value                               |
+      | teams | black: anna, bea \| white: carlo, dino |
 
   # ---- the target of the match ---------------------------------------------------------------------
 
