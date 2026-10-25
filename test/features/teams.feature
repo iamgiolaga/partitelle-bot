@@ -440,11 +440,8 @@ Feature: Teams
     And the bot should send nothing else
     And there should be no match for this chat
 
-  @known-bug @issue-97
-  Scenario: /teams draws the maybe-present people too when the target was lowered
-    # Issue #97: /teams draws from the raw player list, so after lowering the target
-    # to the number of confirmed players, the maybe markers end up inside the teams.
-    # Expected: only the confirmed players (ale, bea) are drawn.
+  Scenario: /teams draws only the confirmed players when the target was lowered
+    # The maybe-present people (carlo, dino) are left out of the draw.
     Given the team draw is seeded with 42
     And a match was started
     And the match target is 4
@@ -457,15 +454,13 @@ Feature: Teams
       """
       *SQUADRA NERA* 
        - ale
-       - dino%is%maybe%present
 
       *SQUADRA BIANCA* 
        - bea
-       - carlo%is%maybe%present
 
       """
     And the bot should send nothing else
     And the match should have:
-      | field   | value                                                       |
-      | players | ale, bea, carlo (maybe), dino (maybe)                       |
-      | teams   | black: ale, dino%is%maybe%present \| white: bea, carlo%is%maybe%present |
+      | field   | value                                 |
+      | players | ale, bea, carlo (maybe), dino (maybe) |
+      | teams   | black: ale \| white: bea              |

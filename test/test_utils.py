@@ -17,6 +17,8 @@ from utils.utils import (
     exclude_maybe,
     format_teams,
     format_summary,
+    confirmed_count,
+    already_in_message,
 )
 
 
@@ -232,6 +234,18 @@ class TestUtils(unittest.TestCase):
         ]
         self.assertEqual(
             exclude_maybe(players), ["JohnDoe", "JaneDoe", "Bob", "Charlie"]
+        )
+
+    def test_confirmed_count(self):
+        self.assertEqual(confirmed_count(None), 0)
+        self.assertEqual(confirmed_count([]), 0)
+        self.assertEqual(confirmed_count(["a", "b%is%maybe%present", "c"]), 2)
+
+    def test_already_in_message(self):
+        self.assertEqual(already_in_message(["a", "b"], 2), "Siete già in 2")
+        self.assertEqual(
+            already_in_message(["a", "b", "c%is%maybe%present"], 2),
+            "Siete già in 2 (1 in forse)",
         )
 
     def test_format_teams(self):

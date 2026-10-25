@@ -29,7 +29,7 @@ async def teams(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif not reached_target:
             answer = f"Prima di poter fare le squadre, devi raggiungere {target} partecipanti"
         else:
-            generated_teams = generate_teams(players)
+            generated_teams = generate_teams(exclude_maybe(players))
             update_teams_on_db(chat_id, generated_teams)
             answer = format_teams(generated_teams)
 
