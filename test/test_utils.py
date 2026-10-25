@@ -11,6 +11,9 @@ from utils.utils import (
     swap_players,
     generate_teams,
     flatten_args,
+    parse_names,
+    join_names,
+    is_command_name,
     exclude_maybe,
     format_teams,
     format_summary,
@@ -191,6 +194,27 @@ class TestUtils(unittest.TestCase):
         # Test case 3: No arguments
         args = []
         self.assertEqual(flatten_args(args), "")
+
+    def test_parse_names(self):
+        self.assertEqual(parse_names(" luca"), ["luca"])
+        self.assertEqual(parse_names(" luca rossi"), ["luca rossi"])
+        self.assertEqual(parse_names("a,b,c"), ["a", "b", "c"])
+        self.assertEqual(parse_names("  a , b,, ,c ,"), ["a", "b", "c"])
+        self.assertEqual(parse_names(""), [])
+        self.assertEqual(parse_names("  "), [])
+        self.assertEqual(parse_names(" , ,"), [])
+
+    def test_join_names(self):
+        self.assertEqual(join_names([]), "")
+        self.assertEqual(join_names(["a"]), "a")
+        self.assertEqual(join_names(["a", "b"]), "a e b")
+        self.assertEqual(join_names(["a", "b", "c"]), "a, b e c")
+        self.assertEqual(join_names(["a", "b", "c", "d"]), "a, b, c e d")
+
+    def test_is_command_name(self):
+        self.assertTrue(is_command_name("/start"))
+        self.assertFalse(is_command_name("luca"))
+        self.assertFalse(is_command_name("lu/ca"))
 
     def test_exclude_maybe(self):
         # Test case 1: No placeholders

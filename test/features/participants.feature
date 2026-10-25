@@ -365,14 +365,13 @@ Feature: Managing the participants
       | field   | value     |
       | players | gian_luca |
 
-  @known-bug @issue-78
-  Scenario: aggiungi a,b,c adds the whole text as one name, so the same list can be added twice
+  Scenario: aggiungi a,b,c adds every name, and sending the same list again changes nothing
     Given a match was started
     And the match target is 4
     When "@mario" sends "aggiungi a,b,c"
     Then the bot should send:
       """
-      Ok, aggiungo a,b,c
+      Ok, aggiungo a, b e c
       """
     And the bot should send:
       """
@@ -386,68 +385,131 @@ Feature: Managing the participants
       {footer}
       """
     And the bot should pin the last message
+    And the bot should send nothing else
     When "@mario" sends "aggiungi a,b,c"
     Then the bot should send:
       """
-      Ok, aggiungo a,b,c
+      a, b e c sono già nella lista
       """
-    And the bot should edit the summary to:
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value   |
+      | players | a, b, c |
+
+  Scenario: aggiungi trims the names and skips the empty ones
+    Given a match was started
+    And the match target is 4
+    When "@mario" sends "Aggiungi  Anna , bea,, ,Carlo ,"
+    Then the bot should send:
+      """
+      Ok, aggiungo anna, bea e carlo
+      """
+    And the bot should send:
       """
       {header}
 
-      1. a ✅
-      2. b ✅
-      3. c ✅
-      4. a ✅
+      1. anna ✅
+      2. bea ✅
+      3. carlo ✅
+      4. ❌
 
       {footer}
       """
-    And the bot should pin the summary
-    And the bot should send the text "kickoff"
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value           |
+      | players | anna, bea, carlo |
+
+  Scenario: aggiungi a list applies to each name the rule of a single name
+    Given a match was started
+    And the match target is 4
+    And the match has the players "anna, bea (maybe)"
+    When "@mario" sends "aggiungi anna,bea,carlo,anna"
+    Then the bot should send:
+      """
+      Ok, aggiungo carlo. Ok, bea, ti confermo. anna è già nella lista
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. anna ✅
+      2. bea ✅
+      3. carlo ✅
+      4. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
     And the bot should send nothing else
     And the match should have:
       | field   | value            |
-      | players | a, b, c, a, b, c |
+      | players | anna, bea, carlo |
 
-  @known-bug @issue-93
-  Scenario: aggiungi without a name adds an empty name and then every addition crashes
+  Scenario: aggiungi a list stops adding when the list is full and kicks off the match
     Given a match was started
-    And the match target is 4
-    When "@mario" sends "aggiungi"
-    Then the bot should send the quoted text "Ok, aggiungo "
+    And the match target is 2
+    And the match has the players "anna"
+    When "@mario" sends "aggiungi bea,carlo,dino"
+    Then the bot should send:
+      """
+      Ok, aggiungo bea. Ma aspetta! Non posso aggiungere carlo e dino perché siete già in 2
+      """
     And the bot should send:
       """
       {header}
 
-      1. ❌
-      2. ❌
-      3. ❌
+      1. anna ✅
+      2. bea ✅
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send the text "kickoff"
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value     |
+      | players | anna, bea |
+
+  Scenario: aggiungi a list tells apart the names added and the ones already in the list
+    Given a match was started
+    And the match target is 4
+    And the match has the players "a, b"
+    When "@mario" sends "aggiungi a,b,c"
+    Then the bot should send:
+      """
+      Ok, aggiungo c. a e b sono già nella lista
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. a ✅
+      2. b ✅
+      3. c ✅
       4. ❌
 
       {footer}
       """
     And the bot should pin the last message
     And the bot should send nothing else
-    Given the bot is expected to crash on the next message
-    When "@mario" sends "aggiungimi"
-    Then the bot should fail with "InvalidTextRepresentation"
-    And the bot should send nothing else
 
-  @known-bug @issue-94
-  Scenario: A chatty message starting with aggiungimi adds the following words as a name
+  Scenario: aggiungi a list confirms together two names that were maybe present
     Given a match was started
     And the match target is 4
-    When "@mario" sends "Aggiungimi pure"
+    And the match has the players "a (maybe), b (maybe)"
+    When "@mario" sends "aggiungi a,b"
     Then the bot should send:
       """
-      Ok, aggiungo pure
+      Ok, a e b, vi confermo
       """
     And the bot should send:
       """
       {header}
 
-      1. pure ✅
-      2. ❌
+      1. a ✅
+      2. b ✅
       3. ❌
       4. ❌
 
@@ -457,22 +519,283 @@ Feature: Managing the participants
     And the bot should send nothing else
     And the match should have:
       | field   | value |
-      | players | pure  |
+      | players | a, b  |
 
-  @known-bug @issue-61
-  Scenario: A /command written after aggiungi is accepted as a name
+  Scenario: aggiungi a list that fills up mid-message refuses the one name left out
     Given a match was started
-    And the match target is 4
-    When "@mario" sends "aggiungi /start"
+    And the match target is 2
+    When "@mario" sends "aggiungi a,b,c"
     Then the bot should send:
       """
-      Ok, aggiungo /start
+      Ok, aggiungo a e b. Ma aspetta! Non posso aggiungere c perché siete già in 2
       """
     And the bot should send:
       """
       {header}
 
-      1. /start ✅
+      1. a ✅
+      2. b ✅
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send the text "kickoff"
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value |
+      | players | a, b  |
+
+  Scenario: aggiungi a list that fills up mid-message refuses the two names left out
+    Given a match was started
+    And the match target is 10
+    And the match has the players "p1, p2, p3, p4, p5, p6, p7, p8, p9"
+    When "@mario" sends "aggiungi a,b,c"
+    Then the bot should send:
+      """
+      Ok, aggiungo a. Ma aspetta! Non posso aggiungere b e c perché siete già in 10
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. p1 ✅
+      2. p2 ✅
+      3. p3 ✅
+      4. p4 ✅
+      5. p5 ✅
+      6. p6 ✅
+      7. p7 ✅
+      8. p8 ✅
+      9. p9 ✅
+      10. a ✅
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send the text "kickoff"
+    And the bot should send nothing else
+
+  Scenario: aggiungi a list when the list is already full only says so
+    Given a match was started
+    And the match target is 2
+    And the match has the players "anna, bea"
+    When "@mario" sends "aggiungi carlo,dino"
+    Then the bot should send:
+      """
+      Siete già in 2
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value     |
+      | players | anna, bea |
+
+  Scenario Outline: aggiungi a,b,c groups the names by outcome whatever the initial list (<before>)
+    Given a match was started
+    And the match target is 10
+    And the match has the players "<before>"
+    When "@mario" sends "aggiungi a,b,c"
+    Then the bot should send:
+      """
+      <answer>
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. <s1>
+      2. <s2>
+      3. <s3>
+      4. <s4>
+      5. ❌
+      6. ❌
+      7. ❌
+      8. ❌
+      9. ❌
+      10. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value   |
+      | players | <after> |
+
+    Examples:
+      | before                             | answer                                                  | s1  | s2  | s3  | s4  | after      |
+      | z                                  | Ok, aggiungo a, b e c                                   | z ✅ | a ✅ | b ✅ | c ✅ | z, a, b, c |
+      | z, a                               | Ok, aggiungo b e c. a è già nella lista                 | z ✅ | a ✅ | b ✅ | c ✅ | z, a, b, c |
+      | z, b                               | Ok, aggiungo a e c. b è già nella lista                 | z ✅ | b ✅ | a ✅ | c ✅ | z, b, a, c |
+      | z, c                               | Ok, aggiungo a e b. c è già nella lista                 | z ✅ | c ✅ | a ✅ | b ✅ | z, c, a, b |
+      | z, a, b                            | Ok, aggiungo c. a e b sono già nella lista              | z ✅ | a ✅ | b ✅ | c ✅ | z, a, b, c |
+      | z, b, c                            | Ok, aggiungo a. b e c sono già nella lista              | z ✅ | b ✅ | c ✅ | a ✅ | z, b, c, a |
+      | z, a, c                            | Ok, aggiungo b. a e c sono già nella lista              | z ✅ | a ✅ | c ✅ | b ✅ | z, a, c, b |
+      | z, a (maybe), b                    | Ok, aggiungo c. Ok, a, ti confermo. b è già nella lista | z ✅ | b ✅ | a ✅ | c ✅ | z, b, a, c |
+      | z, a (maybe), b (maybe), c         | Ok, a e b, vi confermo. c è già nella lista             | z ✅ | c ✅ | a ✅ | b ✅ | z, c, a, b |
+      | z, a (maybe), b (maybe), c (maybe) | Ok, a, b e c, vi confermo                               | z ✅ | a ✅ | b ✅ | c ✅ | z, a, b, c |
+
+  Scenario: aggiungi a,b,c with all three names already in the list changes nothing
+    Given a match was started
+    And the match target is 10
+    And the match has the players "z, a, b, c"
+    When "@mario" sends "aggiungi a,b,c"
+    Then the bot should send:
+      """
+      a, b e c sono già nella lista
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value      |
+      | players | z, a, b, c |
+
+  Scenario Outline: aggiungi a,b,c groups the names refused because the list fills up (<before>)
+    Given a match was started
+    And the match target is 3
+    And the match has the players "<before>"
+    When "@mario" sends "aggiungi a,b,c"
+    Then the bot should send:
+      """
+      <answer>
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. <s1>
+      2. <s2>
+      3. <s3>
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send the text "kickoff"
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value   |
+      | players | <after> |
+
+    Examples:
+      | before          | answer                                                                                            | s1  | s2  | s3  | after   |
+      | z               | Ok, aggiungo a e b. Ma aspetta! Non posso aggiungere c perché siete già in 3                      | z ✅ | a ✅ | b ✅ | z, a, b |
+      | z, a            | Ok, aggiungo b. a è già nella lista. Ma aspetta! Non posso aggiungere c perché siete già in 3 | z ✅ | a ✅ | b ✅ | z, a, b |
+      | z, a (maybe), b | Ok, a, ti confermo. b è già nella lista. Ma aspetta! Non posso aggiungere c perché siete già in 3 | z ✅ | b ✅ | a ✅ | z, b, a |
+
+  Scenario Outline: proponi a,b,c groups the names by outcome whatever the initial list (<before>)
+    Given a match was started
+    And the match target is 10
+    And the match has the players "<before>"
+    When "@mario" sends "proponi a,b,c"
+    Then the bot should send:
+      """
+      <answer>
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. <s1>
+      2. <s2>
+      3. <s3>
+      4. <s4>
+      5. ❌
+      6. ❌
+      7. ❌
+      8. ❌
+      9. ❌
+      10. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value   |
+      | players | <after> |
+
+    Examples:
+      | before          | answer                                                         | s1  | s2  | s3  | s4  | after                              |
+      | z               | Ok, propongo a, b e c                                          | z ✅ | a ❓ | b ❓ | c ❓ | z, a (maybe), b (maybe), c (maybe) |
+      | z, b (maybe)    | Ok, propongo a e c. b è già nella lista                        | z ✅ | b ❓ | a ❓ | c ❓ | z, b (maybe), a (maybe), c (maybe) |
+      | z, b, c         | Ok, propongo a. Va bene, metto in forse b e c                  | z ✅ | a ❓ | b ❓ | c ❓ | z, a (maybe), b (maybe), c (maybe) |
+      | z, a, b (maybe) | Ok, propongo c. Va bene, metto in forse a. b è già nella lista | z ✅ | b ❓ | a ❓ | c ❓ | z, b (maybe), a (maybe), c (maybe) |
+
+  Scenario: proponi a,b,c with all three names already maybe present changes nothing
+    Given a match was started
+    And the match target is 10
+    And the match has the players "z, a (maybe), b (maybe), c (maybe)"
+    When "@mario" sends "proponi a,b,c"
+    Then the bot should send:
+      """
+      a, b e c sono già nella lista
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                              |
+      | players | z, a (maybe), b (maybe), c (maybe) |
+
+  # ---- validation of the names and chatty messages (#61, #93, #94) --------------------------------
+
+  Scenario Outline: A /command among the names is refused as a whole
+    Given a match was started
+    And the match target is 4
+    When "@mario" sends "<message>"
+    Then the bot should send:
+      """
+      Un nome non può iniziare con /
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value  |
+      | players | (none) |
+
+    Examples:
+      | message             |
+      | aggiungi luca,/stop |
+      | proponi /stop,luca  |
+      | togli /stop         |
+
+  Scenario Outline: <message> without a name asks for one and writes nothing
+    Given a match was started
+    And the match target is 4
+    And the match has the players "anna"
+    When "@mario" sends "<message>"
+    Then the bot should send:
+      """
+      <answer>
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value |
+      | players | anna  |
+
+    Examples:
+      | message      | answer                                        |
+      | aggiungi     | Chi dovrei aggiungere? Scrivi: aggiungi <nome> |
+      | proponi      | Chi dovrei proporre? Scrivi: proponi <nome>   |
+      | togli        | Chi dovrei togliere? Scrivi: togli <nome>     |
+
+  Scenario Outline: <message> with only commas does not write an empty name
+    Given a match was started
+    And the match target is 4
+    When "@mario" sends "<message>"
+    Then the bot should send:
+      """
+      <answer>
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value  |
+      | players | (none) |
+    When "@mario" sends "aggiungimi"
+    Then the bot should send:
+      """
+      Ok, @mario, ti aggiungo
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. @mario ✅
       2. ❌
       3. ❌
       4. ❌
@@ -481,9 +804,45 @@ Feature: Managing the participants
       """
     And the bot should pin the last message
     And the bot should send nothing else
+
+    Examples:
+      | message      | answer                                         |
+      | aggiungi     | Chi dovrei aggiungere? Scrivi: aggiungi <nome> |
+      | aggiungi ,,  | Chi dovrei aggiungere? Scrivi: aggiungi <nome> |
+      | proponi ,    | Chi dovrei proporre? Scrivi: proponi <nome>    |
+
+  Scenario Outline: A chatty message starting with a self command is ignored like any other chat
+    Given a match was started
+    And the match target is 4
+    And the match has the players "anna"
+    When "@mario" sends "<message>"
+    Then the bot should send nothing else
+    And the match should have:
+      | field   | value |
+      | players | anna  |
+
+    Examples:
+      | message          |
+      | Aggiungimi pure  |
+      | toglimi grazie   |
+      | proponimi forse  |
+      | aggiungimiii     |
+      | aggiungiamo luca |
+      | togliamo anna    |
+      | proponiamo luca  |
+
+  Scenario: A /command written after aggiungi is refused
+    Given a match was started
+    And the match target is 4
+    When "@mario" sends "aggiungi /start"
+    Then the bot should send:
+      """
+      Un nome non può iniziare con /
+      """
+    And the bot should send nothing else
     And the match should have:
       | field   | value  |
-      | players | /start |
+      | players | (none) |
 
   # ---- proponimi / proponi <nome> -----------------------------------------------------------------
 
@@ -668,21 +1027,20 @@ Feature: Managing the participants
     And the bot should pin the last message
     And the bot should send nothing else
 
-  @known-bug @issue-78
-  Scenario: proponi a,b,c confirms all but the last name
+  Scenario: proponi a,b,c proposes every name
     Given a match was started
     And the match target is 4
     When "@mario" sends "proponi a,b,c"
     Then the bot should send:
       """
-      Ok, propongo a,b,c
+      Ok, propongo a, b e c
       """
     And the bot should send:
       """
       {header}
 
-      1. a ✅
-      2. b ✅
+      1. a ❓
+      2. b ❓
       3. c ❓
       4. ❌
 
@@ -691,51 +1049,115 @@ Feature: Managing the participants
     And the bot should pin the last message
     And the bot should send nothing else
     And the match should have:
-      | field   | value        |
-      | players | a, b, c (maybe) |
+      | field   | value                           |
+      | players | a (maybe), b (maybe), c (maybe) |
 
-  @known-bug @issue-61
-  Scenario: A /command written after proponi is accepted as a name
+  Scenario: proponi a list applies to each name the rule of a single name and revokes the teams
+    Given a match was started
+    And the match target is 4
+    And the match has the players "anna, bea (maybe), carlo, dino"
+    And the match has the black team "anna, carlo" and the white team "dino, bea"
+    When "@mario" sends "proponi anna,bea,anna"
+    Then the bot should send:
+      """
+      Va bene, metto in forse anna. bea è già nella lista
+      """
+    And the bot should send the text "teams revoked"
+    And the bot should send:
+      """
+      {header}
+
+      1. bea ❓
+      2. carlo ✅
+      3. dino ✅
+      4. anna ❓
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                                       |
+      | players | bea (maybe), carlo, dino, anna (maybe) |
+      | teams   | (none)                                      |
+
+  Scenario: proponi a list moves the confirmed names to maybe together
+    Given a match was started
+    And the match target is 4
+    And the match has the players "a, b, c"
+    When "@mario" sends "proponi a,b,d"
+    Then the bot should send:
+      """
+      Ok, propongo d. Va bene, metto in forse a e b
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. c ✅
+      2. a ❓
+      3. b ❓
+      4. d ❓
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+
+  Scenario: proponi a list that fills up mid-message refuses the names left out
+    Given a match was started
+    And the match target is 2
+    When "@mario" sends "proponi a,b,c"
+    Then the bot should send:
+      """
+      Ok, propongo a e b. Ma aspetta! Non posso proporre c perché siete già in 2
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. a ❓
+      2. b ❓
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+
+  Scenario: proponi a list when the list is already full only says so
+    Given a match was started
+    And the match target is 2
+    And the match has the players "anna, bea"
+    When "@mario" sends "proponi carlo,dino"
+    Then the bot should send:
+      """
+      Siete già in 2
+      """
+    And the bot should send nothing else
+
+  Scenario: proponi a list of names already maybe present does nothing
+    Given a match was started
+    And the match target is 4
+    And the match has the players "a (maybe), b (maybe)"
+    When "@mario" sends "proponi a,b"
+    Then the bot should send:
+      """
+      a e b sono già nella lista
+      """
+    And the bot should send nothing else
+
+  Scenario: A /command written after proponi is refused
     Given a match was started
     And the match target is 4
     When "@mario" sends "proponi /stop"
     Then the bot should send:
       """
-      Ok, propongo /stop
+      Un nome non può iniziare con /
       """
-    And the bot should send:
-      """
-      {header}
-
-      1. /stop ❓
-      2. ❌
-      3. ❌
-      4. ❌
-
-      {footer}
-      """
-    And the bot should pin the last message
     And the bot should send nothing else
-
-  @known-bug @issue-93
-  Scenario: proponi without a name proposes an empty name
-    Given a match was started
-    And the match target is 4
-    When "@mario" sends "proponi"
-    Then the bot should send the quoted text "Ok, propongo "
-    And the bot should send:
-      """
-      {header}
-
-      1.  ❓
-      2. ❌
-      3. ❌
-      4. ❌
-
-      {footer}
-      """
-    And the bot should pin the last message
-    And the bot should send nothing else
+    And the match should have:
+      | field   | value  |
+      | players | (none) |
 
   # ---- toglimi / togli <nome> ---------------------------------------------------------------------
 
@@ -935,51 +1357,19 @@ Feature: Managing the participants
       | field | value  |
       | teams | (none) |
 
-  @known-bug @issue-93
-  Scenario: togli without a name asks whom to remove with a broken sentence
-    Given a match was started
-    And the match has the players "anna"
-    When "@mario" sends "togli"
-    Then the bot should send the quoted text " non è nella lista. Chi dovrei togliere?"
-    And the bot should send nothing else
-
-  @known-bug @issue-94
-  Scenario: A chatty message starting with toglimi is read as togli <nome>
-    Given a match was started
-    And the match has the players "anna"
-    When "@mario" sends "toglimi grazie"
-    Then the bot should send:
-      """
-      grazie non è nella lista. Chi dovrei togliere?
-      """
-    And the bot should send nothing else
-
-  @known-bug @issue-61
-  Scenario: A /command written after togli is accepted as a name
+  Scenario: A /command written after togli is refused, even if an old entry with that name exists
     Given a match was started
     And the match target is 4
     And the match has the players "/start"
     When "@mario" sends "togli /start"
     Then the bot should send:
       """
-      Che vergogna, /start
+      Un nome non può iniziare con /
       """
-    And the bot should send:
-      """
-      {header}
-
-      1. ❌
-      2. ❌
-      3. ❌
-      4. ❌
-
-      {footer}
-      """
-    And the bot should pin the last message
     And the bot should send nothing else
     And the match should have:
       | field   | value  |
-      | players | (none) |
+      | players | /start |
 
   # ---- scambia <a> con <b> ------------------------------------------------------------------------
 

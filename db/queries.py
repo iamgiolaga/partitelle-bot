@@ -1,5 +1,10 @@
 from conf.conf import table_name
-from utils.constants import default_target, default_time, default_message
+from utils.constants import (
+    default_target,
+    default_time,
+    default_message,
+    maybe_placeholder,
+)
 from psycopg import sql
 from utils.utils import compute_next_wednesday
 from db.connection import connection
@@ -166,6 +171,13 @@ def update_teams_on_db(chat_id, teams):
 
 
 def update_players_on_db(chat_id, new_entry, action):
+    # the players array literal is built by concatenation: an empty entry corrupts it (#93)
+    # and a /command is never a name (#61); every write path goes through here
+    if action == "add" and (
+        not new_entry.replace(maybe_placeholder, "").strip()
+        or new_entry.startswith("/")
+    ):
+        raise ValueError("invalid player name: " + repr(new_entry))
     with connection() as conn:
         cur = conn.execute(
             sql.SQL("SELECT players FROM {table} WHERE chat_id=%s").format(

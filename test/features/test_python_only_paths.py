@@ -1,4 +1,4 @@
-"""Paths the Gherkin scenarios do not describe (/bamboo, Telegram rejecting a summary), exercised through the same
+"""Paths the Gherkin scenarios do not describe (/bamboo, Telegram rejecting a summary, the db guard on names), exercised through the same
 fake Telegram world. Plain pytest on purpose: the .feature files are the contract and are not touched."""
 
 from telegram.helpers import escape_markdown
@@ -64,3 +64,16 @@ def test_summary_edit_survives_the_bot_not_being_admin(world):
 
     methods = [call.method for call in world.unconsumed()]
     assert methods == ["send_message", "edit_message_text", "pin_chat_message"]
+
+
+def test_the_db_layer_refuses_to_store_an_empty_or_command_name(world):
+    import pytest
+    from db.queries import update_players_on_db
+
+    world.add_chat("Calcetto")
+    world.add_user("@giulia", "Giulia", "giulia")
+    world.send("@giulia", "/start")
+    for name in ["", "  ", "%is%maybe%present", "/start", "/stop%is%maybe%present"]:
+        with pytest.raises(ValueError):
+            update_players_on_db(world.current_chat.id, name, "add")
+    assert world.db.fetch_match(world.current_chat.id)["players"] is None
