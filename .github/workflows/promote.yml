@@ -37,14 +37,16 @@ jobs:
           exit 1
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
 
       # uvx runs git-cliff (version bump and release notes)
       - name: Set up uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.3.2
+        with:
+          version: "0.9.18"
 
       # Pressing the button right after a merge is fine: wait for the CI run on main (which also deploys
       # staging) to finish, so that the commit read from staging below is the latest main.
