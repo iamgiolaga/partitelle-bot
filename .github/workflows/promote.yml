@@ -22,7 +22,7 @@ on:
 
 permissions:
   contents: write # tag + release
-  actions: read # check the CI run of the staging commit
+  actions: write # check the CI run of the staging commit, re-enable this workflow (keep-alive)
 
 concurrency:
   group: deploy-partitellebot
@@ -35,6 +35,12 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      # GitHub disables scheduled workflows after 60 days without repo activity. Re-enabling the workflow through
+      # the API resets that timer. It runs first, so it happens even when the promote is skipped or fails.
+      - name: Keep the schedule alive
+        if: ${{ github.event_name == 'schedule' }}
+        run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/promote.yml/enable"
+
       - name: Require main
         if: ${{ github.ref != 'refs/heads/main' }}
         run: |
