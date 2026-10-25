@@ -128,6 +128,23 @@ def flatten_args(args):
     return " ".join(map(str, args))
 
 
+def parse_names(text):
+    """Split "a, b,,c" into ["a", "b", "c"]: comma separated, trimmed, without empty names."""
+    return [name.strip() for name in text.split(",") if name.strip()]
+
+
+def join_names(names):
+    """Italian-style list: "a", "a e b", "a, b e c"."""
+    if len(names) <= 1:
+        return "".join(names)
+    return ", ".join(names[:-1]) + " e " + names[-1]
+
+
+def is_command_name(name):
+    """A name that looks like a /command is not a name."""
+    return name.startswith("/")
+
+
 def exclude_maybe(players):
     return [player for player in players if maybe_placeholder not in player]
 
