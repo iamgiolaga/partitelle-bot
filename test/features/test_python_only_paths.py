@@ -25,10 +25,7 @@ def test_bamboo_creates_the_match_with_the_bamboo_defaults_once(world):
     assert match["pitch"].startswith("Crespi Sport Village")
     assert match["day"].startswith("Mercoledì ")
 
-    world.db.conn.execute(
-        f"UPDATE {world.db.table} SET pitch = 'Altro campo' WHERE chat_id = %s",
-        [world.current_chat.id],
-    )
+    world.db.set_pitch(world.current_chat.id, "Altro campo")
     world.send("@giulia", "/bamboo")  # already there: answered, not recreated
     assert world.next_call().method == "send_message"
     assert world.db.fetch_match(world.current_chat.id)["pitch"] == "Altro campo"
