@@ -441,7 +441,7 @@ Feature: Teams
     And there should be no match for this chat
 
   Scenario: /teams draws only the confirmed players when the target was lowered
-    # Issue #97: the maybe-present people (carlo, dino) are left out of the draw.
+    # The maybe-present people (carlo, dino) are left out of the draw.
     Given the team draw is seeded with 42
     And a match was started
     And the match target is 4
