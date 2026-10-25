@@ -14,7 +14,6 @@ from db.queries import (
     update_bot_last_message_id_on_db,
 )
 from utils.utils import (
-    flatten_args,
     parse_names,
     join_names,
     is_command_name,
@@ -22,6 +21,7 @@ from utils.utils import (
     confirmed_count,
     already_in_message,
     swap_players,
+    parse_swap,
     format_summary,
 )
 from utils.constants import maybe_placeholder
@@ -42,7 +42,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if (
         new_message in ["aggiungimi", "toglimi", "proponimi"]
         or command in ["aggiungi", "togli", "proponi"]
-        or new_message.startswith("scambia")
+        or command == "scambia"
     ):
         row = find_row_by_chat_id(chat_id)
         if row is None:
@@ -279,23 +279,34 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         )
                         show_summary = False
 
-            elif new_message.startswith("scambia"):
-                to_be_parsed = flatten_args(new_message.split(" ")[1:])
-                x, y = to_be_parsed.split(" con ")
+            elif command == "scambia":
                 show_summary = False
-                if teams is None:
+                names = parse_swap(new_message)
+                if names is None:
+                    answer = "Per scambiare due giocatori scrivi: scambia <nome 1> con <nome 2>"
+                elif teams is None:
                     answer = "Per usare questa funzionalità devi prima formare delle squadre con /teams"
                 else:
-                    if not is_already_present(chat_id, x):
-                        answer = x + " non c'è"
-                    elif not is_already_present(chat_id, y):
-                        answer = y + " non c'è"
+                    x, y = names
+                    in_teams = teams["black"] + teams["white"]
+                    if x not in in_teams:
+                        answer = x + (
+                            " non è in nessuna squadra"
+                            if is_already_present(chat_id, x)
+                            else " non c'è"
+                        )
+                    elif y not in in_teams:
+                        answer = y + (
+                            " non è in nessuna squadra"
+                            if is_already_present(chat_id, y)
+                            else " non c'è"
+                        )
                     else:
                         try:
                             teams = swap_players(teams, x, y)
                             update_teams_on_db(chat_id, teams)
                             answer = "Perfetto, ho scambiato " + x + " con " + y
-                        except Exception:
+                        except ValueError:
                             answer = x + " e " + y + " sono nella stessa squadra!"
 
             await context.bot.send_message(

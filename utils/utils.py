@@ -92,11 +92,25 @@ def get_sender_name(source: Update):
     return source.message.from_user.username.lower()
 
 
+def parse_swap(text):
+    """Split "scambia a con b" into ("a", "b"), or None when it is not exactly "scambia <a> con <b>"."""
+    names = text.split(None, 1)[1:]
+    parts = [part.strip() for part in f" {names[0]} ".split(" con ")] if names else []
+    if len(parts) != 2 or not all(parts):
+        return None
+    return parts[0], parts[1]
+
+
 def swap_players(teams, x, y):
+    if (
+        x not in teams["black"] + teams["white"]
+        or y not in teams["black"] + teams["white"]
+    ):
+        raise ValueError("Not allowed to swap a player who is not in the teams")
     if (x in teams["black"] and y in teams["black"]) or (
         x in teams["white"] and y in teams["white"]
     ):
-        raise Exception("Not allowed to swap two players of the same team")
+        raise ValueError("Not allowed to swap two players of the same team")
 
     temp_black = None
     temp_white = None

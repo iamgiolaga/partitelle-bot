@@ -1043,8 +1043,7 @@ Feature: Match settings
     And the bot should pin the summary
     And the bot should send nothing else
 
-  @known-bug @issue-99
-  Scenario: /setdescription on several lines collapses them into a single line
+  Scenario: /setdescription on several lines keeps the line breaks and the spacing
     Given a match was started
     When "@mario" sends the message:
       """
@@ -1063,7 +1062,10 @@ Feature: Match settings
 
       {ten empty slots}
 
-      Prima riga seconda riga terza riga
+      Prima riga
+      seconda riga
+
+      terza   riga
 
 
       *CAMPO*: 
@@ -1073,9 +1075,86 @@ Feature: Match settings
     And the bot should send nothing else
     And the match description should be:
       """
-      Prima riga seconda riga terza riga
+      Prima riga
+      seconda riga
+
+      terza   riga
 
       """
+
+  Scenario: /setdescription starting on the line after the command keeps the lines
+    Given a match was started
+    When "@mario" sends the message:
+      """
+      /setdescription
+      Prima riga
+      seconda riga
+      """
+    Then the bot should send:
+      """
+      Ok, @mario! Ho aggiornato la descrizione!
+      """
+    And the bot should send:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      {ten empty slots}
+
+      Prima riga
+      seconda riga
+
+
+      *CAMPO*: 
+      {pitch hint}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match description should be:
+      """
+      Prima riga
+      seconda riga
+
+      """
+
+  Scenario: /setdescription with Markdown on several lines is shown formatted
+    Given a match was started
+    When "@mario" sends the message:
+      """
+      /setdescription Portare *due* maglie
+      Ritrovo _alle 20:45_
+      """
+    Then the bot should send:
+      """
+      Ok, @mario! Ho aggiornato la descrizione!
+      """
+    And the bot should send:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      {ten empty slots}
+
+      Portare *due* maglie
+      Ritrovo _alle 20:45_
+
+
+      *CAMPO*: 
+      {pitch hint}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+
+  Scenario: /setdescription with only blank lines explains the usage
+    Given a match was started
+    When "@mario" sends the message:
+      """
+      /setdescription
+
+      """
+    Then the bot should send:
+      """
+      Non hai inserito la descrizione: scrivi /setdescription <descrizione>
+      """
+    And the bot should send nothing else
 
   Scenario: /setdescription again edits the summary
     Given a match was started

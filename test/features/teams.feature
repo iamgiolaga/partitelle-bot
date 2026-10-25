@@ -420,6 +420,24 @@ Feature: Teams
       | scambia ale con zeno | zeno non c'è |
       | scambia zeno con ale | zeno non c'è |
 
+  Scenario Outline: A chatty message starting with scambia is ignored like any other chat
+    Given the team draw is seeded with 42
+    And a match was started
+    And the match has the players "ale, bea, carlo, dino"
+    And the match target is 4
+    And "@mario" had sent "/teams"
+    When "@mario" sends "<message>"
+    Then the bot should send nothing else
+    And the match should have:
+      | field | value                                  |
+      | teams | black: ale, dino \| white: bea, carlo |
+
+    Examples:
+      | message                |
+      | scambiamo anna con bea |
+      | scambiare le maglie    |
+      | Scambiamo?             |
+
   Scenario: scambia before the teams exist explains that the teams are needed
     Given a match was started
     And the match has the players "ale, bea, carlo, dino"

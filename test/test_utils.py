@@ -9,6 +9,7 @@ from utils.utils import (
     normalize_match_time,
     get_sender_name,
     swap_players,
+    parse_swap,
     generate_teams,
     flatten_args,
     parse_names,
@@ -172,6 +173,29 @@ class TestUtils(unittest.TestCase):
         y = "JaneDoe"
         with self.assertRaises(Exception):
             swap_players(teams, x, y)
+
+    def test_swap_players_refuses_a_player_outside_the_teams(self):
+        teams = {"black": ["anna", "bea"], "white": ["carlo", "dino"]}
+        for x, y in [("anna", "enzo"), ("enzo", "carlo")]:
+            with self.assertRaises(ValueError):
+                swap_players(teams, x, y)
+        self.assertEqual(teams, {"black": ["anna", "bea"], "white": ["carlo", "dino"]})
+
+    def test_parse_swap(self):
+        self.assertEqual(parse_swap("scambia anna con bea"), ("anna", "bea"))
+        self.assertEqual(parse_swap("scambia  anna  con  bea "), ("anna", "bea"))
+        self.assertEqual(
+            parse_swap("scambia luca rossi con bea"), ("luca rossi", "bea")
+        )
+        for text in [
+            "scambia",
+            "scambia anna",
+            "scambia anna con",
+            "scambia con anna",
+            "scambia anna con bea con dino",
+            "scambia anna conbea",
+        ]:
+            self.assertIsNone(parse_swap(text))
 
     @patch("utils.utils.random.sample")
     def test_generate_teams(self, mock_sample):
