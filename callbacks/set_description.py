@@ -9,7 +9,7 @@ from db.queries import (
     find_all_info_by_chat_id,
     update_bot_last_message_id_on_db,
 )
-from utils.utils import flatten_args, get_sender_name, format_summary
+from utils.utils import get_sender_name, format_summary
 
 
 async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -24,7 +24,11 @@ async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    if len(context.args) == 0:
+    # the raw text after the command: context.args would collapse newlines and repeated spaces (#99)
+    description = update.message.text.split(None, 1)[1:]
+    description = description[0].strip() if description else ""
+
+    if description == "":
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             parse_mode="markdown",
@@ -32,8 +36,7 @@ async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    description = flatten_args(context.args) + "\n"
-    update_description_on_db(chat_id, description)
+    update_description_on_db(chat_id, description + "\n")
     sender = "@" + get_sender_name(update)
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
