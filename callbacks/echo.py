@@ -65,15 +65,13 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     update_players_on_db(chat_id, sender + maybe_placeholder, "remove")
                     update_players_on_db(chat_id, sender, "add")
                     show_summary = True
-                    reached_target = players and confirmed_count(players) + 1 == target
+                    reached_target = confirmed_count(players) + 1 == target
                 else:
                     if len(players or []) < target:
                         answer = "Ok, " + sender + ", ti aggiungo"
                         update_players_on_db(chat_id, sender, "add")
                         show_summary = True
-                        reached_target = (
-                            players and confirmed_count(players) + 1 == target
-                        )
+                        reached_target = confirmed_count(players) + 1 == target
                     else:
                         answer = already_in_message(players, target)
                         show_summary = False
@@ -102,16 +100,12 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             )
                             update_players_on_db(chat_id, to_be_added, "add")
                             step_summary = True
-                            step_reached = (
-                                players and confirmed_count(players) + 1 == target
-                            )
+                            step_reached = confirmed_count(players) + 1 == target
                         elif len(players or []) < target:
                             added.append(to_be_added)
                             update_players_on_db(chat_id, to_be_added, "add")
                             step_summary = True
-                            step_reached = (
-                                players and confirmed_count(players) + 1 == target
-                            )
+                            step_reached = confirmed_count(players) + 1 == target
                         else:
                             full.append(to_be_added)
                             step_summary = False
