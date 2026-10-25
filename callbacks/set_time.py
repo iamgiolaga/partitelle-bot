@@ -13,7 +13,7 @@ from db.queries import (
 )
 from utils.utils import (
     flatten_args,
-    get_sender_name,
+    get_sender_mention,
     format_summary,
     normalize_match_time,
 )
@@ -52,7 +52,7 @@ async def set_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 find_all_info_by_chat_id(chat_id)
             )
             trigger_payment_reminder(update, context, day, time)
-            sender = "@" + get_sender_name(update)
+            sender = get_sender_mention(update)
             answer = (
                 "Ok, " + sender + "! Ho impostato l'orario della partita alle " + time
             )

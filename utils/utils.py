@@ -89,7 +89,21 @@ def compute_seconds_from_now(destination_date):
 
 
 def get_sender_name(source: Update):
-    return source.message.from_user.username.lower()
+    """Player name of the sender: the lowercase username, or the display name for users
+    without a username (not unique and mutable: a telegram user id is the real identity)."""
+    user = source.message.from_user
+    if user.username:
+        return user.username.lower()
+    return " ".join(part for part in (user.first_name, user.last_name) if part)
+
+
+def get_sender_mention(source: Update):
+    """How the sender is addressed and stored: `@username`, or the bare display name
+    when there is no username (there is no handle to mention)."""
+    user = source.message.from_user
+    if user.username:
+        return "@" + get_sender_name(source)
+    return get_sender_name(source)
 
 
 def parse_swap(text):

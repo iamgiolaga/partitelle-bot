@@ -11,7 +11,7 @@ from db.queries import (
     update_day_on_db,
     update_bot_last_message_id_on_db,
 )
-from utils.utils import flatten_args, get_sender_name, format_summary
+from utils.utils import flatten_args, get_sender_mention, format_summary
 
 
 async def set_day(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -41,7 +41,7 @@ async def set_day(update: Update, context: ContextTypes.DEFAULT_TYPE):
         find_all_info_by_chat_id(chat_id)
     )
     trigger_payment_reminder(update, context, day, time)
-    sender = "@" + get_sender_name(update)
+    sender = get_sender_mention(update)
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         parse_mode="markdown",

@@ -52,9 +52,16 @@ def _user_with_username(world, username):
     world.add_user("@" + username, username.capitalize(), username)
 
 
-@given(parsers.parse('a user named "{name}" without username'))
+@given(parsers.re(r'a user named "(?P<name>[^"]+)" without username$'))
 def _user_without_username(world, name):
     world.add_user(name, name, None)
+
+
+@given(
+    parsers.re(r'a user named "(?P<first>[^"]+)" "(?P<last>[^"]+)" without username$')
+)
+def _user_with_last_name_without_username(world, first, last):
+    world.add_user(f"{first} {last}", first, None, last)
 
 
 @given(parsers.parse('today is "{when}"'))
