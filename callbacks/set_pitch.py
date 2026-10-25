@@ -3,8 +3,8 @@ from telegram.ext import ContextTypes
 from telegram.helpers import escape_markdown
 from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
-from db.queries import update_pitch_on_db, update_bot_last_message_id_on_db
-from db.repository import get_match
+from db import repository
+from db.repository import get_match, set_summary_message_id
 from utils.utils import flatten_args, get_sender_mention, format_summary
 
 
@@ -25,7 +25,7 @@ async def set_pitch(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             pitch = flatten_args(context.args)
-            update_pitch_on_db(chat_id, pitch)
+            repository.set_pitch(chat_id, pitch)
             sender = get_sender_mention(update)
             answer = "Ok, " + sender + "! Ho aggiornato il campo!"
             await context.bot.send_message(
@@ -37,7 +37,7 @@ async def set_pitch(update: Update, context: ContextTypes.DEFAULT_TYPE):
             current_situation = format_summary(match)
             if match.summary_message_id is None:
                 msg = await print_new_summary(current_situation, update, context)
-                update_bot_last_message_id_on_db(chat_id, msg.message_id)
+                set_summary_message_id(chat_id, msg.message_id)
             else:
                 await edit_summary(
                     current_situation, match.summary_message_id, update, context

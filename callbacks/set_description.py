@@ -3,8 +3,8 @@ from telegram.ext import ContextTypes
 from telegram.helpers import escape_markdown
 from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
-from db.queries import update_description_on_db, update_bot_last_message_id_on_db
-from db.repository import get_match
+from db import repository
+from db.repository import get_match, set_summary_message_id
 from utils.utils import get_sender_mention, format_summary
 
 
@@ -30,7 +30,7 @@ async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    update_description_on_db(chat_id, description + "\n")
+    repository.set_description(chat_id, description + "\n")
     sender = get_sender_mention(update)
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -43,6 +43,6 @@ async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if match.summary_message_id is None:
         msg = await print_new_summary(current_situation, update, context)
-        update_bot_last_message_id_on_db(chat_id, msg.message_id)
+        set_summary_message_id(chat_id, msg.message_id)
     else:
         await edit_summary(current_situation, match.summary_message_id, update, context)

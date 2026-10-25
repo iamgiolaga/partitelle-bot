@@ -1,6 +1,10 @@
 import unittest
 
-from db.repository import _encode_participant, _row_to_match
+from db.repository import (
+    _encode_participant,
+    _row_to_match,
+    _validate_new_participant,
+)
 from domain import Match, Participant, Teams
 
 
@@ -57,6 +61,32 @@ class TestRowToMatch(unittest.TestCase):
                 None,
             )
             self.assertEqual(_row_to_match(1, row).participants, [participant])
+
+
+class TestEncodeParticipant(unittest.TestCase):
+    def test_a_maybe_gets_the_suffix(self):
+        self.assertEqual(_encode_participant(Participant("anna")), "anna")
+        self.assertEqual(
+            _encode_participant(Participant("anna", True)), "anna%is%maybe%present"
+        )
+
+
+class TestValidateNewParticipant(unittest.TestCase):
+    def test_empty_and_command_names_are_refused(self):
+        for participant in [
+            Participant(""),
+            Participant("  "),
+            Participant("", True),
+            Participant("%is%maybe%present"),
+            Participant("/start"),
+            Participant("/stop", True),
+        ]:
+            with self.assertRaises(ValueError):
+                _validate_new_participant(participant)
+
+    def test_ordinary_names_are_accepted(self):
+        _validate_new_participant(Participant("anna"))
+        _validate_new_participant(Participant("anna", True))
 
 
 if __name__ == "__main__":

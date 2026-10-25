@@ -65,12 +65,13 @@ def test_summary_edit_survives_the_bot_not_being_admin(world):
 
 def test_the_db_layer_refuses_to_store_an_empty_or_command_name(world):
     import pytest
-    from db.queries import update_players_on_db
+    from db.repository import add_participant
+    from domain import Participant
 
     world.add_chat("Calcetto")
     world.add_user("@giulia", "Giulia", "giulia")
     world.send("@giulia", "/start")
     for name in ["", "  ", "%is%maybe%present", "/start", "/stop%is%maybe%present"]:
         with pytest.raises(ValueError):
-            update_players_on_db(world.current_chat.id, name, "add")
+            add_participant(world.current_chat.id, Participant(name))
     assert world.db.fetch_match(world.current_chat.id)["players"] is None

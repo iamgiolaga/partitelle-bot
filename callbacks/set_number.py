@@ -5,7 +5,7 @@ from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
 from behaviours.remove_job_if_exists import remove_job_if_exists
 from behaviours.trigger_payment_reminder import trigger_payment_reminder
-from db.queries import update_target_on_db, update_bot_last_message_id_on_db
+from db.repository import set_target, set_summary_message_id
 from db.repository import get_match, save_teams
 from utils.utils import get_sender_mention, format_summary
 
@@ -49,7 +49,7 @@ async def set_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                 text=answer,
                             )
 
-                        update_target_on_db(chat_id, chosen_number)
+                        set_target(chat_id, chosen_number)
                         answer = (
                             "Ok, "
                             + sender
@@ -66,7 +66,7 @@ async def set_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             msg = await print_new_summary(
                                 current_situation, update, context
                             )
-                            update_bot_last_message_id_on_db(chat_id, msg.message_id)
+                            set_summary_message_id(chat_id, msg.message_id)
                         else:
                             await edit_summary(
                                 current_situation,
