@@ -16,7 +16,6 @@ from utils.utils import (
 
 
 class TestUtils(unittest.TestCase):
-
     def test_get_next_weekday(self):
         # Test case 1: Start date is a Monday, looking for next Wednesday
         self.assertEqual(get_next_weekday("01/11/2021", 2), "03/11/2021")
