@@ -11,7 +11,7 @@ from db.queries import (
     update_target_on_db,
     update_bot_last_message_id_on_db,
 )
-from utils.utils import get_sender_name, exclude_maybe, format_summary
+from utils.utils import get_sender_mention, exclude_maybe, format_summary
 
 
 async def set_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -32,7 +32,7 @@ async def set_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             else:
                 chosen_number_str = context.args[0]
-                sender = "@" + get_sender_name(update)
+                sender = get_sender_mention(update)
                 players = row[0]
                 if players is None:
                     participants_num = 0

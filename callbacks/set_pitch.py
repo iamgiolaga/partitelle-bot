@@ -9,7 +9,7 @@ from db.queries import (
     find_all_info_by_chat_id,
     update_bot_last_message_id_on_db,
 )
-from utils.utils import flatten_args, get_sender_name, format_summary
+from utils.utils import flatten_args, get_sender_mention, format_summary
 
 
 async def set_pitch(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -32,7 +32,7 @@ async def set_pitch(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             pitch = flatten_args(context.args)
             update_pitch_on_db(chat_id, pitch)
-            sender = "@" + get_sender_name(update)
+            sender = get_sender_mention(update)
             answer = "Ok, " + sender + "! Ho aggiornato il campo!"
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,

@@ -17,9 +17,9 @@ from utils.utils import (
     parse_names,
     join_names,
     is_command_name,
-    get_sender_name,
     confirmed_count,
     already_in_message,
+    get_sender_mention,
     swap_players,
     parse_swap,
     format_summary,
@@ -56,7 +56,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             if new_message == "aggiungimi":
-                sender = "@" + get_sender_name(update)
+                sender = get_sender_mention(update)
                 if is_already_present(chat_id, sender):
                     answer = "Ma " + sender + ", sei già nella lista"
                     show_summary = False
@@ -148,7 +148,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     answer_is_escaped = True
 
             elif new_message == "proponimi":
-                sender = "@" + get_sender_name(update)
+                sender = get_sender_mention(update)
                 if is_already_present(chat_id, sender + maybe_placeholder):
                     answer = "Ma " + sender + ", sei già in forse"
                     show_summary = False
@@ -232,7 +232,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     answer_is_escaped = True
 
             elif new_message == "toglimi":
-                sender = "@" + get_sender_name(update)
+                sender = get_sender_mention(update)
                 if is_already_present(chat_id, sender):
                     answer = "Mamma mia... che paccaro"
                     update_players_on_db(chat_id, sender, "remove")

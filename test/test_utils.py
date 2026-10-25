@@ -7,6 +7,7 @@ from utils.utils import (
     compute_next_wednesday,
     extract_match_day,
     normalize_match_time,
+    get_sender_mention,
     get_sender_name,
     swap_players,
     parse_swap,
@@ -149,6 +150,26 @@ class TestUtils(unittest.TestCase):
         mock_update = MagicMock(spec=Update)
         mock_update.message.from_user.username = "JohnDoe"
         self.assertEqual(get_sender_name(mock_update), "johndoe")
+
+    def test_get_sender_name_and_mention_without_username(self):
+        mock_update = MagicMock(spec=Update)
+        user = mock_update.message.from_user
+        user.username = None
+        user.first_name = "Luca"
+        user.last_name = None
+        self.assertEqual(get_sender_name(mock_update), "Luca")
+        self.assertEqual(get_sender_mention(mock_update), "Luca")
+        user.last_name = "Bianchi"
+        self.assertEqual(get_sender_name(mock_update), "Luca Bianchi")
+        self.assertEqual(get_sender_mention(mock_update), "Luca Bianchi")
+
+    def test_get_sender_mention_with_username(self):
+        mock_update = MagicMock(spec=Update)
+        user = mock_update.message.from_user
+        user.username = "JohnDoe"
+        user.first_name = "John"
+        user.last_name = "Doe"
+        self.assertEqual(get_sender_mention(mock_update), "@johndoe")
 
     def test_swap_players(self):
         # Test case 1: Swap two players from different teams

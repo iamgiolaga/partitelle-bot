@@ -37,7 +37,8 @@ Any `PB_*` variable can be overridden from the environment (defaults: `test/conf
 - `the text "<name>" is:` + docstring: defines a named text for `{name}` / `the text "<name>"`.
 - `a group chat "<title>"`: creates a chat and makes it the current one.
 - `the user "@<username>"`: a user with that username.
-- `a user named "<name>" without username`: a user with no username.
+- `a user named "<name>" without username`: a user with no username (first name only).
+- `a user named "<first>" "<last>" without username`: a user with no username, first and last name (label: `<first> <last>`).
 - `the current chat is "<title>"`: switches the chat later steps refer to (also usable as Then).
 - `a match was started`: really sends `/start` (creates an organizer user if none exists); traffic forgotten.
 - `"<user>" had sent "<text>"` / `... in "<chat>"`: really sends the message as setup; traffic forgotten.

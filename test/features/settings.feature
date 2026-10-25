@@ -1218,37 +1218,142 @@ Feature: Match settings
 
   # ---- users without a username ----------------------------------------------------------------
 
-  @known-bug @issue-88
-  Scenario: /setnumber from a user without username claims the number is missing
+  Scenario: /setnumber from a user without username confirms with the display name
     Given a match was started
     And a user named "Luca" without username
     When "Luca" sends "/setnumber 4"
     Then the bot should send:
       """
-      Non hai inserito il numero: scrivi /setnumber <numero>
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      1. ❌
+      2. ❌
+      3. ❌
+      4. ❌
+
+      {default tail}
+      """
+    And the bot should pin the summary
+    And the bot should send:
+      """
+      Ok, Luca! Ho impostato il numero di partecipanti a 4
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field  | value |
+      | target | 4     |
+
+  Scenario: /setnumber with a wrong number answers a user without username by display name
+    Given a match was started
+    And a user named "Luca" "Bianchi" without username
+    When "Luca Bianchi" sends "/setnumber abc"
+    Then the bot should send:
+      """
+      Luca Bianchi, quello ti sembra un numero? 😂
       """
     And the bot should send nothing else
     And the match should have:
       | field  | value |
       | target | 10    |
 
-  @known-bug @issue-88
-  Scenario Outline: <command> from a user without username saves the change and then crashes without answering
+  Scenario: /setday from a user without username confirms with the display name
     Given a match was started
     And a user named "Luca" without username
-    And the bot is expected to crash on the next message
-    When "Luca" sends "<command>"
-    Then the bot should fail with "AttributeError"
+    When "Luca" sends "/setday 25/10/2026"
+    Then the bot should send:
+      """
+      Ok, Luca! Ho impostato il giorno della partita il 25/10/2026
+      """
+    And the bot should send:
+      """
+      *GIORNO*: 25/10/2026 | 20:00
+
+      {ten empty slots}
+
+      {default tail}
+      """
+    And the bot should pin the summary
     And the bot should send nothing else
     And the match should have:
-      | field   | value   |
-      | <field> | <value> |
+      | field | value |
+      | day   | 25/10/2026 |
+      | time  | 20:00      |
 
-    Examples:
-      | command                     | field       | value      |
-      | /setday 25/10/2026          | day         | 25/10/2026 |
-      | /settime 21:30              | time        | 21:30      |
-      | /setpitch Crespi            | pitch       | Crespi     |
+  Scenario: /settime from a user without username confirms with the display name
+    Given a match was started
+    And a user named "Luca" "Bianchi" without username
+    When "Luca Bianchi" sends "/settime 21:30"
+    Then the bot should send:
+      """
+      Ok, Luca Bianchi! Ho impostato l'orario della partita alle 21:30
+      """
+    And the bot should send:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 21:30
+
+      {ten empty slots}
+
+      {default tail}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match should have:
+      | field | value |
+      | day   | Mercoledì 28/10/2026 |
+      | time  | 21:30                |
+
+  Scenario: /setpitch from a user without username confirms with the display name
+    Given a match was started
+    And a user named "Luca" without username
+    When "Luca" sends "/setpitch Crespi"
+    Then the bot should send:
+      """
+      Ok, Luca! Ho aggiornato il campo!
+      """
+    And the bot should send:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      {ten empty slots}
+
+      {default description}
+
+      *CAMPO*: 
+      Crespi
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match should have:
+      | field | value |
+      | pitch | Crespi |
+
+  Scenario: /setdescription from a user without username confirms with the display name
+    Given a match was started
+    And a user named "Luca" "Bianchi" without username
+    When "Luca Bianchi" sends "/setdescription Portare due maglie"
+    Then the bot should send:
+      """
+      Ok, Luca Bianchi! Ho aggiornato la descrizione!
+      """
+    And the bot should send:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      {ten empty slots}
+
+      Portare due maglie
+
+
+      *CAMPO*: 
+      {pitch hint}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match description should be:
+      """
+      Portare due maglie
+
+      """
 
   # ---- default day ----------------------------------------------------------------------------
 

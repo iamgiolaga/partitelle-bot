@@ -9,7 +9,7 @@ from db.queries import (
     find_all_info_by_chat_id,
     update_bot_last_message_id_on_db,
 )
-from utils.utils import get_sender_name, format_summary
+from utils.utils import get_sender_mention, format_summary
 
 
 async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -37,7 +37,7 @@ async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     update_description_on_db(chat_id, description + "\n")
-    sender = "@" + get_sender_name(update)
+    sender = get_sender_mention(update)
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         parse_mode="markdown",

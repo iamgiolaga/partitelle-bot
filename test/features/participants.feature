@@ -209,23 +209,116 @@ Feature: Managing the participants
 
   # ---- users without username ---------------------------------------------------------------------
 
-  @known-bug @issue-88
-  Scenario Outline: <message> from a user without username crashes the handler
+  Scenario: aggiungimi stores a user without username by display name, without the @
     Given a match was started
+    And the match target is 4
     And a user named "Luca" without username
-    And the bot is expected to crash on the next message
-    When "Luca" sends "<message>"
-    Then the bot should fail with "AttributeError"
+    When "Luca" sends "aggiungimi"
+    Then the bot should send:
+      """
+      Ok, Luca, ti aggiungo
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. Luca ✅
+      2. ❌
+      3. ❌
+      4. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value |
+      | players | Luca  |
+
+  Scenario: aggiungimi twice from a user without username does not duplicate the sender
+    Given a match was started
+    And the match target is 4
+    And a user named "Luca" without username
+    And the match has the players "Luca"
+    When "Luca" sends "aggiungimi"
+    Then the bot should send:
+      """
+      Ma Luca, sei già nella lista
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value |
+      | players | Luca  |
+
+  Scenario: A user with first and last name and no username is identified by the full name
+    Given a match was started
+    And the match target is 4
+    And a user named "Luca" "Bianchi" without username
+    When "Luca Bianchi" sends "aggiungimi"
+    Then the bot should send:
+      """
+      Ok, Luca Bianchi, ti aggiungo
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. Luca Bianchi ✅
+      2. ❌
+      3. ❌
+      4. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value        |
+      | players | Luca Bianchi |
+
+  Scenario: proponimi and toglimi work for a user without username
+    Given a match was started
+    And the match target is 4
+    And a user named "Luca" "Bianchi" without username
+    When "Luca Bianchi" sends "proponimi"
+    Then the bot should send:
+      """
+      Ok, Luca Bianchi, ti propongo
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. Luca Bianchi ❓
+      2. ❌
+      3. ❌
+      4. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    When "Luca Bianchi" sends "toglimi"
+    Then the bot should send:
+      """
+      Peccato, un po' ci avevo sperato
+      """
+    And the bot should edit the summary to:
+      """
+      {header}
+
+      1. ❌
+      2. ❌
+      3. ❌
+      4. ❌
+
+      {footer}
+      """
+    And the bot should pin the summary
     And the bot should send nothing else
     And the match should have:
       | field   | value  |
       | players | (none) |
-
-    Examples:
-      | message    |
-      | aggiungimi |
-      | proponimi  |
-      | toglimi    |
 
   Scenario: aggiungi <nome> works for a user without username
     Given a match was started

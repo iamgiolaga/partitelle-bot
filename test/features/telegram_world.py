@@ -51,9 +51,12 @@ class Person:
     id: int
     first_name: str
     username: str = None
+    last_name: str = None
 
     def to_json(self):
         data = {"id": self.id, "is_bot": False, "first_name": self.first_name}
+        if self.last_name:
+            data["last_name"] = self.last_name
         if self.username:
             data["username"] = self.username
         return data
@@ -230,8 +233,8 @@ class World:
         self.current_chat = chat
         return chat
 
-    def add_user(self, label, first_name, username):
-        person = Person(1000 + len(self.users), first_name, username)
+    def add_user(self, label, first_name, username, last_name=None):
+        person = Person(1000 + len(self.users), first_name, username, last_name)
         self.users[label] = person
         return person
 
