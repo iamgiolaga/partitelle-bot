@@ -24,7 +24,7 @@ async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # the raw text after the command: context.args would collapse newlines and repeated spaces (#99)
+    # the raw text after the command: context.args would collapse newlines and repeated spaces
     description = update.message.text.split(None, 1)[1:]
     description = description[0].strip() if description else ""
 
