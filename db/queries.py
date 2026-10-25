@@ -171,8 +171,8 @@ def update_teams_on_db(chat_id, teams):
 
 
 def update_players_on_db(chat_id, new_entry, action):
-    # the players array literal is built by concatenation: an empty entry corrupts it (#93)
-    # and a /command is never a name (#61); every write path goes through here
+    # the players array literal is built by concatenation: an empty entry corrupts it
+    # and a /command is never a name; every write path goes through here
     if action == "add" and (
         not new_entry.replace(maybe_placeholder, "").strip()
         or new_entry.startswith("/")

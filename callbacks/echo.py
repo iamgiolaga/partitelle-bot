@@ -28,7 +28,7 @@ from utils.constants import maybe_placeholder
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     new_message = update.message.text.lower()
-    # the first word must be exactly the command: "aggiungimi pure" is just chat (#94)
+    # the first word must be exactly the command: "aggiungimi pure" is just chat
     command = new_message.split(" ")[0]
     chat_id = update.message.chat_id
     answer = None
