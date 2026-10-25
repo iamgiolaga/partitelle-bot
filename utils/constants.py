@@ -7,4 +7,3 @@ default_message = (
     "(ditelo a chiunque invitate) \n"
     "*PORTARE UNA MAGLIA BIANCA E UNA COLORATA*\n"
 )
-maybe_placeholder = "%is%maybe%present"

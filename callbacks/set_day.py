@@ -5,8 +5,8 @@ from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
 from behaviours.remove_job_if_exists import remove_job_if_exists
 from behaviours.trigger_payment_reminder import trigger_payment_reminder
-from db.queries import update_day_on_db, update_bot_last_message_id_on_db
-from db.repository import get_match
+from db import repository
+from db.repository import get_match, set_summary_message_id
 from utils.utils import flatten_args, get_sender_mention, format_summary
 
 
@@ -29,7 +29,7 @@ async def set_day(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     day = flatten_args(context.args)
-    update_day_on_db(chat_id, day)
+    repository.set_day(chat_id, day)
     remove_job_if_exists(str(chat_id), context)
     match = get_match(chat_id)
     day = match.day
@@ -48,6 +48,6 @@ async def set_day(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if match.summary_message_id is None:
         msg = await print_new_summary(current_situation, update, context)
-        update_bot_last_message_id_on_db(chat_id, msg.message_id)
+        set_summary_message_id(chat_id, msg.message_id)
     else:
         await edit_summary(current_situation, match.summary_message_id, update, context)

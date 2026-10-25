@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from behaviours.print_new_summary import print_new_summary
-from db.queries import update_bot_last_message_id_on_db
+from db.repository import set_summary_message_id
 from db.repository import get_match
 from utils.utils import format_summary
 
@@ -20,4 +20,4 @@ async def participants(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     current_situation = format_summary(match)
     msg = await print_new_summary(current_situation, update, context)
-    update_bot_last_message_id_on_db(chat_id, msg.message_id)
+    set_summary_message_id(chat_id, msg.message_id)

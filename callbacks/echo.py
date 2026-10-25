@@ -5,12 +5,15 @@ from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
 from behaviours.remove_job_if_exists import remove_job_if_exists
 from behaviours.trigger_payment_reminder import trigger_payment_reminder
-from db.queries import (
-    update_players_on_db,
-    is_already_present,
-    update_bot_last_message_id_on_db,
+from db.repository import (
+    add_participant,
+    get_match,
+    remove_participant,
+    save_teams,
+    set_participant_maybe,
+    set_summary_message_id,
 )
-from db.repository import get_match, save_teams
+from domain import Participant
 from utils.utils import (
     parse_names,
     join_names,
@@ -21,7 +24,6 @@ from utils.utils import (
     parse_swap,
     format_summary,
 )
-from utils.constants import maybe_placeholder
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -55,19 +57,18 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if new_message == "aggiungimi":
                 sender = get_sender_mention(update)
-                if is_already_present(chat_id, sender):
+                if match.find(sender, False):
                     answer = "Ma " + sender + ", sei già nella lista"
                     show_summary = False
-                elif is_already_present(chat_id, sender + maybe_placeholder):
+                elif match.find(sender, True):
                     answer = "Ok, " + sender + ", ti confermo"
-                    update_players_on_db(chat_id, sender + maybe_placeholder, "remove")
-                    update_players_on_db(chat_id, sender, "add")
+                    set_participant_maybe(chat_id, sender, False)
                     show_summary = True
                     reached_target = match.confirmed_count + 1 == target
                 else:
                     if match.has_room:
                         answer = "Ok, " + sender + ", ti aggiungo"
-                        update_players_on_db(chat_id, sender, "add")
+                        add_participant(chat_id, Participant(sender))
                         show_summary = True
                         reached_target = match.confirmed_count + 1 == target
                     else:
@@ -85,23 +86,18 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     added, confirmed, present, full = [], [], [], []
                     for to_be_added in dict.fromkeys(names):
                         current = get_match(chat_id)
-                        if is_already_present(chat_id, to_be_added):
+                        if current.find(to_be_added, False):
                             present.append(to_be_added)
                             step_summary = False
                             step_reached = False
-                        elif is_already_present(
-                            chat_id, to_be_added + maybe_placeholder
-                        ):
+                        elif current.find(to_be_added, True):
                             confirmed.append(to_be_added)
-                            update_players_on_db(
-                                chat_id, to_be_added + maybe_placeholder, "remove"
-                            )
-                            update_players_on_db(chat_id, to_be_added, "add")
+                            set_participant_maybe(chat_id, to_be_added, False)
                             step_summary = True
                             step_reached = current.confirmed_count + 1 == target
                         elif len(current.participants) < target:
                             added.append(to_be_added)
-                            update_players_on_db(chat_id, to_be_added, "add")
+                            add_participant(chat_id, Participant(to_be_added))
                             step_summary = True
                             step_reached = current.confirmed_count + 1 == target
                         else:
@@ -147,19 +143,18 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             elif new_message == "proponimi":
                 sender = get_sender_mention(update)
-                if is_already_present(chat_id, sender + maybe_placeholder):
+                if match.find(sender, True):
                     answer = "Ma " + sender + ", sei già in forse"
                     show_summary = False
-                elif is_already_present(chat_id, sender):
+                elif match.find(sender, False):
                     answer = "Ok, " + sender + ", ti metto in forse"
-                    update_players_on_db(chat_id, sender, "remove")
-                    update_players_on_db(chat_id, sender + maybe_placeholder, "add")
+                    set_participant_maybe(chat_id, sender, True)
                     show_summary = True
                     revoked_teams = teams is not None
                 else:
                     if match.has_room:
                         answer = "Ok, " + sender + ", ti propongo"
-                        update_players_on_db(chat_id, sender + maybe_placeholder, "add")
+                        add_participant(chat_id, Participant(sender, True))
                         show_summary = True
                         revoked_teams = teams is not None
                     else:
@@ -177,23 +172,18 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     proposed, moved, present, full = [], [], [], []
                     for to_be_added in dict.fromkeys(names):
                         current = get_match(chat_id)
-                        if is_already_present(chat_id, to_be_added + maybe_placeholder):
+                        if current.find(to_be_added, True):
                             present.append(to_be_added)
                             step_summary = False
                             step_revoked = False
-                        elif is_already_present(chat_id, to_be_added):
+                        elif current.find(to_be_added, False):
                             moved.append(to_be_added)
-                            update_players_on_db(chat_id, to_be_added, "remove")
-                            update_players_on_db(
-                                chat_id, to_be_added + maybe_placeholder, "add"
-                            )
+                            set_participant_maybe(chat_id, to_be_added, True)
                             step_summary = True
                             step_revoked = teams is not None
                         elif len(current.participants) < target:
                             proposed.append(to_be_added)
-                            update_players_on_db(
-                                chat_id, to_be_added + maybe_placeholder, "add"
-                            )
+                            add_participant(chat_id, Participant(to_be_added, True))
                             step_summary = True
                             step_revoked = teams is not None
                         else:
@@ -231,17 +221,15 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             elif new_message == "toglimi":
                 sender = get_sender_mention(update)
-                if is_already_present(chat_id, sender):
+                if match.find(sender, False):
                     answer = "Mamma mia... che paccaro"
-                    update_players_on_db(chat_id, sender, "remove")
+                    remove_participant(chat_id, Participant(sender))
                     show_summary = True
                     revoked_teams = teams is not None
                 else:
-                    if is_already_present(chat_id, sender + maybe_placeholder):
+                    if match.find(sender, True):
                         answer = "Peccato, un po' ci avevo sperato"
-                        update_players_on_db(
-                            chat_id, sender + maybe_placeholder, "remove"
-                        )
+                        remove_participant(chat_id, Participant(sender, True))
                         show_summary = True
                         revoked_teams = teams is not None
                     else:
@@ -256,19 +244,17 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 elif is_command_name(to_be_removed):
                     answer = command_name_answer
                     show_summary = False
-                elif is_already_present(chat_id, to_be_removed):
+                elif match.find(to_be_removed, False):
                     answer = "Che vergogna, " + to_be_removed
-                    update_players_on_db(chat_id, to_be_removed, "remove")
+                    remove_participant(chat_id, Participant(to_be_removed))
                     show_summary = True
                     revoked_teams = teams is not None
                 else:
-                    if is_already_present(chat_id, to_be_removed + maybe_placeholder):
+                    if match.find(to_be_removed, True):
                         answer = (
                             "Davvero? Ma " + to_be_removed + ", ne sei proprio sicuro?"
                         )
-                        update_players_on_db(
-                            chat_id, to_be_removed + maybe_placeholder, "remove"
-                        )
+                        remove_participant(chat_id, Participant(to_be_removed, True))
                         show_summary = True
                         revoked_teams = teams is not None
                     else:
@@ -289,13 +275,13 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     if not teams.contains(x):
                         answer = x + (
                             " non è in nessuna squadra"
-                            if is_already_present(chat_id, x)
+                            if match.find(x, False)
                             else " non c'è"
                         )
                     elif not teams.contains(y):
                         answer = y + (
                             " non è in nessuna squadra"
-                            if is_already_present(chat_id, y)
+                            if match.find(y, False)
                             else " non c'è"
                         )
                     else:
@@ -325,7 +311,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 current_situation = format_summary(current)
                 if current.summary_message_id is None:
                     msg = await print_new_summary(current_situation, update, context)
-                    update_bot_last_message_id_on_db(chat_id, msg.message_id)
+                    set_summary_message_id(chat_id, msg.message_id)
                 else:
                     await edit_summary(
                         current_situation, current.summary_message_id, update, context

@@ -1,16 +1,17 @@
-"""Reads and writes whole matches: the only place, with db.queries, that knows the SQL,
-the players array encoding (maybe suffix, NULL when empty) and the teams JSON."""
+"""Reads and writes matches: the only place that knows the SQL, the players array
+encoding (maybe suffix, NULL when empty) and the teams JSON."""
 
 import json
 from typing import Any
 
-from psycopg import sql
+from psycopg import Connection, sql
 
 from conf.conf import table_name
 from db.connection import connection
-from db.queries import update_teams_on_db
 from domain import Match, Participant, Teams
-from utils.constants import maybe_placeholder
+
+# marks a "maybe" participant inside the stored players array
+_MAYBE_SUFFIX = "%is%maybe%present"
 
 _COLUMNS = (
     "players, day, time, target, custom_message, pitch, teams, bot_last_message_id"
@@ -18,13 +19,13 @@ _COLUMNS = (
 
 
 def _decode_participant(raw: str) -> Participant:
-    if raw.endswith(maybe_placeholder):
-        return Participant(raw[: -len(maybe_placeholder)], is_maybe=True)
+    if raw.endswith(_MAYBE_SUFFIX):
+        return Participant(raw[: -len(_MAYBE_SUFFIX)], is_maybe=True)
     return Participant(raw)
 
 
 def _encode_participant(participant: Participant) -> str:
-    return participant.name + (maybe_placeholder if participant.is_maybe else "")
+    return participant.name + (_MAYBE_SUFFIX if participant.is_maybe else "")
 
 
 def _decode_teams(raw: dict[str, list[str]] | None) -> Teams | None:
@@ -106,4 +107,95 @@ def _serialize_teams(teams: Teams | None) -> str | None:
 
 def save_teams(chat_id: int | str, teams: Teams | None) -> None:
     """Persist the teams; None revokes them."""
-    update_teams_on_db(chat_id, _serialize_teams(teams))
+    _set_column(chat_id, "teams", _serialize_teams(teams))
+
+
+def _set_column(chat_id: int | str, column: str, value: str | int | None) -> None:
+    with connection() as conn:
+        conn.execute(
+            sql.SQL("UPDATE {table} SET {column} = %s WHERE chat_id=%s").format(
+                table=sql.Identifier(table_name), column=sql.Identifier(column)
+            ),
+            [value, str(chat_id)],
+        )
+
+
+def set_target(chat_id: int | str, target: int) -> None:
+    _set_column(chat_id, "target", str(target))
+
+
+def set_day(chat_id: int | str, day: str) -> None:
+    _set_column(chat_id, "day", day)
+
+
+def set_time(chat_id: int | str, time: str) -> None:
+    _set_column(chat_id, "time", time)
+
+
+def set_description(chat_id: int | str, description: str) -> None:
+    _set_column(chat_id, "custom_message", description)
+
+
+def set_pitch(chat_id: int | str, pitch: str) -> None:
+    _set_column(chat_id, "pitch", pitch)
+
+
+def set_summary_message_id(chat_id: int | str, message_id: int) -> None:
+    _set_column(chat_id, "bot_last_message_id", str(message_id))
+
+
+def _validate_new_participant(participant: Participant) -> None:
+    # a /command is never a name, and an empty name would corrupt the stored array
+    entry = _encode_participant(participant)
+    if not entry.replace(_MAYBE_SUFFIX, "").strip() or entry.startswith("/"):
+        raise ValueError("invalid player name: " + repr(entry))
+
+
+def _lock_players(conn: Connection[Any], chat_id: int | str) -> list[str]:
+    """The stored entries of a chat, with the row locked until the transaction ends."""
+    row = conn.execute(
+        sql.SQL("SELECT players FROM {table} WHERE chat_id=%s FOR UPDATE").format(
+            table=sql.Identifier(table_name)
+        ),
+        [str(chat_id)],
+    ).fetchone()
+    return list(row[0] or [])
+
+
+def _store_players(
+    conn: Connection[Any], chat_id: int | str, entries: list[str]
+) -> None:
+    # an empty list is stored as NULL, never as an empty array
+    conn.execute(
+        sql.SQL("UPDATE {table} SET players = %s WHERE chat_id=%s").format(
+            table=sql.Identifier(table_name)
+        ),
+        [entries or None, str(chat_id)],
+    )
+
+
+def add_participant(chat_id: int | str, participant: Participant) -> None:
+    """Append at the end of the list."""
+    _validate_new_participant(participant)
+    with connection() as conn, conn.transaction():
+        entries = _lock_players(conn, chat_id)
+        entries.append(_encode_participant(participant))
+        _store_players(conn, chat_id, entries)
+
+
+def remove_participant(chat_id: int | str, participant: Participant) -> None:
+    """Raises ValueError when the participant is not in the list."""
+    with connection() as conn, conn.transaction():
+        entries = _lock_players(conn, chat_id)
+        entries.remove(_encode_participant(participant))
+        _store_players(conn, chat_id, entries)
+
+
+def set_participant_maybe(chat_id: int | str, name: str, is_maybe: bool) -> None:
+    """Flip a participant between confirmed and maybe; the player moves to the end of
+    the list, as it joins the new state."""
+    with connection() as conn, conn.transaction():
+        entries = _lock_players(conn, chat_id)
+        entries.remove(_encode_participant(Participant(name, not is_maybe)))
+        entries.append(_encode_participant(Participant(name, is_maybe)))
+        _store_players(conn, chat_id, entries)

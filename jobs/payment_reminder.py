@@ -1,6 +1,6 @@
 from telegram.ext import ContextTypes
 
-from db.queries import update_bot_last_message_id_on_db
+from db.repository import set_summary_message_id
 
 
 async def payment_reminder(context: ContextTypes.DEFAULT_TYPE):
@@ -17,4 +17,4 @@ async def payment_reminder(context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         print("No admin rights to pin the message")
 
-    update_bot_last_message_id_on_db(chat_id, msg.message_id)
+    set_summary_message_id(chat_id, msg.message_id)
