@@ -26,8 +26,7 @@ def _reminders_of_this_chat(world):
 @then(parsers.parse('a payment reminder should be scheduled for "{when}"'))
 def _one_reminder(world, when):
     assert _reminders_of_this_chat(world) == [when], (
-        f"Expected exactly one reminder at {when}, "
-        f"got {_reminders_of_this_chat(world)}"
+        f"Expected exactly one reminder at {when}, got {_reminders_of_this_chat(world)}"
     )
 
 
@@ -37,13 +36,13 @@ def _one_reminder(world, when):
     )
 )
 def _many_reminders(world, count, when):
-    assert _reminders_of_this_chat(world) == [when] * int(
-        count
-    ), f"Expected {count} reminders at {when}, got {_reminders_of_this_chat(world)}"
+    assert _reminders_of_this_chat(world) == [when] * int(count), (
+        f"Expected {count} reminders at {when}, got {_reminders_of_this_chat(world)}"
+    )
 
 
 @then("no payment reminder should be scheduled")
 def _no_reminder(world):
-    assert (
-        _reminders_of_this_chat(world) == []
-    ), f"Unexpected reminder(s): {_reminders_of_this_chat(world)}"
+    assert _reminders_of_this_chat(world) == [], (
+        f"Unexpected reminder(s): {_reminders_of_this_chat(world)}"
+    )

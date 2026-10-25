@@ -10,7 +10,7 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "psycopg-pool>=3.2",
     "python-telegram-bot[job-queue,webhooks]==22.8",
-    "python-dateutil==2.9.0.post0",
+    "python-dateutil==3.0.0",
     "yoyo-migrations>=9.0.0",
 ]
 
@@ -18,8 +18,7 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
-    "ruff==0.7.4",
-    "black==24.10.0",
+    "ruff==0.17.2",
     "pre-commit==4.7.0",
     "pytest-bdd>=9.0.0",
     "time-machine>=3.5.1",
@@ -27,6 +26,13 @@ dev = [
 
 [tool.uv]
 package = false
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+# The rule set ruff used by default up to 0.7 (ruff 0.17 enables many more by default; adopting them is a separate change).
+select = ["E4", "E7", "E9", "F"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]

@@ -14,8 +14,8 @@ jobs:
     name: semantic-pr-title
     runs-on: ubuntu-latest
     steps:
-      # PRs are squash-merged, so the PR title becomes the commit message release-please reads.
-      - uses: amannn/action-semantic-pull-request@v5
+      # PRs are squash-merged, so the PR title becomes the commit message git-cliff reads (promote.yml computes the version and release notes from Conventional Commits).
+      - uses: amannn/action-semantic-pull-request@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

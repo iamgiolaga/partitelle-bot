@@ -189,18 +189,18 @@ def _next_call_as(world, method):
     call = world.next_call()
     assert call.method == method, f"Expected the bot to {method}, but it did: {call}"
     # jobs address the chat with its id as a string (see reminder_steps.py): compare the id, not the type
-    assert (
-        int(call.params["chat_id"]) == world.current_chat.id
-    ), f"Wrong chat: expected {world.current_chat.id}, got {call.params['chat_id']}"
+    assert int(call.params["chat_id"]) == world.current_chat.id, (
+        f"Wrong chat: expected {world.current_chat.id}, got {call.params['chat_id']}"
+    )
     return call
 
 
 def _assert_message(call, text, parse_mode, keys):
     assert set(call.params) == keys, f"Unexpected parameters: {sorted(call.params)}"
     assert call.params.get("parse_mode") == parse_mode, "Unexpected parse mode"
-    assert (
-        call.params["text"] == text
-    ), "the bot's text (+) differs from the scenario's text (-)"
+    assert call.params["text"] == text, (
+        "the bot's text (+) differs from the scenario's text (-)"
+    )
 
 
 @then("the bot should send:")
@@ -265,9 +265,9 @@ def _bot_pins_last(world):
     sent_so_far = sum(
         c.method == "send_message" for c in world.telegram.calls[: world.consumed]
     )
-    assert (
-        sent_so_far
-    ), "The scenario asserted no message sent by the bot before the pin."
+    assert sent_so_far, (
+        "The scenario asserted no message sent by the bot before the pin."
+    )
     expected = world.telegram.sent_ids[sent_so_far - 1]
     call = _next_call_as(world, "pin_chat_message")
     assert set(call.params) == {"chat_id", "message_id"}
@@ -283,9 +283,9 @@ def _bot_pins_summary(world):
     call = _next_call_as(world, "pin_chat_message")
     summary_id = _match_of_this_chat(world)["summary_message_id"]
     assert set(call.params) == {"chat_id", "message_id"}
-    assert (
-        call.params["message_id"] == summary_id
-    ), f"Pinned message {call.params['message_id']}, but the summary is message {summary_id}"
+    assert call.params["message_id"] == summary_id, (
+        f"Pinned message {call.params['message_id']}, but the summary is message {summary_id}"
+    )
 
 
 @then(parsers.parse('the bot should fail with "{exception_type}"'))
@@ -293,9 +293,9 @@ def _bot_failed(world, exception_type):
     """Consumes the oldest recorded handler exception, which must be of this type."""
     assert world.errors, "Expected the bot to crash, but no exception was raised."
     actual = type(world.errors[0]).__name__
-    assert (
-        actual == exception_type
-    ), f"Expected {exception_type}, the bot raised {actual}"
+    assert actual == exception_type, (
+        f"Expected {exception_type}, the bot raised {actual}"
+    )
     world.errors.pop(0)
 
 
@@ -366,16 +366,16 @@ def _match_text_field(world, field, docstring):
 
 @then("there should be no match for this chat")
 def _no_match(world):
-    assert (
-        world.db.fetch_match(world.current_chat.id) is None
-    ), "A match exists for this chat."
+    assert world.db.fetch_match(world.current_chat.id) is None, (
+        "A match exists for this chat."
+    )
 
 
 @then(parsers.parse('there should be a match for "{title}"'))
 def _match_exists_for(world, title):
-    assert (
-        world.db.fetch_match(world.chats[title].id) is not None
-    ), f"There is no match for chat {title!r}."
+    assert world.db.fetch_match(world.chats[title].id) is not None, (
+        f"There is no match for chat {title!r}."
+    )
 
 
 @then(parsers.parse('the match of "{title}" should have no players'))
@@ -394,9 +394,9 @@ def _other_match_has_no_players(world, title):
 @then("the last thing the bot did should address the chat with its id as a string")
 def _addressed_with_string_id(world):
     call = world.telegram.calls[world.consumed - 1]
-    assert isinstance(
-        call.params["chat_id"], str
-    ), f"Expected a string chat_id, got {call.params['chat_id']!r}"
+    assert isinstance(call.params["chat_id"], str), (
+        f"Expected a string chat_id, got {call.params['chat_id']!r}"
+    )
     assert call.params["chat_id"] == str(world.current_chat.id)
 
 

@@ -67,9 +67,7 @@ class FakeTelegram(BaseRequest):
         self.calls = []
         self.sent_ids = []
         self.can_pin = True
-        self.failures = (
-            {}
-        )  # method -> Telegram error descriptions to answer with, once each
+        self.failures = {}  # method -> Telegram error descriptions to answer with, once each
 
     def fail_next(self, method, description):
         self.failures.setdefault(method, []).append(description)
