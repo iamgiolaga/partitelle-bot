@@ -2,9 +2,10 @@ import atexit
 import logging
 import re
 import threading
+from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
 
-from psycopg import OperationalError
+from psycopg import Connection, OperationalError
 from psycopg_pool import ConnectionPool, PoolTimeout
 
 from conf.conf import host, database, user, password, port, db_schema
@@ -18,7 +19,7 @@ POOL_MAX_SIZE = 4
 CONNECT_TIMEOUT = 10  # seconds, for a single connection attempt
 POOL_TIMEOUT = 10  # seconds, to wait for a free connection / for the pool to open
 
-_pool = None
+_pool: ConnectionPool | None = None
 _pool_lock = threading.Lock()
 
 
@@ -26,21 +27,22 @@ class DatabaseUnavailable(Exception):
     """The database cannot be reached (wrong host/credentials, server down, pool exhausted)."""
 
 
-def validate_schema(schema):
-    if not SCHEMA_NAME_RE.match(schema or ""):
+def validate_schema(schema: str | None) -> str:
+    name = schema or ""
+    if not SCHEMA_NAME_RE.match(name):
         raise ValueError(
             f"Invalid PB_DB_SCHEMA {schema!r}: it must match {SCHEMA_NAME_RE.pattern}"
         )
-    return schema
+    return name
 
 
-def _unavailable(error):
+def _unavailable(error: Exception) -> DatabaseUnavailable:
     return DatabaseUnavailable(
         f"Cannot connect to the database {database!r} on {host}:{port or 5432}: {error}"
     )
 
 
-def _create_pool():
+def _create_pool() -> ConnectionPool:
     schema = validate_schema(db_schema)
     pool = ConnectionPool(
         min_size=POOL_MIN_SIZE,
@@ -68,7 +70,8 @@ def _create_pool():
         raise _unavailable(error) from error
     try:
         with pool.connection() as conn:
-            version = conn.execute("SELECT version()").fetchone()[0]
+            row = conn.execute("SELECT version()").fetchone()
+            version = row[0] if row else None
         print(f"PostgreSQL database version: {version}")
     except (PoolTimeout, OperationalError) as error:
         pool.close()
@@ -76,7 +79,7 @@ def _create_pool():
     return pool
 
 
-def get_pool():
+def get_pool() -> ConnectionPool:
     """The shared connection pool, created and opened on first use (never at import time)."""
     global _pool
     with _pool_lock:
@@ -85,7 +88,7 @@ def get_pool():
         return _pool
 
 
-def close_pool():
+def close_pool() -> None:
     global _pool
     with _pool_lock:
         pool, _pool = _pool, None
@@ -97,7 +100,7 @@ atexit.register(close_pool)
 
 
 @contextmanager
-def connection():
+def connection() -> Iterator[Connection]:
     """Check a (autocommit) connection out of the pool for the duration of the block."""
     pool = get_pool()
     with ExitStack() as stack:

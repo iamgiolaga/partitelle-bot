@@ -37,6 +37,9 @@ uv run ruff format .   # format
 uv run ruff check .    # lint
 ```
 
+Types are checked with [mypy](https://mypy.readthedocs.io/) (`uv run mypy`, also run by CI): `domain`, `db/connection.py` and `db/repository.py` are checked strictly, the rest of the code is not checked yet.
+To bring a module under checking, fully annotate it and add it to `files` and to the strict override in the `[tool.mypy]` section of `pyproject.toml`.
+
 Create a `.env` file and fill it with the correct values. You can use the `default.env` file as a template.
 
 ## Database migrations

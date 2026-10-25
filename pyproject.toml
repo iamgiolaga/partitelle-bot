@@ -22,6 +22,7 @@ dev = [
     "pre-commit==4.7.0",
     "pytest-bdd>=9.0.0",
     "time-machine>=3.5.1",
+    "mypy==2.4.0",
 ]
 
 [tool.uv]
@@ -56,3 +57,22 @@ markers = [
     "issue-97: GitHub issue 97",
     "issue-99: GitHub issue 99",
 ]
+
+[tool.mypy]
+python_version = "3.12"
+explicit_package_bases = true
+mypy_path = "."
+# Gradual typing: only the modules listed in `files` are checked (strictly); everything they import
+# is followed silently, so not-yet-typed modules report nothing.
+# To bring a module under checking, annotate it fully, add it to `files` and to the strict override.
+follow_imports = "silent"
+files = ["domain", "db/repository.py", "db/connection.py"]
+
+[[tool.mypy.overrides]]
+module = ["domain.*", "db.repository", "db.connection"]
+strict = true
+
+[[tool.mypy.overrides]]
+# no type stubs / py.typed marker
+module = ["yoyo", "yoyo.*"]
+ignore_missing_imports = true

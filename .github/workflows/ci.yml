@@ -106,6 +106,9 @@ jobs:
       - name: Run Ruff formatter
         run: uv run ruff format --check
 
+      - name: Run mypy
+        run: uv run mypy
+
   # Staging: every push to main (after tests and lint) deploys the commit to partitelle-bot-test.
   deploy-test:
     name: deploy-partitellebot-test
