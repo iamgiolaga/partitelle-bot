@@ -159,8 +159,7 @@ Feature: Payment reminder
     And a payment reminder should be scheduled for "2026-10-28 12:00"
     And the bot should send nothing else
 
-  @known-bug @issue-8
-  Scenario: /settime with the default day schedules no reminder
+  Scenario: /settime with the default day schedules the reminder 2 hours after the new time
     Given a match was started
     When "@mario" sends "/settime 21:30"
     Then the bot should send:
@@ -178,11 +177,10 @@ Feature: Payment reminder
           {campo}
           """
     And the bot should pin the last message
-    And no payment reminder should be scheduled
+    And a payment reminder should be scheduled for "2026-10-28 23:30"
     And the bot should send nothing else
 
-  @known-bug @issue-8
-  Scenario: Reaching the target with the default day schedules no reminder
+  Scenario: Reaching the target with the default day schedules the reminder 2 hours after the default time
     Given a match was started
     And "@mario" had sent "/setnumber 2"
     And "@mario" had sent "aggiungi anna"
@@ -204,7 +202,7 @@ Feature: Payment reminder
           """
     And the bot should pin the summary
     And the bot should send the text "kickoff"
-    And no payment reminder should be scheduled
+    And a payment reminder should be scheduled for "2026-10-28 22:00"
     And the bot should send nothing else
 
   Scenario: /setday with a date in the past schedules no reminder

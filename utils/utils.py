@@ -5,6 +5,7 @@ from telegram.helpers import escape_markdown
 from utils.constants import maybe_placeholder
 import random
 import json
+import re
 
 
 def get_next_weekday(startdate: str, weekday: int) -> str:
@@ -27,7 +28,17 @@ def compute_next_wednesday():
     return get_next_weekday((datetime.today().strftime("%d/%m/%Y")), 2)
 
 
+ITALIAN_WEEKDAY = re.compile(
+    r"^\s*(luned[iì]|marted[iì]|mercoled[iì]|gioved[iì]|venerd[iì]|sabato|domenica)"
+    r"\s+(?=\d{1,2}[/.-]\d{1,2})",
+    re.IGNORECASE,
+)
+
+
 def extract_match_day(day):
+    # dateutil does not know the Italian weekdays (e.g. the default "Mercoledì 28/10/2026"):
+    # drop a leading one, but only when a date follows (a weekday alone is still unreadable)
+    day = ITALIAN_WEEKDAY.sub("", day)
     try:
         extracted_day = parse(day, dayfirst=True)
     except ValueError:

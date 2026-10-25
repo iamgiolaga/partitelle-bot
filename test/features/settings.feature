@@ -421,8 +421,7 @@ Feature: Match settings
     And the bot should pin the last message
     And the bot should send nothing else
 
-  @known-bug @issue-8
-  Scenario: Reaching the target with the default day never schedules the payment reminder
+  Scenario: Reaching the target with the default day schedules the payment reminder
     Given a match was started
     And "@mario" had sent "aggiungi anna"
     And "@mario" had sent "aggiungi bea"
@@ -443,7 +442,12 @@ Feature: Match settings
       Ok, @mario! Ho impostato il numero di partecipanti a 2
       """
     When the scheduled jobs run
-    Then the bot should send nothing else
+    Then the bot should send plain text:
+      """
+      {payment reminder}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
 
   Scenario: Changing the target cancels the teams and the payment reminder
     Given a match was started
@@ -675,8 +679,7 @@ Feature: Match settings
     When the scheduled jobs run
     Then the bot should send nothing else
 
-  @known-bug @issue-8
-  Scenario: The day written by the bot itself cannot be read back, so no payment reminder is ever scheduled
+  Scenario: The day written by the bot itself is read back, so the payment reminder is scheduled
     Given a match was started
     When "@mario" sends "/settime 21:00"
     Then the bot should send:
@@ -693,7 +696,12 @@ Feature: Match settings
       """
     And the bot should pin the summary
     When the scheduled jobs run
-    Then the bot should send nothing else
+    Then the bot should send plain text:
+      """
+      {payment reminder}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
 
   @known-bug @issue-91
   Scenario: The payment reminder replaces the summary as the message edited by later changes

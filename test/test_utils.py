@@ -5,6 +5,7 @@ from datetime import datetime
 from utils.utils import (
     get_next_weekday,
     compute_next_wednesday,
+    extract_match_day,
     get_sender_name,
     swap_players,
     generate_teams,
@@ -63,6 +64,27 @@ class TestUtils(unittest.TestCase):
         mock_date.strptime = datetime.strptime
         mock_date.strftime = datetime.strftime
         self.assertEqual(compute_next_wednesday(), "17/11/2021")
+
+    def test_extract_match_day(self):
+        # The default day written by the bot: Italian weekday + dd/mm/yyyy
+        self.assertEqual(
+            extract_match_day("Mercoledì 28/10/2026"), datetime(2026, 10, 28)
+        )
+        self.assertEqual(
+            extract_match_day("mercoledi 28/10/2026"), datetime(2026, 10, 28)
+        )
+        self.assertEqual(extract_match_day("SABATO 31/10/2026"), datetime(2026, 10, 31))
+        # With the time appended, as trigger_payment_reminder does
+        self.assertEqual(
+            extract_match_day("Mercoledì 28/10/2026 21:30"),
+            datetime(2026, 10, 28, 21, 30),
+        )
+        # A plain date keeps working
+        self.assertEqual(extract_match_day("25/10/2026"), datetime(2026, 10, 25))
+        # Unreadable days are still -1
+        self.assertEqual(extract_match_day("Mercoledì"), -1)
+        self.assertEqual(extract_match_day("sabato 20:00"), -1)
+        self.assertEqual(extract_match_day("prossima settimana"), -1)
 
     def test_get_sender_name(self):
         mock_update = MagicMock(spec=Update)
