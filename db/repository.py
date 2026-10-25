@@ -50,12 +50,18 @@ def _row_to_match(chat_id: int | str, row: tuple[Any, ...]) -> Match:
     )
 
 
+def _table() -> sql.Identifier:
+    if table_name is None:
+        raise RuntimeError("PB_DB_TABLE_NAME is not set")
+    return sql.Identifier(table_name)
+
+
 def get_match(chat_id: int | str) -> Match | None:
     """The match of a chat, or None when /start has not been used (or after /stop)."""
     with connection() as conn:
         cur = conn.execute(
             sql.SQL("SELECT {columns} FROM {table} WHERE chat_id=%s").format(
-                columns=sql.SQL(_COLUMNS), table=sql.Identifier(table_name)
+                columns=sql.SQL(_COLUMNS), table=_table()
             ),
             [str(chat_id)],
         )
@@ -74,7 +80,7 @@ def create_match(match: Match) -> None:
             sql.SQL(
                 "INSERT INTO {table} (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
                 "VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            ).format(table=sql.Identifier(table_name)),
+            ).format(table=_table()),
             [
                 str(match.chat_id),
                 players,
@@ -94,9 +100,7 @@ def create_match(match: Match) -> None:
 def delete_match(chat_id: int | str) -> None:
     with connection() as conn:
         conn.execute(
-            sql.SQL("DELETE FROM {table} WHERE chat_id=%s").format(
-                table=sql.Identifier(table_name)
-            ),
+            sql.SQL("DELETE FROM {table} WHERE chat_id=%s").format(table=_table()),
             [str(chat_id)],
         )
 
@@ -114,7 +118,7 @@ def _set_column(chat_id: int | str, column: str, value: str | int | None) -> Non
     with connection() as conn:
         conn.execute(
             sql.SQL("UPDATE {table} SET {column} = %s WHERE chat_id=%s").format(
-                table=sql.Identifier(table_name), column=sql.Identifier(column)
+                table=_table(), column=sql.Identifier(column)
             ),
             [value, str(chat_id)],
         )
@@ -155,10 +159,12 @@ def _lock_players(conn: Connection[Any], chat_id: int | str) -> list[str]:
     """The stored entries of a chat, with the row locked until the transaction ends."""
     row = conn.execute(
         sql.SQL("SELECT players FROM {table} WHERE chat_id=%s FOR UPDATE").format(
-            table=sql.Identifier(table_name)
+            table=_table()
         ),
         [str(chat_id)],
     ).fetchone()
+    if row is None:
+        raise LookupError(f"no match stored for chat {chat_id}")
     return list(row[0] or [])
 
 
@@ -168,7 +174,7 @@ def _store_players(
     # an empty list is stored as NULL, never as an empty array
     conn.execute(
         sql.SQL("UPDATE {table} SET players = %s WHERE chat_id=%s").format(
-            table=sql.Identifier(table_name)
+            table=_table()
         ),
         [entries or None, str(chat_id)],
     )
