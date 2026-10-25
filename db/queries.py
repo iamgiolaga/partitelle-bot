@@ -1,49 +1,7 @@
 from conf.conf import table_name
-from utils.constants import (
-    default_target,
-    default_time,
-    default_message,
-    maybe_placeholder,
-)
+from utils.constants import maybe_placeholder
 from psycopg import sql
-from utils.utils import compute_next_wednesday
 from db.connection import connection
-
-
-def create_bamboo_chat_id_row(chat_id):
-    with connection() as conn:
-        pitch = (
-            "Crespi Sport Village \n"
-            "\n"
-            "Via Carlo Valvassori Peroni, 48, 20133 \n"
-            "Milano, MI, 02 266 3774 \n"
-            "https://g.co/kgs/L9b6KZ"
-        )
-        default_day = "Mercoledì " + compute_next_wednesday(default_time)
-        conn.execute(
-            sql.SQL(
-                "INSERT INTO {table} (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
-                "VALUES ( %s, null, %s, %s, %s, %s, %s, null, null)"
-            ).format(table=sql.Identifier(table_name)),
-            [
-                str(chat_id),
-                default_day,
-                default_time,
-                str(default_target),
-                default_message,
-                pitch,
-            ],
-        )
-
-
-def delete_row_on_db(chat_id):
-    with connection() as conn:
-        conn.execute(
-            sql.SQL("DELETE FROM {table} WHERE chat_id=%s").format(
-                table=sql.Identifier(table_name)
-            ),
-            [str(chat_id)],
-        )
 
 
 def is_already_present(chat_id, name):
@@ -58,46 +16,6 @@ def is_already_present(chat_id, name):
         if current_players is None or current_players[0] is None:
             return False
         return name in current_players[0]
-
-
-def create_chat_id_row(chat_id):
-    with connection() as conn:
-        default_day = "Mercoledì " + compute_next_wednesday(default_time)
-        conn.execute(
-            sql.SQL(
-                "INSERT INTO {table} (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
-                "VALUES ( %s, null, %s, %s, %s, %s, null, null, null)"
-            ).format(table=sql.Identifier(table_name)),
-            [
-                str(chat_id),
-                default_day,
-                default_time,
-                str(default_target),
-                default_message,
-            ],
-        )
-
-
-def find_all_info_by_chat_id(chat_id):
-    with connection() as conn:
-        cur = conn.execute(
-            sql.SQL(
-                "SELECT players, day, time, target, custom_message, pitch, teams, bot_last_message_id FROM {table} WHERE chat_id=%s"
-            ).format(table=sql.Identifier(table_name)),
-            [str(chat_id)],
-        )
-        return cur.fetchone()
-
-
-def find_row_by_chat_id(chat_id):
-    with connection() as conn:
-        cur = conn.execute(
-            sql.SQL("SELECT chat_id, players FROM {table} WHERE chat_id=%s").format(
-                table=sql.Identifier(table_name)
-            ),
-            [str(chat_id)],
-        )
-        return cur.fetchone()
 
 
 def update_bot_last_message_id_on_db(chat_id, msg_id):

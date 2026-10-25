@@ -2,6 +2,7 @@ import unittest
 from telegram import Update
 from unittest.mock import patch, MagicMock
 from datetime import datetime, time
+from domain import Match, Participant, Teams
 from utils.utils import (
     get_next_weekday,
     compute_next_wednesday,
@@ -16,12 +17,19 @@ from utils.utils import (
     parse_names,
     join_names,
     is_command_name,
-    exclude_maybe,
     format_teams,
     format_summary,
-    confirmed_count,
     already_in_message,
 )
+
+
+def _participants(raw):
+    return [
+        Participant(
+            p.removesuffix("%is%maybe%present"), p.endswith("%is%maybe%present")
+        )
+        for p in raw
+    ]
 
 
 class TestUtils(unittest.TestCase):
@@ -173,34 +181,25 @@ class TestUtils(unittest.TestCase):
 
     def test_swap_players(self):
         # Test case 1: Swap two players from different teams
-        teams = {
-            "black": ["JohnDoe", "JaneDoe", "Alice"],
-            "white": ["Bob", "Charlie", "Eve"],
-        }
-        x = "JohnDoe"
-        y = "Bob"
-        new_teams = swap_players(teams, x, y)
+        teams = Teams(("JohnDoe", "JaneDoe", "Alice"), ("Bob", "Charlie", "Eve"))
+        new_teams = swap_players(teams, "JohnDoe", "Bob")
         self.assertEqual(
             new_teams,
-            '{"black": ["Bob", "JaneDoe", "Alice"], "white": ["JohnDoe", "Charlie", "Eve"]}',
+            Teams(("Bob", "JaneDoe", "Alice"), ("JohnDoe", "Charlie", "Eve")),
         )
+        # the swap is the same whichever player is named first
+        self.assertEqual(swap_players(teams, "Bob", "JohnDoe"), new_teams)
 
         # Test case 2: Swap two players from the same team
-        teams = {
-            "black": ["JohnDoe", "JaneDoe", "Alice"],
-            "white": ["Bob", "Charlie", "Eve"],
-        }
-        x = "JohnDoe"
-        y = "JaneDoe"
-        with self.assertRaises(Exception):
-            swap_players(teams, x, y)
+        with self.assertRaises(ValueError):
+            swap_players(teams, "JohnDoe", "JaneDoe")
 
     def test_swap_players_refuses_a_player_outside_the_teams(self):
-        teams = {"black": ["anna", "bea"], "white": ["carlo", "dino"]}
+        teams = Teams(("anna", "bea"), ("carlo", "dino"))
         for x, y in [("anna", "enzo"), ("enzo", "carlo")]:
             with self.assertRaises(ValueError):
                 swap_players(teams, x, y)
-        self.assertEqual(teams, {"black": ["anna", "bea"], "white": ["carlo", "dino"]})
+        self.assertEqual(teams, Teams(("anna", "bea"), ("carlo", "dino")))
 
     def test_parse_swap(self):
         self.assertEqual(parse_swap("scambia anna con bea"), ("anna", "bea"))
@@ -225,7 +224,9 @@ class TestUtils(unittest.TestCase):
         # Mock the output of random.sample
         mock_sample.return_value = ["JohnDoe", "JaneDoe", "Alice"]
 
-        expected_result = '{"black": ["JohnDoe", "JaneDoe", "Alice"], "white": ["Bob", "Charlie", "Eve"]}'
+        expected_result = Teams(
+            ("JohnDoe", "JaneDoe", "Alice"), ("Bob", "Charlie", "Eve")
+        )
         result = generate_teams(players)
         self.assertEqual(result, expected_result)
 
@@ -263,44 +264,32 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(is_command_name("luca"))
         self.assertFalse(is_command_name("lu/ca"))
 
-    def test_exclude_maybe(self):
-        # Test case 1: No placeholders
-        players = ["JohnDoe", "JaneDoe", "Alice", "Bob", "Charlie", "Eve"]
-        self.assertEqual(exclude_maybe(players), players)
-
-        # Test case 2: Placeholders present
-        players = [
-            "JohnDoe",
-            "JaneDoe",
-            "Alice%is%maybe%present",
-            "Bob",
-            "Charlie",
-            "Eve%is%maybe%present",
-        ]
-        self.assertEqual(
-            exclude_maybe(players), ["JohnDoe", "JaneDoe", "Bob", "Charlie"]
-        )
-
-    def test_confirmed_count(self):
-        self.assertEqual(confirmed_count(None), 0)
-        self.assertEqual(confirmed_count([]), 0)
-        self.assertEqual(confirmed_count(["a", "b%is%maybe%present", "c"]), 2)
-
     def test_already_in_message(self):
-        self.assertEqual(already_in_message(["a", "b"], 2), "Siete già in 2")
         self.assertEqual(
-            already_in_message(["a", "b", "c%is%maybe%present"], 2),
+            already_in_message(
+                Match(1, [Participant("a"), Participant("b")], target=2)
+            ),
+            "Siete già in 2",
+        )
+        self.assertEqual(
+            already_in_message(
+                Match(
+                    1,
+                    [Participant("a"), Participant("b"), Participant("c", True)],
+                    target=2,
+                )
+            ),
             "Siete già in 2 (1 in forse)",
         )
 
     def test_format_teams(self):
         # Test case 1: Teams are empty
-        teams = "{}"
+        teams = Teams((), ())
         with self.assertRaises(Exception):
             format_teams(teams)
 
         # Test case 2: Teams are not empty
-        teams = '{"black": ["JohnDoe", "JaneDoe", "Alice"], "white": ["Bob", "Charlie", "Eve"]}'
+        teams = Teams(("JohnDoe", "JaneDoe", "Alice"), ("Bob", "Charlie", "Eve"))
         self.assertEqual(
             format_teams(teams),
             "*SQUADRA NERA* \n - JohnDoe\n - JaneDoe\n - Alice\n\n*SQUADRA BIANCA* \n - Bob\n - Charlie\n - Eve\n",
@@ -327,7 +316,17 @@ class TestUtils(unittest.TestCase):
             "Pitch"
         )
         self.assertEqual(
-            format_summary(all_players, day, time, target, default_message, pitch),
+            format_summary(
+                Match(
+                    1,
+                    _participants(all_players),
+                    day,
+                    time,
+                    target,
+                    default_message,
+                    pitch,
+                )
+            ),
             expected_output,
         )
 
@@ -351,7 +350,17 @@ class TestUtils(unittest.TestCase):
             "Pitch"
         )
         self.assertEqual(
-            format_summary(all_players, day, time, target, default_message, pitch),
+            format_summary(
+                Match(
+                    1,
+                    _participants(all_players),
+                    day,
+                    time,
+                    target,
+                    default_message,
+                    pitch,
+                )
+            ),
             expected_output,
         )
 
@@ -375,7 +384,17 @@ class TestUtils(unittest.TestCase):
             "Pitch"
         )
         self.assertEqual(
-            format_summary(all_players, day, time, target, default_message, pitch),
+            format_summary(
+                Match(
+                    1,
+                    _participants(all_players),
+                    day,
+                    time,
+                    target,
+                    default_message,
+                    pitch,
+                )
+            ),
             expected_output,
         )
 
@@ -405,7 +424,17 @@ class TestUtils(unittest.TestCase):
             "Pitch"
         )
         self.assertEqual(
-            format_summary(all_players, day, time, target, default_message, pitch),
+            format_summary(
+                Match(
+                    1,
+                    _participants(all_players),
+                    day,
+                    time,
+                    target,
+                    default_message,
+                    pitch,
+                )
+            ),
             expected_output,
         )
 

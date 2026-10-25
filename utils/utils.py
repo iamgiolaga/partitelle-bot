@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 from dateutil.parser import parse
 from telegram import Update
 from telegram.helpers import escape_markdown
-from utils.constants import maybe_placeholder
+from domain import Match, Teams
+from utils.constants import default_time
 import random
-import json
 import re
 
 
@@ -115,41 +115,24 @@ def parse_swap(text):
     return parts[0], parts[1]
 
 
-def swap_players(teams, x, y):
-    if (
-        x not in teams["black"] + teams["white"]
-        or y not in teams["black"] + teams["white"]
-    ):
+def swap_players(teams: Teams, x: str, y: str) -> Teams:
+    if not teams.contains(x) or not teams.contains(y):
         raise ValueError("Not allowed to swap a player who is not in the teams")
-    if (x in teams["black"] and y in teams["black"]) or (
-        x in teams["white"] and y in teams["white"]
+    if (x in teams.black and y in teams.black) or (
+        x in teams.white and y in teams.white
     ):
         raise ValueError("Not allowed to swap two players of the same team")
 
-    temp_black = None
-    temp_white = None
+    def exchange(team: tuple[str, ...]) -> tuple[str, ...]:
+        return tuple(y if p == x else x if p == y else p for p in team)
 
-    if x in teams["black"]:
-        temp_black = [y if player == x else player for player in teams["black"]]
-    else:
-        temp_white = [y if player == x else player for player in teams["white"]]
-
-    if y in teams["black"]:
-        temp_black = [x if player == y else player for player in teams["black"]]
-    else:
-        temp_white = [x if player == y else player for player in teams["white"]]
-
-    teams["black"] = temp_black
-    teams["white"] = temp_white
-
-    return json.dumps(teams)
+    return Teams(black=exchange(teams.black), white=exchange(teams.white))
 
 
-def generate_teams(players):
-    black_team = random.sample(players, int(len(players) / 2))
-    white_team = [player for player in players if player not in black_team]
-    teams = {"black": black_team, "white": white_team}
-    return json.dumps(teams)
+def generate_teams(names: list[str]) -> Teams:
+    black_team = random.sample(names, int(len(names) / 2))
+    white_team = [name for name in names if name not in black_team]
+    return Teams(black=tuple(black_team), white=tuple(white_team))
 
 
 def flatten_args(args):
@@ -173,64 +156,51 @@ def is_command_name(name):
     return name.startswith("/")
 
 
-def exclude_maybe(players):
-    return [player for player in players if maybe_placeholder not in player]
-
-
-def confirmed_count(players):
-    return len(exclude_maybe(players or []))
-
-
-def already_in_message(players, target):
-    message = "Siete già in " + str(target)
-    maybe = len(players or []) - confirmed_count(players)
-    if maybe:
-        message += " (" + str(maybe) + " in forse)"
+def already_in_message(match: Match) -> str:
+    message = "Siete già in " + str(match.target)
+    if match.maybe_count:
+        message += " (" + str(match.maybe_count) + " in forse)"
     return message
 
 
-def format_teams(teams):
-    json_teams = json.loads(teams)
-
-    if json_teams == {}:
+def format_teams(teams: Teams) -> str:
+    if not teams.members:
         raise Exception("Teams are empty")
 
-    black_team = json_teams["black"]
-    white_team = json_teams["white"]
-
     teams_message = "*SQUADRA NERA* \n"
-    for player in black_team:
+    for player in teams.black:
         teams_message = teams_message + " - " + escape_markdown(player) + "\n"
 
     teams_message = teams_message + "\n"
     teams_message = teams_message + "*SQUADRA BIANCA* \n"
-    for player in white_team:
+    for player in teams.white:
         teams_message = teams_message + " - " + escape_markdown(player) + "\n"
 
     return teams_message
 
 
-def format_summary(all_players, day, time, target, default_message, pitch):
+def format_summary(match: Match) -> str:
+    pitch = match.pitch
     if pitch is None:
         pitch = "Usa il comando /setpitch <campo> per inserire la struttura sportiva dove giocherete."
 
-    prefix = f"*GIORNO*: {escape_markdown(day)} | {escape_markdown(time)}\n\n"
-    appendix = f"{default_message}\n\n*CAMPO*: \n{escape_markdown(pitch)}"
+    prefix = (
+        f"*GIORNO*: {escape_markdown(match.day)} | {escape_markdown(match.time)}\n\n"
+    )
+    # the description is deliberately not escaped: users format it with markdown
+    appendix = f"{match.description}\n\n*CAMPO*: \n{escape_markdown(pitch)}"
 
     player_list = ""
-    for i in range(target):
-        if all_players and i < len(all_players):
-            player = all_players[i]
-            presence_outcome_icon = "❓" if player.endswith(maybe_placeholder) else "✅"
-            player = (
-                player.replace(maybe_placeholder, "")
-                if presence_outcome_icon == "❓"
-                else player
-            )
-            player_list += (
-                f"{i + 1}. {escape_markdown(player)} {presence_outcome_icon}\n"
-            )
+    for i in range(match.target):
+        if i < len(match.participants):
+            participant = match.participants[i]
+            icon = "❓" if participant.is_maybe else "✅"
+            player_list += f"{i + 1}. {escape_markdown(participant.name)} {icon}\n"
         else:
             player_list += f"{i + 1}. ❌\n"
 
     return prefix + player_list + "\n" + appendix
+
+
+def default_match_day() -> str:
+    return "Mercoledì " + compute_next_wednesday(default_time)

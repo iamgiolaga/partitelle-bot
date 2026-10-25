@@ -62,7 +62,7 @@ jobs:
         # Line coverage of the application modules only (not the tests); measured 97% when the gate was added.
         run: >-
           uv run pytest test
-          --cov=callbacks --cov=behaviours --cov=jobs --cov=db --cov=utils --cov=handlers
+          --cov=callbacks --cov=behaviours --cov=jobs --cov=db --cov=utils --cov=handlers --cov=domain
           --cov-report=term-missing --cov-report=xml --cov-fail-under=97
 
       - name: Upload coverage report

@@ -3,20 +3,14 @@ from telegram.ext import ContextTypes
 from telegram.helpers import escape_markdown
 from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
-from db.queries import (
-    find_row_by_chat_id,
-    update_pitch_on_db,
-    find_all_info_by_chat_id,
-    update_bot_last_message_id_on_db,
-)
+from db.queries import update_pitch_on_db, update_bot_last_message_id_on_db
+from db.repository import get_match
 from utils.utils import flatten_args, get_sender_mention, format_summary
 
 
 async def set_pitch(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
-    row = find_row_by_chat_id(chat_id)
-
-    if row is None:
+    if get_match(chat_id) is None:
         answer = (
             "Prima di iniziare con le danze, avvia una partita, per farlo usa /start"
         )
@@ -39,23 +33,12 @@ async def set_pitch(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="markdown",
                 text=escape_markdown(answer),
             )
-            (
-                players,
-                day,
-                time,
-                target,
-                default_message,
-                pitch,
-                _,
-                bot_last_message_id,
-            ) = find_all_info_by_chat_id(chat_id)
-            current_situation = format_summary(
-                players, day, time, target, default_message, pitch
-            )
-            if bot_last_message_id is None:
+            match = get_match(chat_id)
+            current_situation = format_summary(match)
+            if match.summary_message_id is None:
                 msg = await print_new_summary(current_situation, update, context)
                 update_bot_last_message_id_on_db(chat_id, msg.message_id)
             else:
                 await edit_summary(
-                    current_situation, bot_last_message_id, update, context
+                    current_situation, match.summary_message_id, update, context
                 )

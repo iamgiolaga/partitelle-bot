@@ -3,20 +3,14 @@ from telegram.ext import ContextTypes
 from telegram.helpers import escape_markdown
 from behaviours.edit_summary import edit_summary
 from behaviours.print_new_summary import print_new_summary
-from db.queries import (
-    find_row_by_chat_id,
-    update_description_on_db,
-    find_all_info_by_chat_id,
-    update_bot_last_message_id_on_db,
-)
+from db.queries import update_description_on_db, update_bot_last_message_id_on_db
+from db.repository import get_match
 from utils.utils import get_sender_mention, format_summary
 
 
 async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
-    row = find_row_by_chat_id(chat_id)
-
-    if row is None:
+    if get_match(chat_id) is None:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             parse_mode="markdown",
@@ -44,15 +38,11 @@ async def set_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=escape_markdown(f"Ok, {sender}! Ho aggiornato la descrizione!"),
     )
 
-    players, day, time, target, default_message, pitch, _, bot_last_message_id = (
-        find_all_info_by_chat_id(chat_id)
-    )
-    current_situation = format_summary(
-        players, day, time, target, default_message, pitch
-    )
+    match = get_match(chat_id)
+    current_situation = format_summary(match)
 
-    if bot_last_message_id is None:
+    if match.summary_message_id is None:
         msg = await print_new_summary(current_situation, update, context)
         update_bot_last_message_id_on_db(chat_id, msg.message_id)
     else:
-        await edit_summary(current_situation, bot_last_message_id, update, context)
+        await edit_summary(current_situation, match.summary_message_id, update, context)

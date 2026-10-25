@@ -1,15 +1,14 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from db.queries import find_all_info_by_chat_id, update_teams_on_db
-from utils.utils import exclude_maybe, format_teams, generate_teams
-import json
+from db.repository import get_match, save_teams
+from utils.utils import format_teams, generate_teams
 
 
 async def teams(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
-    row = find_all_info_by_chat_id(chat_id)
+    match = get_match(chat_id)
 
-    if row is None:
+    if match is None:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             parse_mode="markdown",
@@ -17,20 +16,19 @@ async def teams(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    players, _, _, target, _, _, teams, _ = row
-    participants_num = len(exclude_maybe(players)) if players else 0
-    reached_target = players and participants_num == target
+    target = match.target
+    reached_target = bool(match.participants) and match.confirmed_count == target
 
-    if teams is not None:
-        answer = format_teams(json.dumps(teams))
+    if match.teams is not None:
+        answer = format_teams(match.teams)
     else:
         if target % 2 != 0:
             answer = "Per usare questa funzionalità dovete essere in un numero pari di partecipanti"
         elif not reached_target:
             answer = f"Prima di poter fare le squadre, devi raggiungere {target} partecipanti"
         else:
-            generated_teams = generate_teams(exclude_maybe(players))
-            update_teams_on_db(chat_id, generated_teams)
+            generated_teams = generate_teams(match.confirmed_names())
+            save_teams(chat_id, generated_teams)
             answer = format_teams(generated_teams)
 
     await context.bot.send_message(
