@@ -1,8 +1,13 @@
 name: Promote to prod
 
-# Manual: promotes the commit currently live on staging (PartitelleBotTest) to prod (PartitelleBot).
+# Promotes the commit currently live on staging (PartitelleBotTest) to prod (PartitelleBot).
 # Deploys it, then creates the git tag (no `v` prefix) and the GitHub release with notes generated from Conventional Commits.
+# Runs on demand (manual) and automatically every Thursday at 07:00 UTC: the scheduled run skips if the main commit has been
+# on staging for less than 24 hours. Either way, staging must answer over HTTP before the prod deploy.
+# A failure shows up as the usual failed-workflow email.
 on:
+  schedule:
+    - cron: "0 7 * * 4" # Thursday 07:00 UTC; `inputs.*` are empty on scheduled runs (version = computed, dry_run = false)
   workflow_dispatch:
     inputs:
       version:
@@ -17,7 +22,7 @@ on:
 
 permissions:
   contents: write # tag + release
-  actions: read # check the CI run of the staging commit
+  actions: write # check the CI run of the staging commit, re-enable this workflow (keep-alive)
 
 concurrency:
   group: deploy-partitellebot
@@ -30,6 +35,12 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      # GitHub disables scheduled workflows after 60 days without repo activity. Re-enabling the workflow through
+      # the API resets that timer. It runs first, so it happens even when the promote is skipped or fails.
+      - name: Keep the schedule alive
+        if: ${{ github.event_name == 'schedule' }}
+        run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/promote.yml/enable"
+
       - name: Require main
         if: ${{ github.ref != 'refs/heads/main' }}
         run: |
@@ -104,8 +115,30 @@ jobs:
             exit 1
           fi
 
+      # Scheduled runs only: let a fresh main commit (e.g. a Dependabot merge) soak on staging for 24 hours.
+      # Manual runs ignore this gate.
+      - name: Soak gate (scheduled runs)
+        id: soak
+        if: ${{ github.event_name == 'schedule' }}
+        env:
+          SOAK_HOURS: "24"
+        run: |
+          committed="$(git log -1 --format=%ct origin/main)"
+          age=$(( $(date +%s) - committed ))
+          if [ "$age" -lt $(( SOAK_HOURS * 3600 )) ]; then
+            echo "::notice::Skipping the scheduled promote: the main commit is $(( age / 3600 ))h old, it needs at least ${SOAK_HOURS}h on staging"
+            {
+              echo "## Skipped: soak time not reached"
+              echo "The latest main commit is $(( age / 3600 ))h old (minimum ${SOAK_HOURS}h). Promote manually or wait for the next run."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "The main commit is $(( age / 3600 ))h old, soak time reached"
+
       - name: Compute version and release notes
         id: plan
+        if: ${{ steps.soak.outputs.promote != 'false' }}
         env:
           SHA: ${{ steps.staging.outputs.sha }}
           VERSION_INPUT: ${{ inputs.version }}
@@ -177,6 +210,14 @@ jobs:
             echo "version=${version}"
             echo "notes_file=${RUNNER_TEMP}/release-notes.md"
           } >> "$GITHUB_OUTPUT"
+
+      # The free staging instance spins down when idle: the check retries for a few minutes while it wakes up.
+      - name: Smoke check staging
+        if: ${{ steps.plan.outputs.promote == 'true' && !inputs.dry_run }}
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_TEST_API_KEY }}
+          RENDER_TEST_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }}
+        run: .github/scripts/staging-smoke-check.sh "$RENDER_TEST_SERVICE_ID"
 
       # Deploy first, release after: a failed deploy leaves no tag/release claiming a version that never reached prod.
       - name: Deploy ${{ steps.staging.outputs.sha }} to PartitelleBot (prod)
