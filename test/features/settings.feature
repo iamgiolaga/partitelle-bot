@@ -6,7 +6,7 @@ Feature: Match settings
   Background:
     Given a group chat "Calcetto"
     And the user "@mario"
-    And today is "2026-10-21 18:00"
+    And today is "2026-10-21 21:00"
     And the text "default description" is:
       """
       5 goal di scarto e le squadre si _potrebbero_ cambiare 
@@ -1158,10 +1158,24 @@ Feature: Match settings
       | 2026-10-20 23:59 | Mercoledì 21/10/2026 |
       | 2026-10-22 09:00 | Mercoledì 28/10/2026 |
       | 2026-10-25 12:00 | Mercoledì 28/10/2026 |
-      | 2026-12-30 18:00 | Mercoledì 06/01/2027 |
+      | 2026-12-30 21:00 | Mercoledì 06/01/2027 |
 
-  @known-bug @issue-34
-  Scenario Outline: /start on a Wednesday at <time> skips to the following Wednesday, even before the match could happen
+  Scenario Outline: /start on a Wednesday at <time>, before the default match time, keeps the same day
+    Given the clock moves to "2026-10-21 <time>"
+    When "@mario" sends "/start"
+    Then the bot should send the text "welcome"
+    And the bot should send nothing else
+    And the match should have:
+      | field | value                |
+      | day   | Mercoledì 21/10/2026 |
+
+    Examples:
+      | time  |
+      | 00:01 |
+      | 08:00 |
+      | 19:59 |
+
+  Scenario Outline: /start on a Wednesday at <time>, from the default match time on, skips to the following Wednesday
     Given the clock moves to "2026-10-21 <time>"
     When "@mario" sends "/start"
     Then the bot should send the text "welcome"
@@ -1172,9 +1186,8 @@ Feature: Match settings
 
     Examples:
       | time  |
-      | 00:01 |
-      | 08:00 |
-      | 19:59 |
+      | 20:00 |
+      | 20:01 |
       | 23:59 |
 
   Scenario: The default day is computed once, when the match is started

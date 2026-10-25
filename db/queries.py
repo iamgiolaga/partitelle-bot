@@ -14,7 +14,7 @@ def create_bamboo_chat_id_row(chat_id):
             "Milano, MI, 02 266 3774 \n"
             "https://g.co/kgs/L9b6KZ"
         )
-        default_day = "Mercoledì " + compute_next_wednesday()
+        default_day = "Mercoledì " + compute_next_wednesday(default_time)
         conn.execute(
             sql.SQL(
                 "INSERT INTO {table} (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "
@@ -57,7 +57,7 @@ def is_already_present(chat_id, name):
 
 def create_chat_id_row(chat_id):
     with connection() as conn:
-        default_day = "Mercoledì " + compute_next_wednesday()
+        default_day = "Mercoledì " + compute_next_wednesday(default_time)
         conn.execute(
             sql.SQL(
                 "INSERT INTO {table} (chat_id, players, day, time, target, custom_message, pitch, teams, bot_last_message_id) "

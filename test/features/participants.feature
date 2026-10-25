@@ -7,7 +7,7 @@ Feature: Managing the participants
   Background:
     Given a group chat "Calcetto"
     And the user "@mario"
-    And today is "2026-10-21 18:00"
+    And today is "2026-10-21 21:00"
     And the text "default description" is:
       """
       5 goal di scarto e le squadre si _potrebbero_ cambiare 

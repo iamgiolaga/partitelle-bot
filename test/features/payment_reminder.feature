@@ -9,7 +9,7 @@ Feature: Payment reminder
   Background:
     Given a group chat "Calcetto"
     And the user "@mario"
-    And today is "2026-10-21 18:00"
+    And today is "2026-10-21 21:00"
     And the text "default description" is:
       """
       5 goal di scarto e le squadre si _potrebbero_ cambiare 
@@ -203,6 +203,28 @@ Feature: Payment reminder
     And the bot should pin the summary
     And the bot should send the text "kickoff"
     And a payment reminder should be scheduled for "2026-10-28 22:00"
+    And the bot should send nothing else
+
+  Scenario: Starting on a Wednesday before the match time makes today the default day, with its reminder
+    Given the clock moves to "2026-10-21 19:00"
+    And a match was started
+    When "@mario" sends "/settime 21:00"
+    Then the bot should send:
+          """
+          Ok, @mario! Ho impostato l'orario della partita alle 21:00
+          """
+    And the bot should send:
+          """
+          *GIORNO*: Mercoledì 21/10/2026 | 21:00
+    
+          {empty slots}
+    
+          {default description}
+    
+          {campo}
+          """
+    And the bot should pin the last message
+    And a payment reminder should be scheduled for "2026-10-21 23:00"
     And the bot should send nothing else
 
   Scenario: /setday with a date in the past schedules no reminder

@@ -1,7 +1,7 @@
 import unittest
 from telegram import Update
 from unittest.mock import patch, MagicMock
-from datetime import datetime
+from datetime import datetime, time
 from utils.utils import (
     get_next_weekday,
     compute_next_wednesday,
@@ -32,6 +32,44 @@ class TestUtils(unittest.TestCase):
 
         # Test case 5: Start date is a Saturday, looking for next Friday
         self.assertEqual(get_next_weekday("06/11/2021", 4), "12/11/2021")
+
+    def test_get_next_weekday_considers_the_match_time(self):
+        match_time = time(20, 0)
+        # Wednesday before, at and after the match time
+        for hour, minute, expected in [
+            (8, 0, "10/11/2021"),
+            (19, 59, "10/11/2021"),
+            (20, 0, "17/11/2021"),
+            (20, 1, "17/11/2021"),
+            (23, 59, "17/11/2021"),
+        ]:
+            now = datetime(2021, 11, 10, hour, minute)
+            self.assertEqual(
+                get_next_weekday("10/11/2021", 2, now, match_time), expected
+            )
+        # The time is irrelevant on the other days
+        now = datetime(2021, 11, 11, 8, 0)
+        self.assertEqual(
+            get_next_weekday("11/11/2021", 2, now, match_time), "17/11/2021"
+        )
+        now = datetime(2021, 11, 9, 23, 0)
+        self.assertEqual(
+            get_next_weekday("09/11/2021", 2, now, match_time), "10/11/2021"
+        )
+
+    @patch("utils.utils.datetime")
+    def test_compute_next_wednesday_with_the_match_time(self, mock_date):
+        mock_date.strptime = datetime.strptime
+        mock_date.today.return_value = datetime(2021, 11, 10, 19, 59)  # Wednesday
+        self.assertEqual(compute_next_wednesday("20:00"), "10/11/2021")
+        # From the match time on, it is the following week
+        mock_date.today.return_value = datetime(2021, 11, 10, 20, 0)
+        self.assertEqual(compute_next_wednesday("20:00"), "17/11/2021")
+        mock_date.today.return_value = datetime(2021, 11, 10, 20, 1)
+        self.assertEqual(compute_next_wednesday("20:00"), "17/11/2021")
+        # An unreadable time falls back to the following Wednesday
+        mock_date.today.return_value = datetime(2021, 11, 10, 8, 0)
+        self.assertEqual(compute_next_wednesday("stasera"), "17/11/2021")
 
     @patch("utils.utils.datetime")
     def test_compute_next_wednesday(self, mock_date):
