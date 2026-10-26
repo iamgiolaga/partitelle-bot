@@ -42,6 +42,7 @@ markers = [
     "known-bug: scenario that documents CURRENT (buggy) behaviour; it will need updating when the bug is fixed",
     "payment-reminder: payment reminder feature",
     "issue-8: GitHub issue 8",
+    "issue-25: GitHub issue 25",
     "issue-34: GitHub issue 34",
     "issue-60: GitHub issue 60",
     "issue-61: GitHub issue 61",
@@ -56,6 +57,7 @@ markers = [
     "issue-96: GitHub issue 96",
     "issue-97: GitHub issue 97",
     "issue-99: GitHub issue 99",
+    "issue-112: GitHub issue 112",
 ]
 
 [tool.mypy]

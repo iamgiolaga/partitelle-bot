@@ -477,6 +477,82 @@ Feature: Payment reminder
     And a payment reminder should be scheduled for "2026-10-28 22:00"
     And the bot should send nothing else
 
+  @known-bug @issue-112
+  Scenario: /setday on an incomplete list schedules a reminder for a match that may never be played
+    Given a match was started
+    And "@mario" had sent "/setnumber 2"
+    And "@mario" had sent "aggiungi anna"
+    When "@mario" sends "/setday 28/10/2026"
+    Then the bot should send:
+          """
+          Ok, @mario! Ho impostato il giorno della partita il 28/10/2026
+          """
+    And the bot should edit the summary to:
+          """
+          *GIORNO*: 28/10/2026 | 20:00
+    
+          1. anna ✅
+          2. ❌
+    
+          {default description}
+    
+          {campo}
+          """
+    And the bot should pin the summary
+    And a payment reminder should be scheduled for "2026-10-28 22:00"
+    And the bot should send nothing else
+
+  @known-bug @issue-112
+  Scenario: /settime on an incomplete list schedules a reminder for a match that may never be played
+    Given a match was started
+    And "@mario" had sent "/setnumber 2"
+    And "@mario" had sent "aggiungi anna"
+    When "@mario" sends "/settime 21:30"
+    Then the bot should send:
+          """
+          Ok, @mario! Ho impostato l'orario della partita alle 21:30
+          """
+    And the bot should edit the summary to:
+          """
+          *GIORNO*: Mercoledì 28/10/2026 | 21:30
+    
+          1. anna ✅
+          2. ❌
+    
+          {default description}
+    
+          {campo}
+          """
+    And the bot should pin the summary
+    And a payment reminder should be scheduled for "2026-10-28 23:30"
+    And the bot should send nothing else
+
+  @known-bug @issue-112
+  Scenario: Removing a player before the teams are drawn keeps the reminder although the list is no longer complete
+    Given a match was started
+    And "@mario" had sent "/setnumber 2"
+    And "@mario" had sent "aggiungi anna"
+    And "@mario" had sent "aggiungi bruno"
+    When "@mario" sends "togli anna"
+    Then the bot should send:
+          """
+          Che vergogna, anna
+          """
+    And the bot should edit the summary to:
+          """
+          *GIORNO*: Mercoledì 28/10/2026 | 20:00
+    
+          1. bruno ✅
+          2. ❌
+    
+          {default description}
+    
+          {campo}
+          """
+    And the bot should pin the summary
+    And a payment reminder should be scheduled for "2026-10-28 22:00"
+    And the bot should send nothing else
+
   @known-bug @issue-90
   Scenario: /stop does not cancel the reminder: it still fires for the deleted match
     Given a match was started

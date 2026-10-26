@@ -172,6 +172,16 @@ def _sends_in(world, who, text, title):
     world.send(who, text, chat=world.chats[title])
 
 
+@when(
+    parsers.re(
+        r'"(?P<who>[^"]+)" sends "(?P<text>[^"]*)" and the bot cannot retrieve the sender$'
+    )
+)
+def _sends_without_sender(world, who, text):
+    """The update reaches the bot without the author (e.g. the message was deleted meanwhile)."""
+    world.send(who, text, with_sender=False)
+
+
 @when(parsers.re(r'"(?P<who>[^"]+)" sends the message:$'))
 def _sends_multiline(world, who, docstring):
     """Like `sends "<text>"`, for texts spanning several lines."""
