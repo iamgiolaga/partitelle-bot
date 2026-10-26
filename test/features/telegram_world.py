@@ -239,7 +239,7 @@ class World:
         return person
 
     # traffic ------------------------------------------------------------------------------------
-    def send(self, label, text, chat=None):
+    def send(self, label, text, chat=None, with_sender=True):
         chat = chat or self.current_chat
         person = self.users[label]
         message = {
@@ -249,6 +249,8 @@ class World:
             "from": person.to_json(),
             "text": text,
         }
+        if not with_sender:
+            del message["from"]
         if text.startswith("/"):
             command = text.split()[0]
             message["entities"] = [

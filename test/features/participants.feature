@@ -67,6 +67,24 @@ Feature: Managing the participants
       | field   | value  |
       | players | (none) |
 
+  @known-bug @issue-25
+  Scenario Outline: <message> crashes the bot when the sender cannot be retrieved
+    Given a match was started
+    And the match target is 4
+    And the bot is expected to crash on the next message
+    When "@mario" sends "<message>" and the bot cannot retrieve the sender
+    Then the bot should fail with "AttributeError"
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value  |
+      | players | (none) |
+
+    Examples:
+      | message    |
+      | aggiungimi |
+      | proponimi  |
+      | toglimi    |
+
   # ---- aggiungimi ---------------------------------------------------------------------------------
 
   Scenario: aggiungimi adds the sender and posts a new pinned summary
