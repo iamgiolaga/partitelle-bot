@@ -1,74 +1,31 @@
 import unittest
 
-from db.repository import (
-    _encode_participant,
-    _row_to_match,
-    _validate_new_participant,
-)
-from domain import Match, Participant, Teams
+from db.repository import _teams_from, _team_of, _validate_new_participant
+from domain import Participant, Teams
 
 
-class TestRowToMatch(unittest.TestCase):
-    def test_decodes_a_full_row(self):
-        row = (
-            ["@anna", "bea%is%maybe%present"],
-            "Mercoledì 28/10/2026",
-            "20:00",
-            10,
-            "msg\n",
-            "campo",
-            {"black": ["a"], "white": ["b"]},
-            77,
-        )
+class TestTeamsFrom(unittest.TestCase):
+    def test_no_team_at_all_means_no_teams(self):
+        self.assertIsNone(_teams_from([("anna", "confirmed", None)]))
+        self.assertIsNone(_teams_from([]))
+
+    def test_members_keep_the_order_of_the_rows(self):
+        rows = [
+            ("a", "confirmed", "white"),
+            ("b", "confirmed", "black"),
+            ("c", "maybe", None),
+            ("d", "confirmed", "white"),
+            ("e", "confirmed", "black"),
+        ]
+        self.assertEqual(_teams_from(rows), Teams(("b", "e"), ("a", "d")))
+
+
+class TestTeamOf(unittest.TestCase):
+    def test_names_are_lowercased_and_nothing_means_no_colour(self):
         self.assertEqual(
-            _row_to_match("5", row),
-            Match(
-                5,
-                [Participant("@anna"), Participant("bea", True)],
-                "Mercoledì 28/10/2026",
-                "20:00",
-                10,
-                "msg\n",
-                "campo",
-                77,
-                Teams(("a",), ("b",)),
-            ),
+            _team_of(Teams(("Anna",), ("bea",))), {"anna": "black", "bea": "white"}
         )
-
-    def test_null_columns_decode_to_empty_values(self):
-        match = _row_to_match(5, (None, "d", "20:00", 10, None, None, None, None))
-        self.assertEqual(match.participants, [])
-        self.assertIsNone(match.teams)
-        self.assertIsNone(match.pitch)
-        self.assertIsNone(match.summary_message_id)
-
-    def test_only_a_trailing_suffix_marks_a_maybe(self):
-        players = ["a", "b%is%maybe%present"]
-        match = _row_to_match(1, (players, "d", "t", 2, "", None, None, None))
-        self.assertEqual([p.is_maybe for p in match.participants], [False, True])
-        self.assertEqual([p.name for p in match.participants], ["a", "b"])
-
-    def test_encoding_round_trips_the_maybe_suffix(self):
-        for participant in [Participant("@anna"), Participant("bea", True)]:
-            row = (
-                [_encode_participant(participant)],
-                "d",
-                "t",
-                2,
-                "",
-                None,
-                None,
-                None,
-            )
-            self.assertEqual(_row_to_match(1, row).participants, [participant])
-
-
-class TestEncodeParticipant(unittest.TestCase):
-    def test_a_maybe_gets_the_suffix(self):
-        self.assertEqual(_encode_participant(Participant("anna")), "anna")
-        self.assertEqual(
-            _encode_participant(Participant("anna", True)), "anna%is%maybe%present"
-        )
+        self.assertEqual(_team_of(None), {})
 
 
 class TestValidateNewParticipant(unittest.TestCase):
@@ -77,7 +34,6 @@ class TestValidateNewParticipant(unittest.TestCase):
             Participant(""),
             Participant("  "),
             Participant("", True),
-            Participant("%is%maybe%present"),
             Participant("/start"),
             Participant("/stop", True),
         ]:

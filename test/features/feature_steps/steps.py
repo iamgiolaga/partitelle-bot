@@ -112,10 +112,10 @@ def _match_target(world, target):
     world.db.set_target(world.current_chat.id, target)
 
 
-@given(parsers.parse('the match time was stored as "{time}"'))
-def _match_time(world, time):
-    """Legacy data: before /settime validated its input any text could be stored as the time."""
-    world.db.set_time(world.current_chat.id, time)
+@given(parsers.parse('the chat has the default pitch "{pitch}"'))
+def _chat_default_pitch(world, pitch):
+    """The chat was set up before: its setting row holds a pitch for every new match."""
+    world.db.set_default_pitch(world.current_chat.id, pitch)
 
 
 @given(parsers.parse('the match has the players "{players}"'))

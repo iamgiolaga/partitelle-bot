@@ -1,6 +1,14 @@
 import unittest
+from datetime import datetime
+
+import time_machine
 
 from domain import Match, Participant, Teams
+from domain.schedule import TIMEZONE
+
+
+def _at(*moment):
+    return datetime(*moment, tzinfo=TIMEZONE)
 
 
 def _match(*participants, target=4):
@@ -16,6 +24,12 @@ class TestMatch(unittest.TestCase):
         self.assertIsNone(match.find("bea", False))
         self.assertIsNone(match.find("carlo", False))
 
+    def test_find_ignores_the_case_of_the_name(self):
+        match = _match(Participant("Anna"), Participant("bea", True))
+        self.assertEqual(match.find("anna", False), Participant("Anna"))
+        self.assertEqual(match.find("BEA", True), Participant("bea", True))
+        self.assertIsNone(match.find("anna", True))
+
     def test_counts(self):
         empty = _match()
         self.assertEqual((empty.confirmed_count, empty.maybe_count), (0, 0))
@@ -30,19 +44,20 @@ class TestMatch(unittest.TestCase):
         self.assertFalse(full.has_room)
 
     def test_new_holds_the_defaults(self):
-        match = Match.new("42", "Mercoledì 28/10/2026")
+        with time_machine.travel(_at(2026, 10, 21, 21, 0), tick=False):
+            match = Match.new("42")
         self.assertEqual(match.chat_id, 42)
         self.assertEqual(match.participants, [])
-        self.assertEqual((match.time, match.target), ("20:00", 10))
+        self.assertEqual(match.target, 10)
         self.assertIn("MAGLIA BIANCA", match.description)
-        self.assertEqual(match.day, "Mercoledì 28/10/2026")
+        self.assertEqual(match.starts, _at(2026, 10, 28, 20, 0))
         self.assertIsNone(match.pitch)
         self.assertIsNone(match.summary_message_id)
         self.assertIsNone(match.teams)
-        self.assertEqual(Match.new(1, "d", "campo").pitch, "campo")
+        self.assertEqual(Match.new(1, "campo").pitch, "campo")
 
     def test_new_matches_do_not_share_participants(self):
-        first, second = Match.new(1, "d"), Match.new(2, "d")
+        first, second = Match.new(1), Match.new(2)
         first.participants.append(Participant("a"))
         self.assertEqual(second.participants, [])
 
@@ -53,6 +68,10 @@ class TestTeams(unittest.TestCase):
         self.assertEqual(teams.members, ("a", "b", "c"))
         self.assertTrue(teams.contains("c"))
         self.assertFalse(teams.contains("d"))
+        self.assertTrue(teams.contains("C"))
+        self.assertEqual(teams.colour_of("A"), "black")
+        self.assertEqual(teams.colour_of("c"), "white")
+        self.assertIsNone(teams.colour_of("d"))
         self.assertEqual(teams.as_dict(), {"black": ["a", "b"], "white": ["c"]})
         self.assertEqual(list(teams.as_dict()), ["black", "white"])
 

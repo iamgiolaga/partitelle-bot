@@ -48,9 +48,16 @@ def test_only_db_imports_psycopg():
     assert not found, f"psycopg must only be used inside db/: {found}"
 
 
-def test_maybe_suffix_is_known_only_to_the_repository():
-    found = _containing(_sources(), ["%is%maybe%present"])
-    assert not found, f"the stored maybe-suffix belongs to db/repository.py: {found}"
+def test_the_legacy_table_is_known_only_to_the_migrations():
+    # every application module and the whole test suite, except the tests of the copy migration
+    paths = sorted(
+        p
+        for p in ROOT.rglob("*.py")
+        if not {".venv", "migrations"} & set(p.relative_to(ROOT).parts)
+        and p.name not in {"test_schema_redesign.py", "test_architecture.py"}
+    )
+    found = _containing(paths, ["all_players"])
+    assert not found, f"all_players belongs to migrations/ only: {found}"
 
 
 def test_domain_is_pure():
