@@ -55,6 +55,12 @@ class TestUtils(unittest.TestCase):
         user.last_name = "Doe"
         self.assertEqual(get_sender_mention(mock_update), "@johndoe")
 
+    def test_get_sender_name_and_mention_without_sender(self):
+        mock_update = MagicMock(spec=Update)
+        mock_update.message.from_user = None
+        self.assertIsNone(get_sender_name(mock_update))
+        self.assertIsNone(get_sender_mention(mock_update))
+
     def test_swap_players(self):
         # Test case 1: Swap two players from different teams
         teams = Teams(("JohnDoe", "JaneDoe", "Alice"), ("Bob", "Charlie", "Eve"))

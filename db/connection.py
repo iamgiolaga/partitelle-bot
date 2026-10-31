@@ -72,7 +72,7 @@ def _create_pool() -> ConnectionPool:
         with pool.connection() as conn:
             row = conn.execute("SELECT version()").fetchone()
             version = row[0] if row else None
-        print(f"PostgreSQL database version: {version}")
+        logger.info("PostgreSQL database version: %s", version)
     except (PoolTimeout, OperationalError) as error:
         pool.close()
         raise _unavailable(error) from error

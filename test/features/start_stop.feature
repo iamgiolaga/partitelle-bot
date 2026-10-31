@@ -91,6 +91,27 @@ Feature: Starting and stopping a match
       | field | value |
       | time  | 21:30 |
 
+  @issue-25
+  Scenario: An edited /start is ignored and does not create a match
+    When "@mario" edits a message into "/start"
+    Then the bot should send nothing else
+    And there should be no match for this chat
+
+  @issue-25
+  Scenario Outline: An edited <command> is ignored and leaves the match untouched
+    Given a match was started
+    When "@mario" edits a message into "<command>"
+    Then the bot should send nothing else
+    And the match should have:
+      | field  | value |
+      | target | 10    |
+
+    Examples:
+      | command       |
+      | /setnumber 4  |
+      | /participants |
+      | /stop         |
+
   Scenario: /stop removes the match
     Given a match was started
     When "@mario" sends "/stop"

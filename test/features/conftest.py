@@ -15,6 +15,7 @@ pytest.register_assert_rewrite(
 from pg_harness import Database, prepare_database
 from telegram_world import World
 from feature_steps.steps import *  # noqa: F401,F403  (registers the step definitions)
+from feature_steps.steps import logged_warnings
 from feature_steps.reminder_steps import *  # noqa: F401,F403
 
 
@@ -69,6 +70,11 @@ def pytest_bdd_after_scenario(request, feature, scenario):
     world = request.getfixturevalue("world")
     if world.errors:
         raise AssertionError(f"Unasserted bot crash(es): {world.errors}")
+    warnings = logged_warnings(request.getfixturevalue("caplog"))
+    if warnings[world.consumed_warnings :]:
+        raise AssertionError(
+            f"Unasserted logged warning(s): {warnings[world.consumed_warnings :]}"
+        )
     extra = world.unconsumed()
     if extra:
         lines = "\n".join(f"  - {call}" for call in extra)

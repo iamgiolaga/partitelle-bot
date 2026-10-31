@@ -1,5 +1,6 @@
 """Step definitions. Wording is behaviour-level; everything PTB/DB specific lives behind `world`."""
 
+import logging
 import re
 import random
 
@@ -182,6 +183,12 @@ def _sends_without_sender(world, who, text):
     world.send(who, text, with_sender=False)
 
 
+@when(parsers.re(r'"(?P<who>[^"]+)" edits a message into "(?P<text>[^"]*)"$'))
+def _edits(world, who, text):
+    """The user edits one of their messages so that it now reads `text`."""
+    world.send(who, text, edited=True)
+
+
 @when(parsers.re(r'"(?P<who>[^"]+)" sends the message:$'))
 def _sends_multiline(world, who, docstring):
     """Like `sends "<text>"`, for texts spanning several lines."""
@@ -308,6 +315,24 @@ def _bot_failed(world, exception_type):
         f"Expected {exception_type}, the bot raised {actual}"
     )
     world.errors.pop(0)
+
+
+def logged_warnings(caplog):
+    """Every warning (or worse) logged during the scenario, in order, as (level, message)."""
+    return [
+        (record.levelname, record.getMessage())
+        for record in caplog.records
+        if record.levelno >= logging.WARNING
+    ]
+
+
+@then(parsers.parse('the bot should log the warning "{text}"'))
+def _bot_logs_warning(world, caplog, text):
+    """Consumes the oldest logged warning, which must be exactly this one."""
+    pending = logged_warnings(caplog)[world.consumed_warnings :]
+    assert pending, f'Expected the bot to log "{text}", but it logged nothing more.'
+    assert pending[0] == ("WARNING", text)
+    world.consumed_warnings += 1
 
 
 @then("the bot should send nothing else")

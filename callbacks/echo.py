@@ -38,8 +38,14 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     answer_is_escaped = False
     command_name_answer = "Un nome non può iniziare con /"
 
+    is_self_action = new_message in ["aggiungimi", "toglimi", "proponimi"]
+    sender = get_sender_mention(update) if is_self_action else None
+    if is_self_action and sender is None:
+        # the sender cannot be retrieved (issue #25): nobody to add, propose or remove
+        return
+
     if (
-        new_message in ["aggiungimi", "toglimi", "proponimi"]
+        is_self_action
         or command in ["aggiungi", "togli", "proponi"]
         or command == "scambia"
     ):
@@ -56,7 +62,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             teams = match.teams
 
             if new_message == "aggiungimi":
-                sender = get_sender_mention(update)
                 if match.find(sender, False):
                     answer = "Ma " + sender + ", sei già nella lista"
                     show_summary = False
@@ -142,7 +147,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     answer_is_escaped = True
 
             elif new_message == "proponimi":
-                sender = get_sender_mention(update)
                 if match.find(sender, True):
                     answer = "Ma " + sender + ", sei già in forse"
                     show_summary = False
@@ -220,7 +224,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     answer_is_escaped = True
 
             elif new_message == "toglimi":
-                sender = get_sender_mention(update)
                 if match.find(sender, False):
                     answer = "Mamma mia... che paccaro"
                     remove_participant(chat_id, Participant(sender))

@@ -18,7 +18,7 @@ Any `PB_*` variable can be overridden from the environment (defaults: `test/conf
 - `pg_harness.py`: the only place that knows the DB schema (`Database` helpers take and return plain test values); creates the test database if missing, rebuilds the schema with the real migrations (`db/migrate.py`), truncates it before every scenario.
 - `telegram_world.py`: `FakeTelegram` (a `telegram.request.BaseRequest`) records every outgoing Bot API call (send, edit, pin, ...) and answers with plausible JSON; an unsupported call fails the scenario. Handlers are registered through the real `register_handlers` on a real `Application`.
 - The steps are synchronous: every coroutine runs on a dedicated event loop owned by the `World` (one per scenario). `World.send` feeds a message with `application.process_update`; `World.run_scheduled_jobs` awaits the jobs captured by the (never started) job queue. `test_python_only_paths.py` holds plain pytest tests for the few paths no scenario describes.
-- Every call is recorded in order and each `Then the bot should ...` step consumes the next one. After each scenario (`conftest.py`) any unconsumed bot call, or any recorded handler exception that was not asserted, fails the scenario.
+- Every call is recorded in order and each `Then the bot should ...` step consumes the next one. After each scenario (`conftest.py`) any unconsumed bot call, any recorded handler exception or any logged warning (or error) that was not asserted fails the scenario.
 - Given steps that replay messages (`had sent`, `a match was started`) or write the DB directly are setup: their bot traffic is forgotten and is not part of the expectations.
 
 ## Writing scenarios
@@ -55,6 +55,7 @@ Any `PB_*` variable can be overridden from the environment (defaults: `test/conf
 ### When
 - `"<user>" sends "<text>"` / `... in "<chat>"`: sends a one-line message (to the current or the given chat).
 - `"<user>" sends the message:` + docstring: same, for multi-line text.
+- `"<user>" edits a message into "<text>"`: the user edits one of their messages, which now reads `<text>` (an `edited_message` update).
 - `the scheduled jobs run`: runs every job captured by the job queue (payment reminders).
 
 ### Then
@@ -67,6 +68,7 @@ Any `PB_*` variable can be overridden from the environment (defaults: `test/conf
 - `the bot should pin the summary`: next call pins the tracked summary message.
 - `the bot should send nothing else`: no unconsumed bot calls remain.
 - `the bot should fail with "<ExceptionType>"`: consumes the oldest recorded handler exception, which must be of this type.
+- `the bot should log the warning "<text>"`: consumes the oldest logged warning (or error), which must be a warning with exactly this message.
 - `the match should have:` + `| field | value |` table: exact persisted values (fields: players, target, day, time, pitch, description, teams, summary message; `(none)` = empty).
 - `the match description should be:` / `the match pitch should be:` + docstring: exact text.
 - `the match summary message should be the last message of the bot`: tracked summary id equals the bot's last sent message.

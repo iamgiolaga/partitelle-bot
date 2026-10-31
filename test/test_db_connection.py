@@ -1,6 +1,8 @@
 """Connection pool of the db layer: lazy creation, reuse, and a clear error when the database is unreachable."""
 
 import importlib
+import logging
+import re
 
 import pytest
 
@@ -19,7 +21,8 @@ def test_importing_the_module_does_not_open_a_pool(fresh_pool):
     assert db_connection._pool is None
 
 
-def test_the_pool_is_created_on_first_use_and_reused(fresh_pool):
+def test_the_pool_is_created_on_first_use_and_reused(fresh_pool, caplog):
+    caplog.set_level(logging.INFO, logger="db.connection")
     with db_connection.connection() as conn:
         assert conn.execute("SELECT 1").fetchone() == (1,)
     pool = db_connection._pool
@@ -27,6 +30,12 @@ def test_the_pool_is_created_on_first_use_and_reused(fresh_pool):
     with db_connection.connection():
         pass
     assert db_connection._pool is pool
+    # the server version is logged once, when the pool is created
+    messages = [r.getMessage() for r in caplog.records if r.name == "db.connection"]
+    assert len(messages) == 1
+    assert re.fullmatch(
+        r"PostgreSQL database version: PostgreSQL \d+\.\d+ .+", messages[0]
+    )
 
 
 def test_connections_use_the_configured_schema_and_autocommit(fresh_pool):

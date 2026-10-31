@@ -4,9 +4,14 @@ next to the legacy all_players table."""
 import contextlib
 import importlib.util
 import io
+import logging
 import os
+import re
+import subprocess
+import sys
 import uuid
 from datetime import date, datetime, time, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import psycopg
@@ -240,9 +245,35 @@ def test_deleting_a_chat_cascades_to_everything_below_it(db):
         ).fetchone() == (0,)
 
 
-def test_running_the_migrations_again_changes_nothing(schema, db, capsys):
+def test_running_the_migrations_again_changes_nothing(schema, db, caplog):
+    caplog.set_level(logging.INFO, logger="db.migrate")
     db_migrate.migrate()
-    assert "up to date" in capsys.readouterr().out
+    assert [
+        (record.levelname, record.getMessage())
+        for record in caplog.records
+        if record.name == "db.migrate"
+    ] == [("INFO", f"Schema '{schema}' is up to date: no migrations to apply")]
+
+
+def test_the_standalone_migrate_command_logs_at_info(schema, db):
+    """`python -m db.migrate` runs on its own before the bot starts: its messages must still be emitted."""
+    result = subprocess.run(
+        [sys.executable, "-m", "db.migrate"],
+        cwd=Path(db_migrate.__file__).resolve().parent.parent,
+        env={**os.environ, "PB_DB_SCHEMA": schema},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ""
+    timestamp = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}"
+    lines = [
+        re.sub(f"^{timestamp} - ", "", line) for line in result.stderr.splitlines()
+    ]
+    assert lines == [
+        f"db.migrate - INFO - Schema '{schema}' is up to date: no migrations to apply"
+    ]
 
 
 # --- 0003: copy of the legacy all_players rows ---

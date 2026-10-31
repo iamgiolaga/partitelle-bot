@@ -10,21 +10,27 @@ def compute_seconds_from_now(destination_date):
     return destination_date.timestamp() - datetime.now().timestamp()
 
 
-def get_sender_name(source: Update):
+def get_sender_name(source: Update) -> str | None:
     """Player name of the sender: the lowercase username, or the display name for users
-    without a username (not unique and mutable: a telegram user id is the real identity)."""
+    without a username (not unique and mutable: a telegram user id is the real identity).
+    None when the message has no sender (issue #25)."""
     user = source.message.from_user
+    if user is None:
+        return None
     if user.username:
         return user.username.lower()
     return " ".join(part for part in (user.first_name, user.last_name) if part)
 
 
-def get_sender_mention(source: Update):
+def get_sender_mention(source: Update) -> str | None:
     """How the sender is addressed and stored: `@username`, or the bare display name
-    when there is no username (there is no handle to mention)."""
+    when there is no username (there is no handle to mention). None when the message
+    has no sender (issue #25)."""
     user = source.message.from_user
+    if user is None:
+        return None
     if user.username:
-        return "@" + get_sender_name(source)
+        return "@" + user.username.lower()
     return get_sender_name(source)
 
 

@@ -33,7 +33,12 @@ line-length = 88
 
 [tool.ruff.lint]
 # The rule set ruff used by default up to 0.7 (ruff 0.17 enables many more by default; adopting them is a separate change).
-select = ["E4", "E7", "E9", "F"]
+# T20 (flake8-print): log with `logging`, never `print`.
+select = ["E4", "E7", "E9", "F", "T20"]
+
+[tool.ruff.lint.per-file-ignores]
+# an applied migration: it must never be edited (see CONTRIBUTING)
+"migrations/0003_copy_legacy_data.py" = ["T20"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]

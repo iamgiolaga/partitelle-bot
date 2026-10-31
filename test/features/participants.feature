@@ -67,17 +67,35 @@ Feature: Managing the participants
       | field   | value  |
       | players | (none) |
 
-  @known-bug @issue-25
-  Scenario Outline: <message> crashes the bot when the sender cannot be retrieved
+  @issue-25
+  Scenario Outline: An edited "<message>" is ignored
+    Given a match was started
+    And the match has the players "@mario, anna"
+    When "@mario" edits a message into "<message>"
+    Then the bot should send nothing else
+    And the match should have:
+      | field   | value        |
+      | players | @mario, anna |
+
+    Examples:
+      | message               |
+      | aggiungimi            |
+      | proponimi             |
+      | toglimi               |
+      | aggiungi bea          |
+      | togli anna            |
+      | scambia anna con bea  |
+
+  @issue-25
+  Scenario Outline: <message> is ignored when the sender cannot be retrieved
     Given a match was started
     And the match target is 4
-    And the bot is expected to crash on the next message
+    And the match has the players "@mario, anna (maybe)"
     When "@mario" sends "<message>" and the bot cannot retrieve the sender
-    Then the bot should fail with "AttributeError"
-    And the bot should send nothing else
+    Then the bot should send nothing else
     And the match should have:
-      | field   | value  |
-      | players | (none) |
+      | field   | value                |
+      | players | @mario, anna (maybe) |
 
     Examples:
       | message    |
