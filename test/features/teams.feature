@@ -482,3 +482,77 @@ Feature: Teams
       | field   | value                                 |
       | players | ale, bea, carlo (maybe), dino (maybe) |
       | teams   | black: ale \| white: bea              |
+
+  Scenario: Removing a maybe present player who is not in the teams cancels the teams too
+    Given the team draw is seeded with 42
+    And a match was started
+    And the match target is 4
+    And the match has the players "ale, bea"
+    And "@mario" had sent "proponi carlo"
+    And "@mario" had sent "proponi dino"
+    And the match target is 2
+    And "@mario" had sent "/participants"
+    And "@mario" had sent "/teams"
+    When "@mario" sends "togli carlo"
+    Then the bot should send:
+      """
+      Davvero? Ma carlo, ne sei proprio sicuro?
+      """
+    And the bot should send the text "teams cancelled"
+    And the bot should edit the summary to:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      1. ale ✅
+      2. bea ✅
+
+      {footer}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                    |
+      | players | ale, bea, dino (maybe)   |
+      | teams   | (none)                   |
+
+  Scenario: Confirming a maybe present player keeps the teams, even beyond the target, and the summary hides him
+    Given the team draw is seeded with 42
+    And a match was started
+    And the match target is 4
+    And the match has the players "ale, bea"
+    And "@mario" had sent "proponi carlo"
+    And "@mario" had sent "proponi dino"
+    And the match target is 2
+    And "@mario" had sent "/participants"
+    And "@mario" had sent "/teams"
+    When "@mario" sends "aggiungi carlo"
+    Then the bot should send:
+      """
+      Ok, carlo, ti confermo
+      """
+    And the bot should edit the summary to:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      1. ale ✅
+      2. bea ✅
+
+      {footer}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                                  |
+      | players | ale, bea, dino (maybe), carlo          |
+      | teams   | black: ale \| white: bea               |
+    When "@mario" sends "/teams"
+    Then the bot should send:
+      """
+      *SQUADRA NERA* 
+       - ale
+
+      *SQUADRA BIANCA* 
+       - bea
+
+      """
+    And the bot should send nothing else

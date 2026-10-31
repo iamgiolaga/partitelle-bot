@@ -2092,6 +2092,307 @@ Feature: Managing the participants
       | field | value                                |
       | teams | black: anna, bea \| white: carlo, dino |
 
+  # ---- order of the list and names differing only in case ----------------------------------------
+
+  Scenario: aggiungimi moves a maybe present sender after the players who follow him
+    Given a match was started
+    And the match target is 6
+    And the match has the players "anna, @mario (maybe), luca, sara"
+    When "@mario" sends "aggiungimi"
+    Then the bot should send:
+      """
+      Ok, @mario, ti confermo
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. anna ✅
+      2. luca ✅
+      3. sara ✅
+      4. @mario ✅
+      5. ❌
+      6. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                    |
+      | players | anna, luca, sara, @mario |
+
+  Scenario: aggiungi <nome> moves a maybe present name after the players who follow it
+    Given a match was started
+    And the match target is 6
+    And the match has the players "anna, luca (maybe), sara (maybe), bea"
+    When "@mario" sends "aggiungi luca"
+    Then the bot should send:
+      """
+      Ok, luca, ti confermo
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. anna ✅
+      2. sara ❓
+      3. bea ✅
+      4. luca ✅
+      5. ❌
+      6. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                         |
+      | players | anna, sara (maybe), bea, luca |
+
+  Scenario: A name added after a player in the middle was removed goes last
+    Given a match was started
+    And the match target is 6
+    And the match has the players "anna, bea, carlo"
+    And "@mario" had sent "/participants"
+    When "@mario" sends "togli bea"
+    Then the bot should send:
+      """
+      Che vergogna, bea
+      """
+    And the bot should edit the summary to:
+      """
+      {header}
+
+      1. anna ✅
+      2. carlo ✅
+      3. ❌
+      4. ❌
+      5. ❌
+      6. ❌
+
+      {footer}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    When "@mario" sends "aggiungi dino"
+    Then the bot should send:
+      """
+      Ok, aggiungo dino
+      """
+    And the bot should edit the summary to:
+      """
+      {header}
+
+      1. anna ✅
+      2. carlo ✅
+      3. dino ✅
+      4. ❌
+      5. ❌
+      6. ❌
+
+      {footer}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value             |
+      | players | anna, carlo, dino |
+
+  Scenario: A removed name that is added again goes last
+    Given a match was started
+    And the match target is 6
+    And the match has the players "anna, bea, carlo"
+    And "@mario" had sent "/participants"
+    When "@mario" sends "togli anna"
+    Then the bot should send:
+      """
+      Che vergogna, anna
+      """
+    And the bot should edit the summary to:
+      """
+      {header}
+
+      1. bea ✅
+      2. carlo ✅
+      3. ❌
+      4. ❌
+      5. ❌
+      6. ❌
+
+      {footer}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    When "@mario" sends "aggiungi anna"
+    Then the bot should send:
+      """
+      Ok, aggiungo anna
+      """
+    And the bot should edit the summary to:
+      """
+      {header}
+
+      1. bea ✅
+      2. carlo ✅
+      3. anna ✅
+      4. ❌
+      5. ❌
+      6. ❌
+
+      {footer}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value            |
+      | players | bea, carlo, anna |
+
+  Scenario: A sender who removed himself and comes back goes last, as maybe present too
+    Given a match was started
+    And the match target is 6
+    And the match has the players "anna, @mario, carlo"
+    And "@mario" had sent "/participants"
+    When "@mario" sends "toglimi"
+    Then the bot should send:
+      """
+      Mamma mia... che paccaro
+      """
+    And the bot should edit the summary to:
+      """
+      {header}
+
+      1. anna ✅
+      2. carlo ✅
+      3. ❌
+      4. ❌
+      5. ❌
+      6. ❌
+
+      {footer}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    When "@mario" sends "proponimi"
+    Then the bot should send:
+      """
+      Ok, @mario, ti propongo
+      """
+    And the bot should edit the summary to:
+      """
+      {header}
+
+      1. anna ✅
+      2. carlo ✅
+      3. @mario ❓
+      4. ❌
+      5. ❌
+      6. ❌
+
+      {footer}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                       |
+      | players | anna, carlo, @mario (maybe) |
+
+  Scenario Outline: A name differing only in case from <before> is added as a second person by <message>
+    Given a match was started
+    And the match target is 4
+    And the match has the players "<before>"
+    When "@mario" sends "<message>"
+    Then the bot should send:
+      """
+      <answer>
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. <s1>
+      2. <s2>
+      3. ❌
+      4. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value   |
+      | players | <after> |
+
+    Examples:
+      | before       | message       | answer            | s1      | s2      | after                      |
+      | Luca         | aggiungi luca | Ok, aggiungo luca | Luca ✅ | luca ✅ | Luca, luca                 |
+      | Luca         | proponi luca  | Ok, propongo luca | Luca ✅ | luca ❓ | Luca, luca (maybe)         |
+      | Luca (maybe) | aggiungi luca | Ok, aggiungo luca | Luca ❓ | luca ✅ | Luca (maybe), luca         |
+      | Luca (maybe) | proponi luca  | Ok, propongo luca | Luca ❓ | luca ❓ | Luca (maybe), luca (maybe) |
+
+  Scenario Outline: A sender without username named "Luca" is added as a second person next to <before> by <message>
+    Given a match was started
+    And the match target is 4
+    And a user named "Luca" without username
+    And the match has the players "<before>"
+    When "Luca" sends "<message>"
+    Then the bot should send:
+      """
+      <answer>
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. <s1>
+      2. <s2>
+      3. ❌
+      4. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value   |
+      | players | <after> |
+
+    Examples:
+      | before       | message    | answer                | s1      | s2      | after                      |
+      | luca         | aggiungimi | Ok, Luca, ti aggiungo | luca ✅ | Luca ✅ | luca, Luca                 |
+      | luca         | proponimi  | Ok, Luca, ti propongo | luca ✅ | Luca ❓ | luca, Luca (maybe)         |
+      | luca (maybe) | aggiungimi | Ok, Luca, ti aggiungo | luca ❓ | Luca ✅ | luca (maybe), Luca         |
+      | luca (maybe) | proponimi  | Ok, Luca, ti propongo | luca ❓ | Luca ❓ | luca (maybe), Luca (maybe) |
+
+  Scenario: A name stored with a capital letter cannot be removed by name, which is always lowercased
+    Given a match was started
+    And the match target is 4
+    And the match has the players "Luca, anna"
+    When "@mario" sends "togli Luca"
+    Then the bot should send:
+      """
+      luca non è nella lista. Chi dovrei togliere?
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value      |
+      | players | Luca, anna |
+
+  Scenario: A sender without username cannot remove himself next to a differently cased entry
+    Given a match was started
+    And the match target is 4
+    And a user named "Luca" without username
+    And the match has the players "luca (maybe), anna"
+    When "Luca" sends "toglimi"
+    Then the bot should send:
+      """
+      Non eri in lista neanche prima
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value              |
+      | players | luca (maybe), anna |
+
   # ---- /participants and the summary message -------------------------------------------------------
 
   Scenario: /participants shows the players, confirmed and maybe present
