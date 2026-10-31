@@ -70,6 +70,15 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             swap_players(teams, "JohnDoe", "JaneDoe")
 
+    def test_swap_players_ignores_case_and_keeps_the_stored_names(self):
+        teams = Teams(("Anna", "bea"), ("Carlo", "dino"))
+        self.assertEqual(
+            swap_players(teams, "anna", "CARLO"),
+            Teams(("Carlo", "bea"), ("Anna", "dino")),
+        )
+        with self.assertRaises(ValueError):
+            swap_players(teams, "ANNA", "bea")
+
     def test_swap_players_refuses_a_player_outside_the_teams(self):
         teams = Teams(("anna", "bea"), ("carlo", "dino"))
         for x, y in [("anna", "enzo"), ("enzo", "carlo")]:

@@ -425,6 +425,89 @@ Feature: Managing the participants
       | field   | value |
       | players | luca  |
 
+  Scenario: aggiungi <nome> sees a user without username added by display name as the same person
+    Given a match was started
+    And the match target is 4
+    And a user named "Luca" without username
+    And the match has the players "Luca"
+    When "@mario" sends "aggiungi luca"
+    Then the bot should send:
+      """
+      luca è già nella lista
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value |
+      | players | Luca  |
+
+  Scenario: aggiungimi confirms a user without username who was proposed with another case
+    Given a match was started
+    And the match target is 4
+    And a user named "Luca" without username
+    And the match has the players "anna, luca (maybe)"
+    When "Luca" sends "aggiungimi"
+    Then the bot should send:
+      """
+      Ok, Luca, ti confermo
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. anna ✅
+      2. luca ✅
+      3. ❌
+      4. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value      |
+      | players | anna, luca |
+
+  Scenario: togli <nome> removes a user without username who joined with the display name
+    Given a match was started
+    And the match target is 4
+    And the match has the players "Luca, anna"
+    When "@mario" sends "togli luca"
+    Then the bot should send:
+      """
+      Che vergogna, luca
+      """
+    And the bot should send:
+      """
+      {header}
+
+      1. anna ✅
+      2. ❌
+      3. ❌
+      4. ❌
+
+      {footer}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value |
+      | players | anna  |
+
+  Scenario: scambia finds the players of the teams whatever the case they were stored with
+    Given a match was started
+    And the match target is 4
+    And the match has the players "Anna, bea, Carlo, dino"
+    And the match has the black team "Anna, bea" and the white team "Carlo, dino"
+    When "@mario" sends "scambia anna con carlo"
+    Then the bot should send:
+      """
+      Perfetto, ho scambiato anna con carlo
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field | value                                |
+      | teams | black: bea, Carlo \| white: Anna, dino |
+
   Scenario: aggiungi <nome> confirms a maybe present name
     Given a match was started
     And the match target is 4

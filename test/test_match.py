@@ -24,6 +24,12 @@ class TestMatch(unittest.TestCase):
         self.assertIsNone(match.find("bea", False))
         self.assertIsNone(match.find("carlo", False))
 
+    def test_find_ignores_the_case_of_the_name(self):
+        match = _match(Participant("Anna"), Participant("bea", True))
+        self.assertEqual(match.find("anna", False), Participant("Anna"))
+        self.assertEqual(match.find("BEA", True), Participant("bea", True))
+        self.assertIsNone(match.find("anna", True))
+
     def test_counts(self):
         empty = _match()
         self.assertEqual((empty.confirmed_count, empty.maybe_count), (0, 0))
@@ -62,6 +68,10 @@ class TestTeams(unittest.TestCase):
         self.assertEqual(teams.members, ("a", "b", "c"))
         self.assertTrue(teams.contains("c"))
         self.assertFalse(teams.contains("d"))
+        self.assertTrue(teams.contains("C"))
+        self.assertEqual(teams.colour_of("A"), "black")
+        self.assertEqual(teams.colour_of("c"), "white")
+        self.assertIsNone(teams.colour_of("d"))
         self.assertEqual(teams.as_dict(), {"black": ["a", "b"], "white": ["c"]})
         self.assertEqual(list(teams.as_dict()), ["black", "white"])
 
