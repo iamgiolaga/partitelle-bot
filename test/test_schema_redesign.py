@@ -521,7 +521,7 @@ def test_the_legacy_table_is_unchanged_by_the_copy(copied):
 def test_the_summary_and_anomalies_never_print_names_or_texts(copied):
     _, _, out = copied
     assert (
-        "0003 copied 8 chat(s): 1 match(es) stopped, 2 reminder(s) marked as sent"
+        "0003 copied 9 chat(s): 2 match(es) stopped, 3 reminder(s) marked as sent"
         in out
     )
     for private in ("anna", "Mario", "Ugo", "boh", "Altro campo"):
