@@ -41,9 +41,6 @@ def create_schema(schema):
 
 def migrate():
     schema = validate_schema(db_schema)
-    if schema == "public":
-        print("PB_DB_SCHEMA is 'public' (legacy layout): migrations skipped")
-        return
 
     # the schema must exist before yoyo connects: it creates its bookkeeping tables on the first connection
     create_schema(schema)

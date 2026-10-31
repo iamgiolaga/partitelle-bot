@@ -1,5 +1,7 @@
 """Connection pool of the db layer: lazy creation, reuse, and a clear error when the database is unreachable."""
 
+import importlib
+
 import pytest
 
 from db import connection as db_connection
@@ -70,3 +72,19 @@ def test_an_invalid_schema_is_rejected(fresh_pool, monkeypatch):
     monkeypatch.setattr(db_connection, "db_schema", "bad;schema")
     with pytest.raises(ValueError):
         db_connection.get_pool()
+
+
+@pytest.mark.parametrize("value", [None, ""])
+def test_a_missing_schema_stops_the_startup(monkeypatch, value):
+    from conf import conf
+
+    if value is None:
+        monkeypatch.delenv("PB_DB_SCHEMA")
+    else:
+        monkeypatch.setenv("PB_DB_SCHEMA", value)
+    try:
+        with pytest.raises(RuntimeError, match="PB_DB_SCHEMA is not set"):
+            importlib.reload(conf)
+    finally:
+        monkeypatch.undo()
+        importlib.reload(conf)
