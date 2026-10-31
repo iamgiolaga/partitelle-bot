@@ -1,23 +1,15 @@
+from datetime import datetime
+
 from jobs.payment_reminder import payment_reminder
-from utils.utils import extract_match_time, extract_match_day, compute_seconds_from_now
+from utils.utils import compute_seconds_from_now
+
+# the reminder asks how the match went, so it goes out after the match is over
+REMINDER_DELAY_SECONDS = 2 * 3600
 
 
-def trigger_payment_reminder(update, context, day, time):
+def trigger_payment_reminder(update, context, starts: datetime):
     chat_id = update.effective_message.chat_id
-    match_time = extract_match_time(time)
-    reminder_time_from_now = -1
-
-    if match_time == -1:
-        match_date = extract_match_day(day)
-        waiting_time_in_seconds = 36 * 3600
-    else:
-        match_date = extract_match_day(f"{day} {time}")
-        waiting_time_in_seconds = 2 * 3600
-
-    if match_date != -1:
-        reminder_time_from_now = (
-            compute_seconds_from_now(match_date) + waiting_time_in_seconds
-        )
+    reminder_time_from_now = compute_seconds_from_now(starts) + REMINDER_DELAY_SECONDS
 
     if reminder_time_from_now > 0:
         context.job_queue.run_once(

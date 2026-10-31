@@ -395,7 +395,7 @@ Feature: Match settings
     When "@mario" sends "/setnumber 2"
     Then the bot should edit the summary to:
       """
-      *GIORNO*: 25/10/2026 | 20:00
+      *GIORNO*: Domenica 25/10/2026 | 20:00
 
       1. anna ✅
       2. bea ✅
@@ -463,7 +463,7 @@ Feature: Match settings
       """
     And the bot should edit the summary to:
       """
-      *GIORNO*: 25/10/2026 | 20:00
+      *GIORNO*: Domenica 25/10/2026 | 20:00
 
       1. anna ✅
       2. bea ✅
@@ -523,11 +523,11 @@ Feature: Match settings
     When "@mario" sends "/setday 25/10/2026"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato il giorno della partita il 25/10/2026
+      Ok, @mario! Ho impostato il giorno della partita: domenica 25/10/2026
       """
     And the bot should send:
       """
-      *GIORNO*: 25/10/2026 | 20:00
+      *GIORNO*: Domenica 25/10/2026 | 20:00
 
       {ten empty slots}
 
@@ -537,51 +537,32 @@ Feature: Match settings
     And the bot should send nothing else
     And the match should have:
       | field | value      |
-      | day   | 25/10/2026 |
-      | time  | 20:00      |
+      | day   | Domenica 25/10/2026 |
+      | time  | 20:00               |
 
-  Scenario: /setday accepts free text, joins the words and schedules no reminder
+  Scenario: /setday with text that is not a date is refused and stores nothing
     Given a match was started
     When "@mario" sends "/setday sabato   prossimo   sera"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato il giorno della partita il sabato prossimo sera
+      Non ho capito il giorno, @mario: scrivilo come GG/MM/AAAA, per esempio /setday 25/10/2026
       """
-    And the bot should send:
-      """
-      *GIORNO*: sabato prossimo sera | 20:00
-
-      {ten empty slots}
-
-      {default tail}
-      """
-    And the bot should pin the summary
-    And the match should have:
-      | field | value                |
-      | day   | sabato prossimo sera |
-    When the scheduled jobs run
-    Then the bot should send nothing else
-
-  Scenario: /setday escapes Markdown characters in the confirmation and in the summary
-    Given a match was started
-    When "@mario" sends "/setday sabato_sera"
-    Then the bot should send:
-      """
-      Ok, @mario! Ho impostato il giorno della partita il sabato\_sera
-      """
-    And the bot should send:
-      """
-      *GIORNO*: sabato\_sera | 20:00
-
-      {ten empty slots}
-
-      {default tail}
-      """
-    And the bot should pin the summary
     And the bot should send nothing else
     And the match should have:
-      | field | value       |
-      | day   | sabato_sera |
+      | field           | value                |
+      | day             | Mercoledì 28/10/2026 |
+      | time            | 20:00                |
+      | summary message | (none)               |
+
+  Scenario: /setday escapes Markdown characters of the user name in the refusal
+    Given a match was started
+    And the user "@mario_rossi"
+    When "@mario_rossi" sends "/setday sabato"
+    Then the bot should send:
+      """
+      Non ho capito il giorno, @mario\_rossi: scrivilo come GG/MM/AAAA, per esempio /setday 25/10/2026
+      """
+    And the bot should send nothing else
 
   Scenario: /setday after the summary exists edits it
     Given a match was started
@@ -589,11 +570,11 @@ Feature: Match settings
     When "@mario" sends "/setday 25/10/2026"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato il giorno della partita il 25/10/2026
+      Ok, @mario! Ho impostato il giorno della partita: domenica 25/10/2026
       """
     And the bot should edit the summary to:
       """
-      *GIORNO*: 25/10/2026 | 20:00
+      *GIORNO*: Domenica 25/10/2026 | 20:00
 
       {ten empty slots}
 
@@ -622,11 +603,11 @@ Feature: Match settings
     When "@mario" sends "/setday 25/10/2026"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato il giorno della partita il 25/10/2026
+      Ok, @mario! Ho impostato il giorno della partita: domenica 25/10/2026
       """
     And the bot should send:
       """
-      *GIORNO*: 25/10/2026 | 20:00
+      *GIORNO*: Domenica 25/10/2026 | 20:00
 
       {ten empty slots}
 
@@ -653,23 +634,28 @@ Feature: Match settings
     And the bot should pin the last message
     And the bot should send nothing else
 
-  Scenario: /setday with free text cancels the previous payment reminder
+  Scenario: /setday with text that is not a date keeps the previous payment reminder
     Given a match was started
     And "@mario" had sent "/setday 25/10/2026"
     And "@mario" had sent "/setday sabato"
     When the scheduled jobs run
-    Then the bot should send nothing else
+    Then the bot should send plain text:
+      """
+      {payment reminder}
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
 
   Scenario: /setday with a date in the past schedules no payment reminder
     Given a match was started
     When "@mario" sends "/setday 20/10/2026"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato il giorno della partita il 20/10/2026
+      Ok, @mario! Ho impostato il giorno della partita: martedì 20/10/2026
       """
     And the bot should send:
       """
-      *GIORNO*: 20/10/2026 | 20:00
+      *GIORNO*: Martedì 20/10/2026 | 20:00
 
       {ten empty slots}
 
@@ -721,7 +707,7 @@ Feature: Match settings
       """
     And the bot should edit the summary to:
       """
-      *GIORNO*: 25/10/2026 | 20:00
+      *GIORNO*: Domenica 25/10/2026 | 20:00
 
       {ten empty slots}
 
@@ -767,7 +753,7 @@ Feature: Match settings
       """
     And the bot should edit the summary to:
       """
-      *GIORNO*: 25/10/2026 | 21:30
+      *GIORNO*: Domenica 25/10/2026 | 21:30
 
       {ten empty slots}
 
@@ -805,7 +791,7 @@ Feature: Match settings
       """
     And the bot should edit the summary to:
       """
-      *GIORNO*: 25/10/2026 | <stored>
+      *GIORNO*: Domenica 25/10/2026 | <stored>
 
       {ten empty slots}
 
@@ -827,14 +813,14 @@ Feature: Match settings
       | 21.30 | 21:30  |
       | 9.05  | 09:05  |
 
-  Scenario Outline: /settime with the invalid time "<text>" is refused and the time is not changed
+  Scenario Outline: /settime with the unreadable time "<text>" is refused and the time is not changed
     Given a match was started
     And "@mario" had sent "/setday 25/10/2026"
     And "@mario" had sent "/settime 21:30"
     When "@mario" sends "/settime <text>"
     Then the bot should send:
       """
-      L'orario non è valido: scrivi /settime <orario> nel formato HH:MM, ad esempio /settime 21:30
+      Non ho capito l'ora, @mario: scrivila come HH:MM, per esempio /settime 21:30
       """
     And the bot should send nothing else
     And the match should have:
@@ -848,12 +834,48 @@ Feature: Match settings
       | 21:60    |
       | stasera  |
       | alle 21  |
-      | 21       |
       | 21:5     |
       | 21:300   |
       | 21 30    |
       | 21:30:00 |
       | -1:30    |
+
+  Scenario: /settime with a bare hour means that hour o'clock
+    Given a match was started
+    And "@mario" had sent "/setday 25/10/2026"
+    And "@mario" had sent "/settime 21:30"
+    When "@mario" sends "/settime 20"
+    Then the bot should send:
+      """
+      Ok, @mario! Ho impostato l'orario della partita alle 20:00
+      """
+    And the bot should edit the summary to:
+      """
+      *GIORNO*: Domenica 25/10/2026 | 20:00
+
+      {ten empty slots}
+
+      {default tail}
+      """
+    And the bot should pin the summary
+    And the bot should send nothing else
+    And the match should have:
+      | field | value |
+      | time  | 20:00 |
+
+  Scenario: /settime with text that is not a time is refused and stores nothing
+    Given a match was started
+    When "@mario" sends "/settime verso le nove"
+    Then the bot should send:
+      """
+      Non ho capito l'ora, @mario: scrivila come HH:MM, per esempio /settime 21:30
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field           | value                |
+      | day             | Mercoledì 28/10/2026 |
+      | time            | 20:00                |
+      | summary message | (none)               |
 
   Scenario: An invalid /settime keeps the payment reminder scheduled before
     Given a match was started
@@ -1262,11 +1284,11 @@ Feature: Match settings
     When "Luca" sends "/setday 25/10/2026"
     Then the bot should send:
       """
-      Ok, Luca! Ho impostato il giorno della partita il 25/10/2026
+      Ok, Luca! Ho impostato il giorno della partita: domenica 25/10/2026
       """
     And the bot should send:
       """
-      *GIORNO*: 25/10/2026 | 20:00
+      *GIORNO*: Domenica 25/10/2026 | 20:00
 
       {ten empty slots}
 
@@ -1276,8 +1298,8 @@ Feature: Match settings
     And the bot should send nothing else
     And the match should have:
       | field | value |
-      | day   | 25/10/2026 |
-      | time  | 20:00      |
+      | day   | Domenica 25/10/2026 |
+      | time  | 20:00               |
 
   Scenario: /settime from a user without username confirms with the display name
     Given a match was started

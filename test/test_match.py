@@ -1,6 +1,14 @@
 import unittest
+from datetime import datetime
+
+import time_machine
 
 from domain import Match, Participant, Teams
+from domain.schedule import TIMEZONE
+
+
+def _at(*moment):
+    return datetime(*moment, tzinfo=TIMEZONE)
 
 
 def _match(*participants, target=4):
@@ -30,19 +38,20 @@ class TestMatch(unittest.TestCase):
         self.assertFalse(full.has_room)
 
     def test_new_holds_the_defaults(self):
-        match = Match.new("42", "Mercoledì 28/10/2026")
+        with time_machine.travel(_at(2026, 10, 21, 21, 0), tick=False):
+            match = Match.new("42")
         self.assertEqual(match.chat_id, 42)
         self.assertEqual(match.participants, [])
-        self.assertEqual((match.time, match.target), ("20:00", 10))
+        self.assertEqual(match.target, 10)
         self.assertIn("MAGLIA BIANCA", match.description)
-        self.assertEqual(match.day, "Mercoledì 28/10/2026")
+        self.assertEqual(match.starts, _at(2026, 10, 28, 20, 0))
         self.assertIsNone(match.pitch)
         self.assertIsNone(match.summary_message_id)
         self.assertIsNone(match.teams)
-        self.assertEqual(Match.new(1, "d", "campo").pitch, "campo")
+        self.assertEqual(Match.new(1, "campo").pitch, "campo")
 
     def test_new_matches_do_not_share_participants(self):
-        first, second = Match.new(1, "d"), Match.new(2, "d")
+        first, second = Match.new(1), Match.new(2)
         first.participants.append(Participant("a"))
         self.assertEqual(second.participants, [])
 
