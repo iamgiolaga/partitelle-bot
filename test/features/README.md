@@ -55,6 +55,7 @@ Any `PB_*` variable can be overridden from the environment (defaults: `test/conf
 ### When
 - `"<user>" sends "<text>"` / `... in "<chat>"`: sends a one-line message (to the current or the given chat).
 - `"<user>" sends the message:` + docstring: same, for multi-line text.
+- `"<user>" edits a message into "<text>"`: the user edits one of their messages, which now reads `<text>` (an `edited_message` update).
 - `the scheduled jobs run`: runs every job captured by the job queue (payment reminders).
 
 ### Then

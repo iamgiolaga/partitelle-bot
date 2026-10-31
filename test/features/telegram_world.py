@@ -240,7 +240,7 @@ class World:
         return person
 
     # traffic ------------------------------------------------------------------------------------
-    def send(self, label, text, chat=None, with_sender=True):
+    def send(self, label, text, chat=None, with_sender=True, edited=False):
         chat = chat or self.current_chat
         person = self.users[label]
         message = {
@@ -252,6 +252,8 @@ class World:
         }
         if not with_sender:
             del message["from"]
+        if edited:  # the user edited one of their messages: Telegram sends an `edited_message` update
+            message["edit_date"] = self.now_ts()
         if text.startswith("/"):
             command = text.split()[0]
             message["entities"] = [
@@ -259,7 +261,11 @@ class World:
             ]
         self._update_id += 1
         update = Update.de_json(
-            {"update_id": self._update_id, "message": message}, self.application.bot
+            {
+                "update_id": self._update_id,
+                "edited_message" if edited else "message": message,
+            },
+            self.application.bot,
         )
         self.run(self.application.process_update(update))
         if self.errors and not self.expect_failures:

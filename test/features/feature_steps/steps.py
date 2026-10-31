@@ -183,6 +183,12 @@ def _sends_without_sender(world, who, text):
     world.send(who, text, with_sender=False)
 
 
+@when(parsers.re(r'"(?P<who>[^"]+)" edits a message into "(?P<text>[^"]*)"$'))
+def _edits(world, who, text):
+    """The user edits one of their messages so that it now reads `text`."""
+    world.send(who, text, edited=True)
+
+
 @when(parsers.re(r'"(?P<who>[^"]+)" sends the message:$'))
 def _sends_multiline(world, who, docstring):
     """Like `sends "<text>"`, for texts spanning several lines."""
