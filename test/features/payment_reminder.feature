@@ -1,11 +1,9 @@
 @payment-reminder
 Feature: Payment reminder
   When a match is fully booked, or when its day or time change, the bot schedules a reminder
-  for the group: 2 hours after the match time, or 36 hours after the start of the match day when
-  the stored time is not a valid HH:MM (only legacy data: /settime refuses invalid times).
+  for the group: 2 hours after the match start, only if that moment is still in the future.
   When it fires it asks who has not paid yet and pins the message.
-  A reminder is scheduled only if the match day is a date the bot can understand and the
-  resulting moment is still in the future.
+  A day or time the bot cannot understand is refused and leaves the match, and its reminder, as it was.
 
   Background:
     Given a group chat "Calcetto"
@@ -52,11 +50,11 @@ Feature: Payment reminder
     When "@mario" sends "/setday 28/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il 28/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: mercoledì 28/10/2026
           """
     And the bot should send:
           """
-          *GIORNO*: 28/10/2026 | 20:00
+          *GIORNO*: Mercoledì 28/10/2026 | 20:00
     
           {empty slots}
     
@@ -69,7 +67,7 @@ Feature: Payment reminder
     And the bot should send nothing else
     And the match should have:
       | field | value      |
-      | day   | 28/10/2026 |
+      | day   | Mercoledì 28/10/2026 |
       | time  | 20:00      |
 
   Scenario: /settime with a valid time moves the reminder 2 hours after the new time
@@ -82,7 +80,7 @@ Feature: Payment reminder
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 29/10/2026 | 21:30
+          *GIORNO*: Giovedì 29/10/2026 | 21:30
     
           {empty slots}
     
@@ -94,17 +92,17 @@ Feature: Payment reminder
     And a payment reminder should be scheduled for "2026-10-29 23:30"
     And the bot should send nothing else
 
-  Scenario: /setday after a legacy invalid time falls back to 36 hours after the start of the day
+  Scenario: /setday after a legacy unreadable time reads it as 20:00 and schedules the reminder 2 hours after it
     Given a match was started
     And the match time was stored as "sera"
     When "@mario" sends "/setday 27/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il 27/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: martedì 27/10/2026
           """
     And the bot should send:
           """
-          *GIORNO*: 27/10/2026 | sera
+          *GIORNO*: Martedì 27/10/2026 | 20:00
     
           {empty slots}
     
@@ -113,7 +111,7 @@ Feature: Payment reminder
           {campo}
           """
     And the bot should pin the last message
-    And a payment reminder should be scheduled for "2026-10-28 12:00"
+    And a payment reminder should be scheduled for "2026-10-27 22:00"
     And the bot should send nothing else
 
   Scenario: /settime with a time written with a dot is normalised and schedules the reminder 2 hours after it
@@ -126,7 +124,7 @@ Feature: Payment reminder
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 27/10/2026 | 21:30
+          *GIORNO*: Martedì 27/10/2026 | 21:30
     
           {empty slots}
     
@@ -211,11 +209,11 @@ Feature: Payment reminder
     When "@mario" sends "/setday 20/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il 20/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: martedì 20/10/2026
           """
     And the bot should send:
           """
-          *GIORNO*: 20/10/2026 | 20:00
+          *GIORNO*: Martedì 20/10/2026 | 20:00
     
           {empty slots}
     
@@ -232,11 +230,11 @@ Feature: Payment reminder
     When "@mario" sends "/setday 21/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il 21/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: mercoledì 21/10/2026
           """
     And the bot should send:
           """
-          *GIORNO*: 21/10/2026 | 20:00
+          *GIORNO*: Mercoledì 21/10/2026 | 20:00
     
           {empty slots}
     
@@ -259,7 +257,7 @@ Feature: Payment reminder
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 21/10/2026 | 15:00
+          *GIORNO*: Mercoledì 21/10/2026 | 15:00
     
           {empty slots}
     
@@ -271,27 +269,16 @@ Feature: Payment reminder
     And no payment reminder should be scheduled
     And the bot should send nothing else
 
-  Scenario: /setday with something that is not a date drops the previous reminder
+  Scenario: /setday with something that is not a date keeps the previous reminder
     Given a match was started
     And "@mario" had sent "/setday 28/10/2026"
     Then a payment reminder should be scheduled for "2026-10-28 22:00"
     When "@mario" sends "/setday boh"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il boh
+          Non ho capito il giorno, @mario: scrivilo come GG/MM/AAAA, per esempio /setday 25/10/2026
           """
-    And the bot should edit the summary to:
-          """
-          *GIORNO*: boh | 20:00
-    
-          {empty slots}
-    
-          {default description}
-    
-          {campo}
-          """
-    And the bot should pin the summary
-    And no payment reminder should be scheduled
+    And a payment reminder should be scheduled for "2026-10-28 22:00"
     And the bot should send nothing else
 
   Scenario: Changing the time replaces the previous reminder instead of adding another one
@@ -304,7 +291,7 @@ Feature: Payment reminder
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 28/10/2026 | 21:30
+          *GIORNO*: Mercoledì 28/10/2026 | 21:30
     
           {empty slots}
     
@@ -380,7 +367,7 @@ Feature: Payment reminder
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 28/10/2026 | 20:00
+          *GIORNO*: Mercoledì 28/10/2026 | 20:00
     
           1. anna ✅
           2. bruno ✅
@@ -407,7 +394,7 @@ Feature: Payment reminder
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 28/10/2026 | 20:00
+          *GIORNO*: Mercoledì 28/10/2026 | 20:00
     
           1. anna ✅
           2. bruno ✅
@@ -444,7 +431,7 @@ Feature: Payment reminder
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 28/10/2026 | 20:00
+          *GIORNO*: Mercoledì 28/10/2026 | 20:00
     
           1. bruno ✅
           2. ❌
@@ -463,7 +450,7 @@ Feature: Payment reminder
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 28/10/2026 | 20:00
+          *GIORNO*: Mercoledì 28/10/2026 | 20:00
     
           1. bruno ✅
           2. anna ✅
@@ -485,11 +472,11 @@ Feature: Payment reminder
     When "@mario" sends "/setday 28/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il 28/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: mercoledì 28/10/2026
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 28/10/2026 | 20:00
+          *GIORNO*: Mercoledì 28/10/2026 | 20:00
     
           1. anna ✅
           2. ❌
@@ -585,7 +572,7 @@ Feature: Payment reminder
           """
     And the bot should edit the summary to:
           """
-          *GIORNO*: 28/10/2026 | 21:30
+          *GIORNO*: Mercoledì 28/10/2026 | 21:30
     
           {empty slots}
     

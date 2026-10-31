@@ -318,7 +318,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     )
 
                 if reached_target:
-                    trigger_payment_reminder(update, context, current.day, current.time)
+                    trigger_payment_reminder(update, context, current.starts)
                     await context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         parse_mode="markdown",

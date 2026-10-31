@@ -2,13 +2,12 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from db.repository import get_match, create_match
 from domain import Match
-from utils.utils import default_match_day
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     if get_match(chat_id) is None:
-        create_match(Match.new(chat_id, default_match_day()))
+        create_match(Match.new(chat_id))
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,

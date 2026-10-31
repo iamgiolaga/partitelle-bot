@@ -76,5 +76,5 @@ strict = true
 
 [[tool.mypy.overrides]]
 # no type stubs / py.typed marker
-module = ["yoyo", "yoyo.*"]
+module = ["yoyo", "yoyo.*", "dateutil", "dateutil.*"]
 ignore_missing_imports = true
