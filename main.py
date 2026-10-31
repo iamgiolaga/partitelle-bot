@@ -35,11 +35,17 @@ def build_application(bot_token=token):
     return application
 
 
-def main():
+def configure_logging():
     logging.basicConfig(
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         level=logging.INFO,
     )
+    # httpx logs every request URL at INFO, and Bot API URLs contain the bot token (/bot<token>/...).
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
+def main():
+    configure_logging()
     application = build_application()
 
     if env == "local":
