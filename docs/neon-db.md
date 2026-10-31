@@ -1,6 +1,6 @@
 # Neon database
 
-The database is hosted on Neon Free (it used to be a Render free Postgres that expired every month, see [#79](https://github.com/iamgiolaga/partitelle-bot/issues/79)). There is one Neon project per environment, so each has its own free quota (100 CU-hours/month). Each environment uses a schema (`staging`, `prod`) of the database `partitelle`; the structure comes from `migrations/` (see "Database migrations" in `CONTRIBUTING.md`), so no manual DDL is ever needed.
+The database is hosted on Neon Free (it used to be a Render free Postgres that expired every month, see [#79](https://github.com/partitelle/partitelle-bot/issues/79)). There is one Neon project per environment, so each has its own free quota (100 CU-hours/month). Each environment uses a schema (`staging`, `prod`) of the database `partitelle`; the structure comes from `migrations/` (see "Database migrations" in `CONTRIBUTING.md`), so no manual DDL is ever needed.
 
 | Field | Value |
 | --- | --- |

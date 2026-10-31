@@ -168,7 +168,7 @@ How to contribute
 
 Hell, yes 😉!
 
-Have a look at `here <https://github.com/iamgiolaga/partitelle-bot/blob/main/CONTRIBUTING.md>`_.
+Have a look at `here <https://github.com/partitelle/partitelle-bot/blob/main/CONTRIBUTING.md>`_.
 
 =================
 Sponsorships
