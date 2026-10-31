@@ -21,7 +21,7 @@ PartitelleBot keeps the participant list of the weekly match in a Telegram group
 When the list is full it splits the players into two random teams, and after the match it reminds the group to pay the pitch.
 The bot talks Italian; this README is in English.
 
-It is a Python 3.12 project built on the async API of `python-telegram-bot <https://github.com/python-telegram-bot/python-telegram-bot>`_ (v22), with PostgreSQL for storage, both hosted on `Render <https://dashboard.render.com>`_.
+It is a Python 3.12 project built on the async API of `python-telegram-bot <https://github.com/python-telegram-bot/python-telegram-bot>`_ (v22). The bot runs on `Render <https://render.com>`_ and stores its data in PostgreSQL on `Neon <https://neon.tech>`_ (see ``docs/neon-db.md``).
 
 How to use it in a group
 ========================
