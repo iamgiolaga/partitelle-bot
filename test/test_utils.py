@@ -70,6 +70,15 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             swap_players(teams, "JohnDoe", "JaneDoe")
 
+    def test_swap_players_ignores_case_and_keeps_the_stored_names(self):
+        teams = Teams(("Anna", "bea"), ("Carlo", "dino"))
+        self.assertEqual(
+            swap_players(teams, "anna", "CARLO"),
+            Teams(("Carlo", "bea"), ("Anna", "dino")),
+        )
+        with self.assertRaises(ValueError):
+            swap_players(teams, "ANNA", "bea")
+
     def test_swap_players_refuses_a_player_outside_the_teams(self):
         teams = Teams(("anna", "bea"), ("carlo", "dino"))
         for x, y in [("anna", "enzo"), ("enzo", "carlo")]:
@@ -173,7 +182,7 @@ class TestUtils(unittest.TestCase):
 
     def test_format_summary(self):
         # Test case 1: No players
-        all_players = []
+        names = []
         starts = datetime(2026, 10, 28, 20, 0, tzinfo=TIMEZONE)
         target = 6
         default_message = "Default message"
@@ -194,7 +203,7 @@ class TestUtils(unittest.TestCase):
             format_summary(
                 Match(
                     1,
-                    _participants(all_players),
+                    _participants(names),
                     starts,
                     target,
                     default_message,
@@ -205,7 +214,7 @@ class TestUtils(unittest.TestCase):
         )
 
         # Test case 2: Full players present
-        all_players = ["JohnDoe", "JaneDoe", "Alice", "Bob", "Charlie", "Eve"]
+        names = ["JohnDoe", "JaneDoe", "Alice", "Bob", "Charlie", "Eve"]
         starts = datetime(2026, 10, 28, 20, 0, tzinfo=TIMEZONE)
         target = 6
         default_message = "Default message"
@@ -226,7 +235,7 @@ class TestUtils(unittest.TestCase):
             format_summary(
                 Match(
                     1,
-                    _participants(all_players),
+                    _participants(names),
                     starts,
                     target,
                     default_message,
@@ -237,7 +246,7 @@ class TestUtils(unittest.TestCase):
         )
 
         # Test case 3: Some players present
-        all_players = ["JohnDoe", "JaneDoe", "Alice", "Bob", "Charlie"]
+        names = ["JohnDoe", "JaneDoe", "Alice", "Bob", "Charlie"]
         starts = datetime(2026, 10, 28, 20, 0, tzinfo=TIMEZONE)
         target = 6
         default_message = "Default message"
@@ -258,7 +267,7 @@ class TestUtils(unittest.TestCase):
             format_summary(
                 Match(
                     1,
-                    _participants(all_players),
+                    _participants(names),
                     starts,
                     target,
                     default_message,
@@ -269,7 +278,7 @@ class TestUtils(unittest.TestCase):
         )
 
         # Test case 4: Some players present, some maybe
-        all_players = [
+        names = [
             "JohnDoe",
             "JaneDoe",
             "Alice%is%maybe%present",
@@ -296,7 +305,7 @@ class TestUtils(unittest.TestCase):
             format_summary(
                 Match(
                     1,
-                    _participants(all_players),
+                    _participants(names),
                     starts,
                     target,
                     default_message,

@@ -58,6 +58,7 @@ markers = [
     "issue-97: GitHub issue 97",
     "issue-99: GitHub issue 99",
     "issue-112: GitHub issue 112",
+    "issue-128: GitHub issue 128",
 ]
 
 [tool.mypy]

@@ -43,7 +43,6 @@ jobs:
       PB_DB_PASSWORD: partitelle
       PB_DB_NAME: partitelle_test
       PB_DB_SCHEMA: staging
-      PB_DB_TABLE_NAME: all_players
 
     steps:
       - name: Checkout repository

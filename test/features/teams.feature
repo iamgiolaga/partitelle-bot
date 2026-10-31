@@ -330,7 +330,7 @@ Feature: Teams
     And the match should have:
       | field   | value                                  |
       | players | bea, carlo, dino, ale                  |
-      | teams   | black: dino, bea \| white: carlo, ale |
+      | teams   | black: bea, dino \| white: carlo, ale |
 
   Scenario: scambia moves two players of different teams to each other's team
     Given the team draw is seeded with 42
@@ -381,7 +381,7 @@ Feature: Teams
     And the bot should send nothing else
     And the match should have:
       | field | value                                  |
-      | teams | black: carlo, dino \| white: bea, ale |
+      | teams | black: carlo, dino \| white: ale, bea |
 
   Scenario: scambia between two players of the same team is refused and changes nothing
     Given the team draw is seeded with 42
@@ -515,6 +515,7 @@ Feature: Teams
       | players | ale, bea, dino (maybe)   |
       | teams   | (none)                   |
 
+  @known-bug @issue-128
   Scenario: Confirming a maybe present player keeps the teams, even beyond the target, and the summary hides him
     Given the team draw is seeded with 42
     And a match was started

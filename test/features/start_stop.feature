@@ -199,3 +199,71 @@ Feature: Starting and stopping a match
       """
     And the bot should pin the last message
     And the bot should send nothing else
+
+  Scenario: /start in a chat with a default pitch gives the match that pitch
+    Given the chat has the default pitch "Campo Rossi"
+    When "@mario" sends "/start"
+    Then the bot should send the text "welcome"
+    And the bot should send nothing else
+    When "@mario" sends "/participants"
+    Then the bot should send:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      1. ❌
+      2. ❌
+      3. ❌
+      4. ❌
+      5. ❌
+      6. ❌
+      7. ❌
+      8. ❌
+      9. ❌
+      10. ❌
+
+      {default description}
+
+      *CAMPO*: 
+      Campo Rossi
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field | value       |
+      | pitch | Campo Rossi |
+
+  Scenario: /bamboo in a chat with another default pitch keeps the bamboo pitch
+    Given the chat has the default pitch "Campo Rossi"
+    When "@mario" sends "/bamboo"
+    Then the bot should send the text "welcome"
+    And the bot should send nothing else
+    When "@mario" sends "/participants"
+    Then the bot should send:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      1. ❌
+      2. ❌
+      3. ❌
+      4. ❌
+      5. ❌
+      6. ❌
+      7. ❌
+      8. ❌
+      9. ❌
+      10. ❌
+
+      {default description}
+
+      *CAMPO*: 
+      Crespi Sport Village 
+
+      Via Carlo Valvassori Peroni, 48, 20133 
+      Milano, MI, 02 266 3774 
+      https://g.co/kgs/L9b6KZ
+      """
+    And the bot should pin the last message
+    And the bot should send nothing else
+    And the match should have:
+      | field | value                                                                                                                      |
+      | pitch | Crespi Sport Village \n\nVia Carlo Valvassori Peroni, 48, 20133 \nMilano, MI, 02 266 3774 \nhttps://g.co/kgs/L9b6KZ |

@@ -40,10 +40,11 @@ def parse_swap(text):
 def swap_players(teams: Teams, x: str, y: str) -> Teams:
     if not teams.contains(x) or not teams.contains(y):
         raise ValueError("Not allowed to swap a player who is not in the teams")
-    if (x in teams.black and y in teams.black) or (
-        x in teams.white and y in teams.white
-    ):
+    if teams.colour_of(x) == teams.colour_of(y):
         raise ValueError("Not allowed to swap two players of the same team")
+    # the names as stored, whatever case the user typed
+    stored = {member.lower(): member for member in teams.members}
+    x, y = stored[x.lower()], stored[y.lower()]
 
     def exchange(team: tuple[str, ...]) -> tuple[str, ...]:
         return tuple(y if p == x else x if p == y else p for p in team)

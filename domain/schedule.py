@@ -4,7 +4,6 @@ Free of Telegram and storage concerns, so the bot and the repository share one s
 """
 
 import re
-import unicodedata
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -36,23 +35,6 @@ _LEADING_WEEKDAY = re.compile(
     rf"^\s*(?:{_WEEKDAY_PATTERN})\s+(?=\d{{1,2}}[/.-]\d{{1,2}})", re.IGNORECASE
 )
 _TIME = re.compile(r"(\d{1,2})(?:[:.](\d{2}))?")
-
-
-def _unaccented(name: str) -> str:
-    decomposed = unicodedata.normalize("NFD", name.lower())
-    return decomposed.replace("̀", "")
-
-
-_WEEKDAY_NUMBER = {
-    _unaccented(name): number for number, name in enumerate(WEEKDAY_NAMES)
-}
-
-
-def weekday_number(text: str) -> int | None:
-    """The weekday (0 = Monday) when the text is exactly an Italian weekday name."""
-    if re.fullmatch(rf"\s*(?:{_WEEKDAY_PATTERN})\s*", text, re.IGNORECASE) is None:
-        return None
-    return _WEEKDAY_NUMBER[_unaccented(text.strip())]
 
 
 def next_weekday(today: date, weekday: int) -> date:

@@ -56,7 +56,7 @@ Rules:
 
 - never edit a migration that has already been applied/merged: add a new one
 - staging and prod migrate at their own deploys, so a migration must be backward compatible with the code currently deployed in the other environment (e.g. add nullable columns, do not drop or rename columns in the same release)
-- `PB_DB_SCHEMA` unset or `public` is the legacy layout: migrations are skipped
+- `PB_DB_SCHEMA` is mandatory: the bot and `db.migrate` refuse to start without it
 - the Neon database setup, env vars and backups are described in [docs/neon-db.md](docs/neon-db.md)
 
 On Render, the start command of both services must be:

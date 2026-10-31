@@ -32,7 +32,16 @@ class Teams:
         return self.black + self.white
 
     def contains(self, name: str) -> bool:
-        return name in self.members
+        return self.colour_of(name) is not None
+
+    def colour_of(self, name: str) -> str | None:
+        """The team colour of a name (black or white), compared ignoring case like the stored names."""
+        wanted = name.lower()
+        if any(member.lower() == wanted for member in self.black):
+            return "black"
+        if any(member.lower() == wanted for member in self.white):
+            return "white"
+        return None
 
     def as_dict(self) -> dict[str, list[str]]:
         return {"black": list(self.black), "white": list(self.white)}
@@ -55,7 +64,10 @@ class Match:
 
     def find(self, name: str, is_maybe: bool) -> Participant | None:
         for participant in self.participants:
-            if participant.name == name and participant.is_maybe == is_maybe:
+            if (
+                participant.name.lower() == name.lower()
+                and participant.is_maybe == is_maybe
+            ):
                 return participant
         return None
 
