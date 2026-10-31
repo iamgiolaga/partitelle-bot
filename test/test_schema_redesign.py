@@ -315,6 +315,7 @@ LEGACY_ROWS = [
     legacy_row(6, players=["Mario", "mario", "Luca"]),
     legacy_row(7, day=day_text(7), time="9.30", pitch="Altro campo"),
     legacy_row(8, players=["%is%maybe%present", "", "Ugo"]),
+    legacy_row(9, day="Mercoledì 11/05/2022", time="21:00", pitch=BAMBOO),
 ]
 
 
@@ -483,6 +484,17 @@ def test_bamboo_pitch_becomes_the_default_pitch_of_the_chat(copied):
     assert copied_match(conn, 2)[4] == BAMBOO
 
 
+def test_stopped_match_leaves_its_chat_without_a_default_pitch(copied):
+    conn, _, _ = copied
+    match = copied_match(conn, 9)
+    assert match[4] == BAMBOO
+    assert match[6] is not None
+    assert conn.execute(
+        "SELECT s.default_pitch FROM setting s JOIN chat c USING (chat_uuid) "
+        "WHERE c.telegram_chat_id = 9"
+    ).fetchone() == (None,)
+
+
 def test_names_colliding_case_insensitively_keep_the_first(copied):
     conn, _, out = copied
     assert [(n, p) for n, _, p, _, _ in copied_participants(conn, 6)] == [
@@ -495,7 +507,7 @@ def test_names_colliding_case_insensitively_keep_the_first(copied):
 def test_active_match_counts_the_non_stale_rows(copied):
     conn, _, _ = copied
     assert conn.execute("SELECT count(*) FROM active_match").fetchone() == (
-        len(LEGACY_ROWS) - 1,
+        len(LEGACY_ROWS) - 2,
     )
 
 

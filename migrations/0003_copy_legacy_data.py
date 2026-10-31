@@ -161,11 +161,6 @@ def copy_legacy_rows(conn, today: date) -> None:
             [chat_id],
         )
         chat_uuid = cur.fetchone()[0]
-        cur.execute(
-            "INSERT INTO setting (chat_uuid, default_pitch) VALUES (%s, %s)",
-            [chat_uuid, BAMBOO_PITCH if pitch == BAMBOO_PITCH else None],
-        )
-
         starts, fallbacks = resolve_starts(day, at, today)
         for fallback in fallbacks:
             print(f"0003 chat {chat_id}: {fallback}, fallback used")
@@ -195,6 +190,16 @@ def copy_legacy_rows(conn, today: date) -> None:
         match_uuid, is_stopped, is_reminded = cur.fetchone()
         stopped += is_stopped
         reminded += is_reminded
+
+        # the default pitch is only kept for chats still using the bot: a stopped
+        # match means the chat is dormant, so its old pitch is not worth carrying over
+        cur.execute(
+            "INSERT INTO setting (chat_uuid, default_pitch) VALUES (%s, %s)",
+            [
+                chat_uuid,
+                BAMBOO_PITCH if pitch == BAMBOO_PITCH and not is_stopped else None,
+            ],
+        )
 
         participants, duplicates = decode_players(players)
         if duplicates:
