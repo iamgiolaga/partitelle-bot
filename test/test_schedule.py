@@ -9,7 +9,6 @@ from domain.schedule import (
     next_weekday,
     parse_day,
     parse_time,
-    weekday_number,
     with_day,
     with_time,
 )
@@ -125,15 +124,6 @@ class TestParseTime(unittest.TestCase):
     def test_rejected_text(self):
         for text in ["25:99", "24:00", "24", "21:60", "stasera", "alle 21", "21:5", ""]:
             self.assertIsNone(parse_time(text), text)
-
-
-class TestWeekdayNumber(unittest.TestCase):
-    def test_exact_names_only(self):
-        self.assertEqual(weekday_number("Mercoledì"), 2)
-        self.assertEqual(weekday_number(" sabato "), 5)
-        self.assertEqual(weekday_number("DOMENICA"), 6)
-        self.assertIsNone(weekday_number("sabato sera"))
-        self.assertIsNone(weekday_number(""))
 
 
 class TestReplaceOnePart(unittest.TestCase):

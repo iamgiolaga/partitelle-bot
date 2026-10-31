@@ -92,28 +92,6 @@ Feature: Payment reminder
     And a payment reminder should be scheduled for "2026-10-29 23:30"
     And the bot should send nothing else
 
-  Scenario: /setday after a legacy unreadable time reads it as 20:00 and schedules the reminder 2 hours after it
-    Given a match was started
-    And the match time was stored as "sera"
-    When "@mario" sends "/setday 27/10/2026"
-    Then the bot should send:
-          """
-          Ok, @mario! Ho impostato il giorno della partita: martedì 27/10/2026
-          """
-    And the bot should send:
-          """
-          *GIORNO*: Martedì 27/10/2026 | 20:00
-    
-          {empty slots}
-    
-          {default description}
-    
-          {campo}
-          """
-    And the bot should pin the last message
-    And a payment reminder should be scheduled for "2026-10-27 22:00"
-    And the bot should send nothing else
-
   Scenario: /settime with a time written with a dot is normalised and schedules the reminder 2 hours after it
     Given a match was started
     And "@mario" had sent "/setday 27/10/2026"

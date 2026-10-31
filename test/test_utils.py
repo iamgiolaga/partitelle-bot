@@ -173,7 +173,7 @@ class TestUtils(unittest.TestCase):
 
     def test_format_summary(self):
         # Test case 1: No players
-        all_players = []
+        names = []
         starts = datetime(2026, 10, 28, 20, 0, tzinfo=TIMEZONE)
         target = 6
         default_message = "Default message"
@@ -194,7 +194,7 @@ class TestUtils(unittest.TestCase):
             format_summary(
                 Match(
                     1,
-                    _participants(all_players),
+                    _participants(names),
                     starts,
                     target,
                     default_message,
@@ -205,7 +205,7 @@ class TestUtils(unittest.TestCase):
         )
 
         # Test case 2: Full players present
-        all_players = ["JohnDoe", "JaneDoe", "Alice", "Bob", "Charlie", "Eve"]
+        names = ["JohnDoe", "JaneDoe", "Alice", "Bob", "Charlie", "Eve"]
         starts = datetime(2026, 10, 28, 20, 0, tzinfo=TIMEZONE)
         target = 6
         default_message = "Default message"
@@ -226,7 +226,7 @@ class TestUtils(unittest.TestCase):
             format_summary(
                 Match(
                     1,
-                    _participants(all_players),
+                    _participants(names),
                     starts,
                     target,
                     default_message,
@@ -237,7 +237,7 @@ class TestUtils(unittest.TestCase):
         )
 
         # Test case 3: Some players present
-        all_players = ["JohnDoe", "JaneDoe", "Alice", "Bob", "Charlie"]
+        names = ["JohnDoe", "JaneDoe", "Alice", "Bob", "Charlie"]
         starts = datetime(2026, 10, 28, 20, 0, tzinfo=TIMEZONE)
         target = 6
         default_message = "Default message"
@@ -258,7 +258,7 @@ class TestUtils(unittest.TestCase):
             format_summary(
                 Match(
                     1,
-                    _participants(all_players),
+                    _participants(names),
                     starts,
                     target,
                     default_message,
@@ -269,7 +269,7 @@ class TestUtils(unittest.TestCase):
         )
 
         # Test case 4: Some players present, some maybe
-        all_players = [
+        names = [
             "JohnDoe",
             "JaneDoe",
             "Alice%is%maybe%present",
@@ -296,7 +296,7 @@ class TestUtils(unittest.TestCase):
             format_summary(
                 Match(
                     1,
-                    _participants(all_players),
+                    _participants(names),
                     starts,
                     target,
                     default_message,

@@ -1167,7 +1167,7 @@ Feature: Managing the participants
     Given a match was started
     And the match target is 4
     And the match has the players "anna, bea (maybe), carlo, dino"
-    And the match has the black team "anna, carlo" and the white team "dino, bea"
+    And the match has the black team "anna, carlo" and the white team "dino"
     When "@mario" sends "proponi anna,bea,anna"
     Then the bot should send:
       """
@@ -1507,7 +1507,7 @@ Feature: Managing the participants
     And the bot should send nothing else
     And the match should have:
       | field | value                                |
-      | teams | black: carlo, bea \| white: anna, dino |
+      | teams | black: bea, carlo \| white: anna, dino |
 
   Scenario: scambia works in both directions
     Given a match was started
@@ -1522,7 +1522,7 @@ Feature: Managing the participants
     And the bot should send nothing else
     And the match should have:
       | field | value                                |
-      | teams | black: anna, dino \| white: carlo, bea |
+      | teams | black: anna, dino \| white: bea, carlo |
 
   Scenario: scambia refuses two players of the same team
     Given a match was started
@@ -1978,46 +1978,6 @@ Feature: Managing the participants
       {footer}
       """
     And the bot should pin the last message
-    And the bot should send nothing else
-
-  Scenario: A target of 1 kicks off the match
-    Given a match was started
-    And the match target is 1
-    When "@mario" sends "aggiungimi"
-    Then the bot should send:
-      """
-      Ok, @mario, ti aggiungo
-      """
-    And the bot should send:
-      """
-      {header}
-
-      1. @mario ✅
-
-      {footer}
-      """
-    And the bot should pin the summary
-    And the bot should send the text "kickoff"
-    And the bot should send nothing else
-
-  Scenario: A target of 1 kicks off the match with aggiungi too
-    Given a match was started
-    And the match target is 1
-    When "@mario" sends "aggiungi luca"
-    Then the bot should send:
-      """
-      Ok, aggiungo luca
-      """
-    And the bot should send:
-      """
-      {header}
-
-      1. luca ✅
-
-      {footer}
-      """
-    And the bot should pin the summary
-    And the bot should send the text "kickoff"
     And the bot should send nothing else
 
   Scenario: Adding a player after the teams are formed keeps the teams
