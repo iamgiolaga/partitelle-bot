@@ -47,6 +47,19 @@ class Teams:
         return {"black": list(self.black), "white": list(self.white)}
 
 
+@dataclass(frozen=True)
+class TargetTooLow:
+    """A new target refused because more people than that are already in the list."""
+
+    requested: int
+    confirmed: int
+    maybe: int
+
+    @property
+    def total(self) -> int:
+        return self.confirmed + self.maybe
+
+
 @dataclass
 class Match:
     chat_id: int
@@ -86,3 +99,9 @@ class Match:
     def has_room(self) -> bool:
         """Maybe participants hold a place too."""
         return len(self.participants) < self.target
+
+    def check_new_target(self, target: int) -> TargetTooLow | None:
+        """Refuse a target lower than the people in the list: maybe participants hold a place too."""
+        if target < len(self.participants):
+            return TargetTooLow(target, self.confirmed_count, self.maybe_count)
+        return None

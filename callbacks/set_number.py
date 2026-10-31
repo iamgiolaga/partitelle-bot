@@ -7,7 +7,32 @@ from behaviours.remove_job_if_exists import remove_job_if_exists
 from behaviours.trigger_payment_reminder import trigger_payment_reminder
 from db.repository import set_target, set_summary_message_id
 from db.repository import get_match, save_teams
+from domain import TargetTooLow
 from utils.utils import get_sender_mention, format_summary
+
+
+def target_too_low_answer(refusal: TargetTooLow, current_target: int) -> str:
+    advice = (
+        "Prima togli qualcuno con togli <nome>, oppure lascia il numero a "
+        f"{current_target} 🙏"
+    )
+    if refusal.maybe == 0:
+        return (
+            f"Non posso scendere a {refusal.requested}: "
+            f"ci sono già {refusal.confirmed} confermati. {advice}"
+        )
+    maybes = f"{refusal.maybe} in forse"
+    if refusal.confirmed == 0:
+        counts = maybes
+    elif refusal.confirmed == 1:
+        counts = f"1 confermato e {maybes}"
+    else:
+        counts = f"{refusal.confirmed} confermati e {maybes}"
+    return (
+        f"Non posso scendere a {refusal.requested}: "
+        f"in lista ci sono già {refusal.total} persone ({counts}), "
+        f"e anche chi è in forse tiene un posto. {advice}"
+    )
 
 
 async def set_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -36,8 +61,8 @@ async def set_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         answer = "Non è un numero valido di partecipanti 🌚"
                     elif chosen_number < 2:
                         answer = "Il numero che hai inserito non va bene 👎"
-                    elif chosen_number < participants_num:
-                        answer = "Hai ridotto i partecipanti ma c'è ancora gente nella lista. Io non saprei chi togliere, puoi farlo tu? 🙏"
+                    elif (refusal := match.check_new_target(chosen_number)) is not None:
+                        answer = target_too_low_answer(refusal, match.target)
                     else:
                         if match.teams is not None:
                             save_teams(chat_id, None)

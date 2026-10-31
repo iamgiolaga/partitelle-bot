@@ -301,45 +301,117 @@ Feature: Match settings
 
   Scenario: /setnumber below the number of confirmed players is refused
     Given a match was started
-    And "@mario" had sent "aggiungi anna"
-    And "@mario" had sent "aggiungi bea"
-    And "@mario" had sent "aggiungi carla"
-    When "@mario" sends "/setnumber 2"
+    And the match has the players "anna, bea, carla, dino, ele, fede, gino, ivo, luca, nico"
+    When "@mario" sends "/setnumber 8"
     Then the bot should send:
       """
-      Hai ridotto i partecipanti ma c'è ancora gente nella lista. Io non saprei chi togliere, puoi farlo tu? 🙏
+      Non posso scendere a 8: ci sono già 10 confermati. Prima togli qualcuno con togli <nome>, oppure lascia il numero a 10 🙏
       """
     And the bot should send nothing else
     And the match should have:
-      | field   | value             |
-      | target  | 10                |
-      | players | anna, bea, carla  |
+      | field   | value                                                      |
+      | target  | 10                                                         |
+      | players | anna, bea, carla, dino, ele, fede, gino, ivo, luca, nico   |
 
-  Scenario: Players who are only maybe-present do not count when lowering the target
+  Scenario: Maybe-present players hold a place, so /setnumber below the people in the list is refused
+    Given a match was started
+    And the match target is 4
+    And the match has the players "anna, bea, carla (maybe), dino (maybe)"
+    When "@mario" sends "/setnumber 3"
+    Then the bot should send:
+      """
+      Non posso scendere a 3: in lista ci sono già 4 persone (2 confermati e 2 in forse), e anche chi è in forse tiene un posto. Prima togli qualcuno con togli <nome>, oppure lascia il numero a 4 🙏
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                                  |
+      | target  | 4                                      |
+      | players | anna, bea, carla (maybe), dino (maybe) |
+
+  Scenario: The refusal says "1 confermato" when only one player is confirmed
+    Given a match was started
+    And the match has the players "anna, bea (maybe), carla (maybe)"
+    When "@mario" sends "/setnumber 2"
+    Then the bot should send:
+      """
+      Non posso scendere a 2: in lista ci sono già 3 persone (1 confermato e 2 in forse), e anche chi è in forse tiene un posto. Prima togli qualcuno con togli <nome>, oppure lascia il numero a 10 🙏
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                             |
+      | target  | 10                                |
+      | players | anna, bea (maybe), carla (maybe)  |
+
+  Scenario: The refusal counts only the maybe-present players when nobody is confirmed
+    Given a match was started
+    And the match has the players "anna (maybe), bea (maybe), carla (maybe)"
+    When "@mario" sends "/setnumber 2"
+    Then the bot should send:
+      """
+      Non posso scendere a 2: in lista ci sono già 3 persone (3 in forse), e anche chi è in forse tiene un posto. Prima togli qualcuno con togli <nome>, oppure lascia il numero a 10 🙏
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                                      |
+      | target  | 10                                         |
+      | players | anna (maybe), bea (maybe), carla (maybe)   |
+
+  Scenario: /setnumber equal to the people in the list, maybe-present included, is accepted
     Given a match was started
     And "@mario" had sent "aggiungi anna"
     And "@mario" had sent "aggiungi bea"
     And "@mario" had sent "proponi carla"
-    When "@mario" sends "/setnumber 2"
+    And "@mario" had sent "proponi dino"
+    When "@mario" sends "/setnumber 4"
     Then the bot should edit the summary to:
       """
       *GIORNO*: Mercoledì 28/10/2026 | 20:00
 
       1. anna ✅
       2. bea ✅
+      3. carla ❓
+      4. dino ❓
 
       {default tail}
       """
     And the bot should pin the summary
-    And the bot should send the text "si gioca"
     And the bot should send:
       """
-      Ok, @mario! Ho impostato il numero di partecipanti a 2
+      Ok, @mario! Ho impostato il numero di partecipanti a 4
       """
     And the bot should send nothing else
     And the match should have:
-      | field   | value                |
-      | target  | 2                    |
+      | field   | value                                  |
+      | target  | 4                                      |
+      | players | anna, bea, carla (maybe), dino (maybe) |
+
+  Scenario: /setnumber above the people in the list, maybe-present included, is accepted
+    Given a match was started
+    And "@mario" had sent "aggiungi anna"
+    And "@mario" had sent "aggiungi bea"
+    And "@mario" had sent "proponi carla"
+    When "@mario" sends "/setnumber 5"
+    Then the bot should edit the summary to:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      1. anna ✅
+      2. bea ✅
+      3. carla ❓
+      4. ❌
+      5. ❌
+
+      {default tail}
+      """
+    And the bot should pin the summary
+    And the bot should send:
+      """
+      Ok, @mario! Ho impostato il numero di partecipanti a 5
+      """
+    And the bot should send nothing else
+    And the match should have:
+      | field   | value                    |
+      | target  | 5                        |
       | players | anna, bea, carla (maybe) |
 
   Scenario: Reaching the target announces that the match is on
