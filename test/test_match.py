@@ -3,7 +3,7 @@ from datetime import datetime
 
 import time_machine
 
-from domain import Match, Participant, Teams
+from domain import Match, Participant, TargetTooLow, Teams
 from domain.schedule import TIMEZONE
 
 
@@ -42,6 +42,30 @@ class TestMatch(unittest.TestCase):
         self.assertTrue(_match(Participant("a"), target=2).has_room)
         full = _match(Participant("a"), Participant("b", True), target=2)
         self.assertFalse(full.has_room)
+
+    def test_check_new_target_refuses_below_the_people_in_the_list(self):
+        match = _match(*(Participant(name) for name in "abcd"), target=10)
+        self.assertEqual(match.check_new_target(3), TargetTooLow(3, 4, 0))
+        self.assertEqual(TargetTooLow(3, 4, 0).total, 4)
+
+    def test_check_new_target_counts_maybes(self):
+        match = _match(
+            Participant("a"),
+            Participant("b"),
+            Participant("c", True),
+            Participant("d", True),
+        )
+        refusal = match.check_new_target(3)
+        self.assertEqual(refusal, TargetTooLow(requested=3, confirmed=2, maybe=2))
+        self.assertEqual(refusal.total if refusal else None, 4)
+        only_maybes = _match(Participant("a", True), Participant("b", True), target=10)
+        self.assertEqual(only_maybes.check_new_target(1), TargetTooLow(1, 0, 2))
+
+    def test_check_new_target_accepts_the_list_size_or_more(self):
+        match = _match(Participant("a"), Participant("b", True), target=10)
+        self.assertIsNone(match.check_new_target(2))
+        self.assertIsNone(match.check_new_target(3))
+        self.assertIsNone(_match().check_new_target(2))
 
     def test_new_holds_the_defaults(self):
         with time_machine.travel(_at(2026, 10, 21, 21, 0), tick=False):

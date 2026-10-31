@@ -1,3 +1,3 @@
-from domain.match import BAMBOO_PITCH, Match, Participant, Teams
+from domain.match import BAMBOO_PITCH, Match, Participant, TargetTooLow, Teams
 
-__all__ = ["BAMBOO_PITCH", "Match", "Participant", "Teams"]
+__all__ = ["BAMBOO_PITCH", "Match", "Participant", "TargetTooLow", "Teams"]

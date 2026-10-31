@@ -515,6 +515,7 @@ Feature: Teams
       | players | ale, bea, dino (maybe)   |
       | teams   | (none)                   |
 
+  # Covers a state created before #128 (a target below the people in the list) that /setnumber now refuses: legacy data may still hold it.
   @known-bug @issue-128
   Scenario: Confirming a maybe present player keeps the teams, even beyond the target, and the summary hides him
     Given the team draw is seeded with 42
