@@ -50,7 +50,7 @@ Feature: Payment reminder
     When "@mario" sends "/setday 28/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il Mercoledì 28/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: mercoledì 28/10/2026
           """
     And the bot should send:
           """
@@ -98,7 +98,7 @@ Feature: Payment reminder
     When "@mario" sends "/setday 27/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il Martedì 27/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: martedì 27/10/2026
           """
     And the bot should send:
           """
@@ -209,7 +209,7 @@ Feature: Payment reminder
     When "@mario" sends "/setday 20/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il Martedì 20/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: martedì 20/10/2026
           """
     And the bot should send:
           """
@@ -230,7 +230,7 @@ Feature: Payment reminder
     When "@mario" sends "/setday 21/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il Mercoledì 21/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: mercoledì 21/10/2026
           """
     And the bot should send:
           """
@@ -472,7 +472,7 @@ Feature: Payment reminder
     When "@mario" sends "/setday 28/10/2026"
     Then the bot should send:
           """
-          Ok, @mario! Ho impostato il giorno della partita il Mercoledì 28/10/2026
+          Ok, @mario! Ho impostato il giorno della partita: mercoledì 28/10/2026
           """
     And the bot should edit the summary to:
           """

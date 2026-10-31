@@ -523,7 +523,7 @@ Feature: Match settings
     When "@mario" sends "/setday 25/10/2026"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato il giorno della partita il Domenica 25/10/2026
+      Ok, @mario! Ho impostato il giorno della partita: domenica 25/10/2026
       """
     And the bot should send:
       """
@@ -570,7 +570,7 @@ Feature: Match settings
     When "@mario" sends "/setday 25/10/2026"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato il giorno della partita il Domenica 25/10/2026
+      Ok, @mario! Ho impostato il giorno della partita: domenica 25/10/2026
       """
     And the bot should edit the summary to:
       """
@@ -603,7 +603,7 @@ Feature: Match settings
     When "@mario" sends "/setday 25/10/2026"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato il giorno della partita il Domenica 25/10/2026
+      Ok, @mario! Ho impostato il giorno della partita: domenica 25/10/2026
       """
     And the bot should send:
       """
@@ -651,7 +651,7 @@ Feature: Match settings
     When "@mario" sends "/setday 20/10/2026"
     Then the bot should send:
       """
-      Ok, @mario! Ho impostato il giorno della partita il Martedì 20/10/2026
+      Ok, @mario! Ho impostato il giorno della partita: martedì 20/10/2026
       """
     And the bot should send:
       """
@@ -1284,7 +1284,7 @@ Feature: Match settings
     When "Luca" sends "/setday 25/10/2026"
     Then the bot should send:
       """
-      Ok, Luca! Ho impostato il giorno della partita il Domenica 25/10/2026
+      Ok, Luca! Ho impostato il giorno della partita: domenica 25/10/2026
       """
     And the bot should send:
       """

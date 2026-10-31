@@ -51,7 +51,7 @@ async def set_day(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id=update.effective_chat.id,
         parse_mode="markdown",
         text=escape_markdown(
-            f"Ok, {sender}! Ho impostato il giorno della partita il {format_day(starts)}"
+            f"Ok, {sender}! Ho impostato il giorno della partita: {format_day(starts).lower()}"
         ),
     )
 
