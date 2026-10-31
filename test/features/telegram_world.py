@@ -175,6 +175,7 @@ class World:
     users: dict = field(default_factory=dict)
     current_chat: Chat = None
     consumed: int = 0
+    consumed_warnings: int = 0  # logged warnings already asserted (see steps.py)
     errors: list = field(default_factory=list)
     _message_ids: dict = field(default_factory=dict)
     _update_id: int = 0

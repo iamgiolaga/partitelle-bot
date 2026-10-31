@@ -329,6 +329,7 @@ Feature: Payment reminder
     When the scheduled jobs run
     Then the bot should send the plain text "payment reminder"
     And the bot should pin the last message
+    And the bot should log the warning "No admin rights to pin the message"
     And the match summary message should be the last message of the bot
     And the bot should send nothing else
 

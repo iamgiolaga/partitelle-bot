@@ -1,5 +1,9 @@
+import logging
+
 from telegram import Update
 from telegram.ext import ContextTypes
+
+logger = logging.getLogger(__name__)
 
 
 async def edit_summary(
@@ -19,4 +23,4 @@ async def edit_summary(
             chat_id=update.effective_chat.id, message_id=bot_last_message_id
         )
     except Exception:
-        print("No admin rights to pin the message")
+        logger.warning("No admin rights to pin the message")

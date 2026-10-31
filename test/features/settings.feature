@@ -1236,8 +1236,32 @@ Feature: Match settings
       Crespi
       """
     And the bot should pin the summary
+    And the bot should log the warning "No admin rights to pin the message"
     And the bot should send nothing else
 
+  Scenario: Changes still edit the summary when the bot cannot pin it again
+    Given a match was started
+    And "@mario" had sent "/setpitch Crespi"
+    And the bot is not an administrator of the chat
+    When "@mario" sends "/setpitch Bamboo"
+    Then the bot should send:
+      """
+      Ok, @mario! Ho aggiornato il campo!
+      """
+    And the bot should edit the summary to:
+      """
+      *GIORNO*: Mercoledì 28/10/2026 | 20:00
+
+      {ten empty slots}
+
+      {default description}
+
+      *CAMPO*: 
+      Bamboo
+      """
+    And the bot should pin the summary
+    And the bot should log the warning "No admin rights to pin the message"
+    And the bot should send nothing else
   # ---- users without a username ----------------------------------------------------------------
 
   Scenario: /setnumber from a user without username confirms with the display name

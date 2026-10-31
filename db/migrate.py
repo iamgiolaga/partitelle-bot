@@ -3,6 +3,7 @@
 Usage: python -m db.migrate
 """
 
+import logging
 from pathlib import Path
 from urllib.parse import quote
 
@@ -12,6 +13,9 @@ from yoyo import get_backend, read_migrations
 
 from conf.conf import host, database, user, password, port, db_schema
 from db.connection import validate_schema
+
+# a fixed name: `python -m db.migrate` (Render) would otherwise log as `__main__`
+logger = logging.getLogger("db.migrate")
 
 MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
 
@@ -50,12 +54,21 @@ def migrate():
     with backend.lock():
         pending = backend.to_apply(migrations)
         if not pending:
-            print(f"Schema '{schema}' is up to date: no migrations to apply")
+            logger.info("Schema '%s' is up to date: no migrations to apply", schema)
             return
-        print(f"Applying to schema '{schema}': {[m.id for m in pending]}")
+        logger.info("Applying to schema '%s': %s", schema, [m.id for m in pending])
         backend.apply_migrations(pending)
-        print("Migrations applied")
+        logger.info("Migrations applied")
+
+
+def main():
+    # run standalone before the bot starts (`python -m db.migrate`): without this the messages would be lost
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # as in main.py
+        level=logging.INFO,
+    )
+    migrate()
 
 
 if __name__ == "__main__":
-    migrate()
+    main()
