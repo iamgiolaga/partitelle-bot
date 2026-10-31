@@ -9,7 +9,7 @@ Just make sure that you follow these simple rules:
 - Open a new PR (the title must follow Conventional Commits: `feat: ...` | `fix: ...` | `chore: ...` | `doc: ...` | `test: ...`, it is checked by CI). The PR runs tests and lint; once merged, it is deployed to [PartitelleBotTest](https://t.me/PartitelleTestBot)
 - If it works, I release it to [PartitelleBot](https://t.me/PartitelleBot) (see below)
 
-See this [PR example](https://github.com/iamgiolaga/partitelle-bot/pull/20)
+See this [PR example](https://github.com/partitelle/partitelle-bot/pull/20)
 
 Best,
 Giovanni
