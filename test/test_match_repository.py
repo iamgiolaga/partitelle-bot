@@ -1,11 +1,14 @@
 import unittest
+from datetime import date, datetime
 
 from db.repository import (
+    _decode_starts,
     _encode_participant,
     _row_to_match,
     _validate_new_participant,
 )
 from domain import Match, Participant, Teams
+from domain.schedule import TIMEZONE
 
 
 class TestRowToMatch(unittest.TestCase):
@@ -25,8 +28,7 @@ class TestRowToMatch(unittest.TestCase):
             Match(
                 5,
                 [Participant("@anna"), Participant("bea", True)],
-                "Mercoledì 28/10/2026",
-                "20:00",
+                datetime(2026, 10, 28, 20, 0, tzinfo=TIMEZONE),
                 10,
                 "msg\n",
                 "campo",
@@ -61,6 +63,47 @@ class TestRowToMatch(unittest.TestCase):
                 None,
             )
             self.assertEqual(_row_to_match(1, row).participants, [participant])
+
+
+class TestDecodeStarts(unittest.TestCase):
+    # a Thursday: the next Wednesday is the 28th
+    today = date(2026, 10, 22)
+
+    def _decode(self, day, at):
+        return _decode_starts(day, at, self.today)
+
+    def test_a_date_with_or_without_the_weekday(self):
+        expected = datetime(2026, 10, 25, 21, 30, tzinfo=TIMEZONE)
+        for day in ["25/10/2026", "Domenica 25/10/2026", "domenica 25.10.2026"]:
+            self.assertEqual(self._decode(day, "21:30"), expected)
+
+    def test_a_weekday_alone_is_the_next_such_weekday(self):
+        self.assertEqual(
+            self._decode("Sabato", "20:00"),
+            datetime(2026, 10, 24, 20, 0, tzinfo=TIMEZONE),
+        )
+        self.assertEqual(
+            self._decode("giovedi", "20:00"),
+            datetime(2026, 10, 29, 20, 0, tzinfo=TIMEZONE),
+        )
+
+    def test_a_bare_hour_and_other_time_spellings(self):
+        for at, expected in [("20", (20, 0)), ("9.05", (9, 5)), (" 7:30 ", (7, 30))]:
+            self.assertEqual(
+                self._decode("25/10/2026", at),
+                datetime(2026, 10, 25, *expected, tzinfo=TIMEZONE),
+            )
+
+    def test_anything_unreadable_falls_back_to_the_next_wednesday_at_eight(self):
+        fallback = datetime(2026, 10, 28, 20, 0, tzinfo=TIMEZONE)
+        for day, at in [("boh", "sera"), (None, None), ("", ""), ("31/02/2026", "25")]:
+            self.assertEqual(self._decode(day, at), fallback)
+
+    def test_a_readable_day_keeps_the_default_time_when_the_time_is_not(self):
+        self.assertEqual(
+            self._decode("25/10/2026", "sera"),
+            datetime(2026, 10, 25, 20, 0, tzinfo=TIMEZONE),
+        )
 
 
 class TestEncodeParticipant(unittest.TestCase):

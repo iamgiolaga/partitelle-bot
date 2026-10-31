@@ -2,6 +2,7 @@
 encoding (maybe suffix, NULL when empty) and the teams JSON."""
 
 import json
+from datetime import date, datetime, time
 from typing import Any
 
 from psycopg import Connection, sql
@@ -9,6 +10,17 @@ from psycopg import Connection, sql
 from conf.conf import table_name
 from db.connection import connection
 from domain import Match, Participant, Teams
+from domain.schedule import (
+    DEFAULT_TIME,
+    TIMEZONE,
+    WEDNESDAY,
+    format_day,
+    format_time,
+    next_weekday,
+    parse_day,
+    parse_time,
+    weekday_number,
+)
 
 # marks a "maybe" participant inside the stored players array
 _MAYBE_SUFFIX = "%is%maybe%present"
@@ -28,6 +40,18 @@ def _encode_participant(participant: Participant) -> str:
     return participant.name + (_MAYBE_SUFFIX if participant.is_maybe else "")
 
 
+def _decode_starts(day: str | None, at: str | None, today: date) -> datetime:
+    """The start of a stored match. The day and time columns are free text written by older
+    versions, so this never fails: what cannot be read falls back to the default."""
+    text = day or ""
+    match_day = parse_day(text)
+    if match_day is None:
+        weekday = weekday_number(text)
+        match_day = next_weekday(today, WEDNESDAY if weekday is None else weekday)
+    match_time: time = parse_time(at or "") or DEFAULT_TIME
+    return datetime.combine(match_day, match_time, tzinfo=TIMEZONE)
+
+
 def _decode_teams(raw: dict[str, list[str]] | None) -> Teams | None:
     if raw is None:
         return None
@@ -36,12 +60,11 @@ def _decode_teams(raw: dict[str, list[str]] | None) -> Teams | None:
 
 def _row_to_match(chat_id: int | str, row: tuple[Any, ...]) -> Match:
     """Decode a row selected with _COLUMNS; NULL players decode to an empty list."""
-    players, day, time, target, description, pitch, teams, summary_message_id = row
+    players, day, at, target, description, pitch, teams, summary_message_id = row
     return Match(
         chat_id=int(chat_id),
         participants=[_decode_participant(raw) for raw in players or []],
-        day=day,
-        time=time,
+        starts=_decode_starts(day, at, datetime.now(TIMEZONE).date()),
         target=target,
         description=description,
         pitch=pitch,
@@ -84,8 +107,8 @@ def create_match(match: Match) -> None:
             [
                 str(match.chat_id),
                 players,
-                match.day,
-                match.time,
+                format_day(match.starts),
+                format_time(match.starts),
                 str(match.target),
                 match.description,
                 match.pitch,
@@ -128,12 +151,14 @@ def set_target(chat_id: int | str, target: int) -> None:
     _set_column(chat_id, "target", str(target))
 
 
-def set_day(chat_id: int | str, day: str) -> None:
-    _set_column(chat_id, "day", day)
-
-
-def set_time(chat_id: int | str, time: str) -> None:
-    _set_column(chat_id, "time", time)
+def set_starts(chat_id: int | str, starts: datetime) -> None:
+    with connection() as conn:
+        conn.execute(
+            sql.SQL("UPDATE {table} SET day = %s, time = %s WHERE chat_id=%s").format(
+                table=_table()
+            ),
+            [format_day(starts), format_time(starts), str(chat_id)],
+        )
 
 
 def set_description(chat_id: int | str, description: str) -> None:

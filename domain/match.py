@@ -1,8 +1,10 @@
 """The match as the bot reasons about it, free of storage and Telegram concerns."""
 
 from dataclasses import dataclass, field
+from datetime import datetime
 
-from utils.constants import default_message, default_target, default_time
+from domain.schedule import next_start
+from utils.constants import default_message, default_target
 
 # the pitch the /bamboo command starts every match with
 BAMBOO_PITCH = (
@@ -40,8 +42,7 @@ class Teams:
 class Match:
     chat_id: int
     participants: list[Participant] = field(default_factory=list)
-    day: str = ""
-    time: str = default_time
+    starts: datetime = field(default_factory=next_start)
     target: int = default_target
     description: str | None = default_message
     pitch: str | None = None
@@ -49,10 +50,8 @@ class Match:
     teams: Teams | None = None
 
     @classmethod
-    def new(cls, chat_id: int | str, day: str, pitch: str | None = None) -> "Match":
-        # day is computed by the caller: finding the next Wednesday lives in utils, which
-        # imports telegram and so cannot be imported by the domain
-        return cls(chat_id=int(chat_id), day=day, pitch=pitch)
+    def new(cls, chat_id: int | str, pitch: str | None = None) -> "Match":
+        return cls(chat_id=int(chat_id), starts=next_start(), pitch=pitch)
 
     def find(self, name: str, is_maybe: bool) -> Participant | None:
         for participant in self.participants:
