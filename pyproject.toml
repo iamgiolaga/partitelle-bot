@@ -4,7 +4,7 @@ name = "partitelle-bot"
 # The real version is the git tag created by the "Promote to prod" workflow.
 version = "0.0.0"
 description = "Telegram bot to organize football matches"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "psycopg[binary]>=3.2",
