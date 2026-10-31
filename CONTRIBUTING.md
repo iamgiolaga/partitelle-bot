@@ -91,14 +91,14 @@ This is useful to test the bot on a local environment before pushing the changes
 
 ## Dependencies
 
-[Dependabot](.github/dependabot.yml) checks `uv` and GitHub Actions dependencies every Monday. Patch and minor updates are grouped in one PR and auto-merged once CI is green (they only reach staging; prod follows with a manual `Promote to prod` run on the CEO's OK). Major updates get their own PR and are reviewed manually. Dependabot does not touch `requirements.txt`, so the workflow regenerates it on every Dependabot PR (majors included) and CI fails if it is out of sync with `uv.lock`. Auto-merge needs the `AUTOMERGE_TOKEN` Dependabot secret (see the one-time setup below).
+[Dependabot](.github/dependabot.yml) checks `uv` and GitHub Actions dependencies every Monday. Patch and minor updates are grouped in one PR and auto-merged once CI is green (they only reach staging; prod follows with a manual `Promote to prod` run on a maintainer's OK). Major updates get their own PR and are reviewed manually. Dependabot does not touch `requirements.txt`, so the workflow regenerates it on every Dependabot PR (majors included) and CI fails if it is out of sync with `uv.lock`. Auto-merge needs the `AUTOMERGE_TOKEN` Dependabot secret (see the one-time setup below).
 
 ## Release & deploy flow
 
 1. Open a PR with a Conventional Commits title; CI runs `unit-test` and `linter`.
 2. Optional: add the `deploy-partitellebot-test` label to try the PR on PartitelleBotTest (staging) before merging. Once tests and lint pass, CI points the test service at the PR branch and deploys its head commit (and redeploys on every new push while the label is present). The test service is shared, so if two PRs are labeled the last deploy wins. Fork PRs are not deployed.
 3. Squash-merge to `main`: after tests and lint pass, CI deploys that commit to staging (this also moves staging back to `main`).
-4. Prod is promoted manually (`workflow_dispatch`) on the CEO's OK; there is no schedule. Failures arrive as the usual failed-workflow email. Actions > "Promote to prod" > Run workflow, or from the CLI:
+4. Prod is promoted manually (`workflow_dispatch`) on a maintainer's OK; there is no schedule. Failures arrive as the usual failed-workflow email. Actions > "Promote to prod" > Run workflow, or from the CLI:
 
    ```bash
    gh workflow run promote.yml                    # compute the version from commit types
