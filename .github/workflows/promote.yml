@@ -46,7 +46,7 @@ jobs:
 
       # uvx runs git-cliff (version bump and release notes)
       - name: Set up uv
-        uses: astral-sh/setup-uv@v10.3.2
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           version: "0.13.5"
 
