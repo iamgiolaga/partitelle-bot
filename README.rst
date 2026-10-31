@@ -1,138 +1,97 @@
-****
+.. image:: .github/img/logo.png
+   :width: 160px
+   :align: center
+   :alt: PartitelleBot logo
+
+====================
 PartitelleBot
-****
+====================
+
+Telegram bot that organizes amateur football matches among friends: who is in, who is maybe, and the teams.
 
 .. image:: https://img.shields.io/badge/Telegram-PartitelleBot-blue.svg?logo=telegram
    :align: center
    :target: https://t.me/PartitelleBot
    :alt: PartitelleBot
-|
-**PartitelleBot** is an Italian Telegram Bot in Python to retrieve participants for the organization of a football game.
 
-=================
-Table of contents
-=================
+What it is
+==========
 
-- `Architecture`_
-- `Behaviour`_
-- `Match summary`_
-- `Final phase`_
-- `Swapping players`_
-- `Allowed messages`_
-- `Commands`_
-- `Local development`_
-- `How to contribute`_
-- `Sponsorships`_
+PartitelleBot keeps the participant list of the weekly match in a Telegram group and updates a single summary message as people join or drop out.
+When the list is full it splits the players into two random teams, and after the match it reminds the group to pay the pitch.
+The bot talks Italian; this README is in English.
 
-=================
-Architecture
-=================
+It is a Python 3.12 project built on the async API of `python-telegram-bot <https://github.com/python-telegram-bot/python-telegram-bot>`_ (v22), with PostgreSQL for storage, both hosted on `Render <https://dashboard.render.com>`_.
 
-This is a *Python* 3.12 project relying on the async API of the `python-telegram-bot <https://github.com/python-telegram-bot/python-telegram-bot>`_ library (v22).
-Data storage is handled through *PostgreSQL*.
-The application and the mentioned database are both hosted on `Render <https://dashboard.render.com>`_.
+How to use it in a group
+========================
 
-=================
-Behaviour
-=================
-.. image:: .github/img/presentation_message.png
-    :width: 500px
-    :height: 250px
-    :align: center
-    :alt: Presentation message
-|
-By adding **PartitelleBot** to your Telegram group, you can easily manage those so-hard-to-organize weekly football matches with your friends.
-You have two ways of interacting with the bot:
+1. Add `@PartitelleBot <https://t.me/PartitelleBot>`_ to the group. Giving it administrator rights lets it pin its messages.
+2. Send ``/start`` to create the match. By default it is the next Wednesday at 20:00 (today, if it is a Wednesday and 20:00 has not passed yet), with 10 players. Change it with ``/setday``, ``/settime`` and ``/setnumber``.
+3. Everybody writes plain chat keywords (see below) to join. The bot prints the summary the first time and then edits it in place; ``/participants`` shows it again on demand.
+4. Once the confirmed players reach the target, the bot announces it and you can run ``/teams`` to get a black and a white team.
+5. Teams can be adjusted with ``scambia <name 1> con <name 2>``. Removing a player or marking one as maybe revokes the teams (the bot says so); ``/teams`` generates them again.
+6. Two hours after the match starts, the bot asks the group whether everybody paid, and pins the message if it can.
 
-1. by writing a specific set of `allowed messages`_ through the conversation
-2. by using standard commands_
+The summary looks like this (the pitch and the description are editable)::
 
-By default, the bot sets all new matches the next Wednesday at 9 pm but this information is, of course, editable. Once a new match is created through /start command, people can begin to organize the match through the set of allowed messages. The first time the bot detects an adding interaction, it will print a `match summary`_ of the current situation whereas from the second time it will edit its previous message (by the way remind that a new explicit summary can be obtained through /participants command). In this way, people can easily and autonomously add, propose, and remove themselves or each other. Once the target number is reached, users enter the `final phase`_; here, the bot states that is the time to play and asks permission to generate /teams. Through this command, the bot randomly generates two groups of players, respectively the black team and the white team. At this point, users can always adjust the teams by `swapping players`_.
+    GIORNO: Mercoledì 04/11/2026 | 20:00
 
-**Note**: if you give PartitelleBot the administrator rights, it will be able to pin its messages in the group.
+    1. Anna ✅
+    2. Marco ❓
+    3. ❌
+    ...
 
-=================
-Match summary
-=================
-.. image:: .github/img/match_summary.png
-    :width: 490px
-    :height: 480px
-    :align: center
-    :alt: Match summary
-|
-In my organizational experience, one of the most annoying tasks is to keep on copying and pasting the same list over and over again
-each time a new update over participants turns out. This summary aims to change this pattern and let the bot do the dirty work.
-This message has a specific structure:
+    <description>
 
-**GIORNO:** <day> | <time>
+    CAMPO:
+    <pitch>
 
+``✅`` is confirmed, ``❓`` is maybe, ``❌`` is a free slot.
 
-<participants list from 1 to N
+Chat keywords
+-------------
 
-- added player ✅
-- added player ✅
-- proposed player ❓
-- ...
-- free slot ❌
-where N is the target number>
+Keywords are plain messages, not commands. The message must start exactly with the keyword, and names are matched ignoring case.
+``aggiungi``, ``proponi`` accept several comma-separated names (``aggiungi luca, sara``). The names are free text: they do not have to be Telegram users.
 
+=================================== ===================================================================================
+Message                             Effect
+=================================== ===================================================================================
+``aggiungimi``                      add yourself, or confirm yourself if you were maybe
+``aggiungi <name>``                 add someone, or confirm them if they were maybe
+``proponimi``                       add yourself as maybe
+``proponi <name>``                  add someone as maybe
+``toglimi``                         remove yourself, whether confirmed or maybe
+``togli <name>``                    remove one person, whether confirmed or maybe
+``scambia <name 1> con <name 2>``   swap two players of different teams (needs teams from ``/teams``)
+=================================== ===================================================================================
 
-<description>
-
-**CAMPO:** <pitch>
-
-=================
-Final phase
-=================
-.. image:: .github/img/final_phase.png
-    :width: 340px
-    :height: 350px
-    :align: center
-    :alt: Final phase
-|
-
-=================
-Swapping players
-=================
-.. image:: .github/img/swap.png
-    :width: 300px
-    :height: 360px
-    :align: center
-    :alt: Swap
-|
-
-=================
-Allowed messages
-=================
-This is the list of current available allowed messages to interact with the bot:
-
-- **proponimi** - you want to be added to the list but you are not 100% sure to be present
-- **proponi <nome>** - you propose someone else who may participate
-- **aggiungimi** - you want to be added or confirmed to the list of participants
-- **aggiungi <nome>** - you add someone to the list or someone who had been previously proposed
-- **toglimi** - you remove yourself from the list in any case
-- **togli <nome>** - you remove someone else from the list in any case
-- **scambia <nome 1> con <nome 2>** - you swap two players to balance the teams generated by the bot
-
-=================
 Commands
-=================
-This is the list of current available commands:
+========
 
-- **/start** - Create new match
-- **/setnumber** - Set the number of participants
-- **/setday** - Set the day of the match
-- **/settime** - Set the time of the match
-- **/setdescription** - Set the custom message under the list of participants
-- **/setpitch** - Set the football pitch
-- **/participants** - Show the participants of the current match
-- **/teams** - Show the generated teams for the current match
-- **/stop** - Remove the match
-- **/help** - Show the list of available commands
+``/setday`` and ``/settime`` read a human date or time and refuse anything they cannot understand.
 
-=================
-Local development
-=================
+========================== ================================================================================================
+Command                    Description
+========================== ================================================================================================
+``/start``                 create the match of the chat (does nothing if one is already active)
+``/setnumber <n>``         number of players, up to 40; teams need an even number. Revokes existing teams
+``/setday <date>``         day of the match, day first, e.g. ``/setday 25/10/2026``
+``/settime <time>``        time of the match, e.g. ``/settime 21:30``, ``/settime 21.30`` or ``/settime 20``
+``/setdescription <text>`` text shown under the list; Telegram markdown is allowed
+``/setpitch <name>``       pitch shown at the bottom of the summary
+``/participants``          show the summary of the current match
+``/teams``                 generate the teams once the target is reached, or show the existing ones
+``/stop``                  stop the current match; it is kept as history and ``/start`` can create a new one
+``/help``                  list keywords and commands
+========================== ================================================================================================
+
+Development
+===========
+
+Setup, workflow and conventions are in `CONTRIBUTING.md <https://github.com/partitelle/partitelle-bot/blob/main/CONTRIBUTING.md>`_.
+
 Prerequisites: `uv <https://docs.astral.sh/uv/>`_ and `Docker <https://www.docker.com/>`_.
 
 1. create your own bot with `BotFather <https://t.me/BotFather>`_ and copy its token
@@ -161,18 +120,12 @@ PB_DB_PASSWORD      PostgreSQL password
 PB_DB_PORT          PostgreSQL port (also the host port published by docker compose)
 =================== ======================================================================
 
-=================
-How to contribute
-=================
-"Can I contribute to this project?"
-
-Hell, yes 😉!
-
-Have a look at `here <https://github.com/partitelle/partitelle-bot/blob/main/CONTRIBUTING.md>`_.
-
-=================
 Sponsorships
-=================
-The ambitiousness of this project depends on the resources it has available and every little help to contribute to its improvement is appreciated.
-Nothing mandatory, just do it if you feel like you would offer me a coffee! :)
-In that case, tap the Sponsor button at the top, or click `here <https://paypal.me/GiovanniL891?country.x=IT&locale.x=it_IT>`_ 💪.
+============
+
+Nothing mandatory, just do it if you feel like offering a coffee: tap the Sponsor button at the top, or click `here <https://paypal.me/GiovanniL891?country.x=IT&locale.x=it_IT>`_.
+
+License
+=======
+
+Released under the GNU General Public License v3.0, see `LICENSE <LICENSE>`__.
